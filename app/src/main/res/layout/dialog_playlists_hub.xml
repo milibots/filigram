@@ -1,0 +1,491 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#000000"
+    android:orientation="vertical"
+    android:layoutDirection="rtl">
+
+    <!-- Top Bar with Safe Inset Area -->
+    <LinearLayout
+        android:id="@+id/topBarPlaylistsHub"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="60dp"
+        android:background="#0A0A0A"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingTop="38dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="10dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnBackPlaylistsHub"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/estedad_bold"
+            android:text="بازگشت"
+            android:textColor="@color/gold"
+            android:textSize="13sp"
+            app:icon="@drawable/ic_arrow_back"
+            app:iconGravity="textStart"
+            app:iconPadding="6dp"
+            app:iconTint="@color/gold" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:fontFamily="@font/w_cinema"
+            android:text="کتابخانه من"
+            android:textColor="@android:color/white"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnCreateNewPlaylist"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:backgroundTint="#1F1A10"
+            android:fontFamily="@font/estedad_bold"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:text="+ پلی‌لیست جدید"
+            android:textColor="@color/gold"
+            android:textSize="11sp"
+            app:cornerRadius="18dp"
+            app:strokeColor="@color/gold_dim"
+            app:strokeWidth="1dp" />
+    </LinearLayout>
+
+    <!-- Two Modern Segmented Pill Tabs -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#050505"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingTop="10dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="12dp">
+
+        <!-- Tab 1: Favorites / Likes -->
+        <LinearLayout
+            android:id="@+id/tabFavorites"
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_marginEnd="6dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_chip_selector"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp">
+
+            <ImageView
+                android:id="@+id/icTabFav"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@drawable/ic_heart_filled_gold"
+                app:tint="@android:color/white" />
+
+            <TextView
+                android:id="@+id/txtTabFav"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:fontFamily="@font/estedad_bold"
+                android:text="نشان‌ها و علاقه‌مندی‌ها"
+                android:textColor="@android:color/white"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/badgeFavCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:background="@drawable/bg_badge_counter_pill"
+                android:fontFamily="@font/estedad_bold"
+                android:paddingStart="8dp"
+                android:paddingTop="2dp"
+                android:paddingEnd="8dp"
+                android:paddingBottom="2dp"
+                android:text="۰"
+                android:textColor="@android:color/white"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <!-- Tab 2: User Playlists -->
+        <LinearLayout
+            android:id="@+id/tabPlaylists"
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_marginStart="6dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_chip_selector"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp">
+
+            <ImageView
+                android:id="@+id/icTabPlaylists"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@drawable/ic_playlist_vector"
+                app:tint="@color/muted" />
+
+            <TextView
+                android:id="@+id/txtTabPlaylists"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:fontFamily="@font/estedad_bold"
+                android:text="پلی‌لیست‌های من"
+                android:textColor="@color/muted"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/badgePlaylistsCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:background="@drawable/bg_badge_counter_pill"
+                android:fontFamily="@font/estedad_bold"
+                android:paddingStart="8dp"
+                android:paddingTop="2dp"
+                android:paddingEnd="8dp"
+                android:paddingBottom="2dp"
+                android:text="۰"
+                android:textColor="@color/muted"
+                android:textSize="11sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <!-- Container 1: Favorites / Likes Screen -->
+        <LinearLayout
+            android:id="@+id/containerFavorites"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <!-- Favorites Action Bar -->
+            <LinearLayout
+                android:id="@+id/headerActionsFavorites"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="16dp"
+                android:paddingTop="6dp"
+                android:paddingEnd="16dp"
+                android:paddingBottom="4dp">
+
+                <TextView
+                    android:id="@+id/txtFavHeaderCount"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:fontFamily="@font/w_cinema"
+                    android:text="آرشیو فیلم‌ها و سریال‌های نشان‌شده"
+                    android:textColor="@color/header_gray"
+                    android:textSize="13sp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnExportFavorites"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:fontFamily="@font/w_cinema"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:paddingStart="6dp"
+                    android:paddingEnd="6dp"
+                    android:text="خروجی JSON"
+                    android:textColor="@color/gold"
+                    android:textSize="11sp"
+                    app:icon="@android:drawable/ic_menu_share"
+                    app:iconPadding="4dp"
+                    app:iconSize="15dp"
+                    app:iconTint="@color/gold" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnImportFavorites"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:fontFamily="@font/w_cinema"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:paddingStart="6dp"
+                    android:paddingEnd="6dp"
+                    android:text="ورودی JSON"
+                    android:textColor="@color/gold"
+                    android:textSize="11sp"
+                    app:icon="@android:drawable/ic_menu_upload"
+                    app:iconPadding="4dp"
+                    app:iconSize="15dp"
+                    app:iconTint="@color/gold" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnClearAllFavorites"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:fontFamily="@font/w_cinema"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:text="حذف همه نشان‌ها"
+                    android:textColor="#FF5555"
+                    android:textSize="12sp"
+                    app:icon="@android:drawable/ic_menu_delete"
+                    app:iconPadding="4dp"
+                    app:iconSize="16dp"
+                    app:iconTint="#FF5555" />
+            </LinearLayout>
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1">
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvFavoritesHub"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:clipToPadding="false"
+                    android:paddingStart="10dp"
+                    android:paddingTop="6dp"
+                    android:paddingEnd="10dp"
+                    android:paddingBottom="24dp" />
+
+                <!-- Empty Favorites -->
+                <LinearLayout
+                    android:id="@+id/emptyFavoritesContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:padding="32dp"
+                    android:visibility="gone">
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="120dp"
+                        android:layout_height="120dp"
+                        app:cardBackgroundColor="@color/card"
+                        app:cardCornerRadius="60dp"
+                        app:strokeColor="@color/gold_dim"
+                        app:strokeWidth="1.5dp">
+
+                        <ImageView
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:padding="26dp"
+                            android:src="@drawable/ic_heart_outline_gold" />
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:fontFamily="@font/w_cinema"
+                        android:text="هنوز فیلمی را نشان نکرده‌اید!"
+                        android:textColor="@color/header_gray"
+                        android:textSize="16sp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:fontFamily="@font/estedad"
+                        android:gravity="center"
+                        android:lineSpacingExtra="4dp"
+                        android:text="با زدن آیکون قلب در جزییات فیلم‌ها، آن‌ها در این تب ذخیره می‌شوند."
+                        android:textColor="@color/muted"
+                        android:textSize="12sp" />
+                </LinearLayout>
+            </FrameLayout>
+        </LinearLayout>
+
+        <!-- Container 2: User Playlists Screen -->
+        <LinearLayout
+            android:id="@+id/containerPlaylists"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <!-- Playlists Action Bar -->
+            <LinearLayout
+                android:id="@+id/headerActionsPlaylists"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="16dp"
+                android:paddingTop="6dp"
+                android:paddingEnd="16dp"
+                android:paddingBottom="4dp">
+
+                <TextView
+                    android:id="@+id/txtPlaylistsHeaderCount"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:fontFamily="@font/w_cinema"
+                    android:text="مجموعه‌های شخصی شما"
+                    android:textColor="@color/header_gray"
+                    android:textSize="13sp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnExportPlaylists"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:fontFamily="@font/w_cinema"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:paddingStart="6dp"
+                    android:paddingEnd="6dp"
+                    android:text="خروجی JSON"
+                    android:textColor="@color/gold"
+                    android:textSize="11sp"
+                    app:icon="@android:drawable/ic_menu_share"
+                    app:iconPadding="4dp"
+                    app:iconSize="15dp"
+                    app:iconTint="@color/gold" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnImportPlaylists"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:fontFamily="@font/w_cinema"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:paddingStart="6dp"
+                    android:paddingEnd="6dp"
+                    android:text="ورودی JSON"
+                    android:textColor="@color/gold"
+                    android:textSize="11sp"
+                    app:icon="@android:drawable/ic_menu_upload"
+                    app:iconPadding="4dp"
+                    app:iconSize="15dp"
+                    app:iconTint="@color/gold" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnClearAllPlaylists"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:fontFamily="@font/w_cinema"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:text="حذف همه پلی‌لیست‌ها"
+                    android:textColor="#FF5555"
+                    android:textSize="12sp"
+                    app:icon="@android:drawable/ic_menu_delete"
+                    app:iconPadding="4dp"
+                    app:iconSize="16dp"
+                    app:iconTint="#FF5555" />
+            </LinearLayout>
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1">
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvPlaylistsHub"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:clipToPadding="false"
+                    android:paddingStart="16dp"
+                    android:paddingTop="6dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="24dp" />
+
+                <!-- Empty Playlists -->
+                <LinearLayout
+                    android:id="@+id/emptyPlaylistsContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:padding="32dp"
+                    android:visibility="gone">
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="120dp"
+                        android:layout_height="120dp"
+                        app:cardBackgroundColor="@color/card"
+                        app:cardCornerRadius="60dp"
+                        app:strokeColor="@color/gold_dim"
+                        app:strokeWidth="1.5dp">
+
+                        <ImageView
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:padding="26dp"
+                            android:src="@drawable/ic_playlist_vector"
+                            app:tint="@color/gold" />
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:fontFamily="@font/w_cinema"
+                        android:text="هنوز پلی‌لیستی ایجاد نکرده‌اید!"
+                        android:textColor="@color/header_gray"
+                        android:textSize="16sp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:fontFamily="@font/estedad"
+                        android:gravity="center"
+                        android:lineSpacingExtra="4dp"
+                        android:text="شما می‌توانید مجموعه‌های دلخواه خود را ساخته و فیلم‌های مدنظرتان را به آن اضافه کنید."
+                        android:textColor="@color/muted"
+                        android:textSize="12sp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnEmptyCreatePlaylist"
+                        android:layout_width="wrap_content"
+                        android:layout_height="42dp"
+                        android:layout_marginTop="16dp"
+                        android:backgroundTint="@color/gold"
+                        android:fontFamily="@font/estedad_bold"
+                        android:paddingStart="20dp"
+                        android:paddingEnd="20dp"
+                        android:text="+ ایجاد اولین پلی‌لیست"
+                        android:textColor="@color/black"
+                        android:textSize="12sp"
+                        app:cornerRadius="21dp" />
+                </LinearLayout>
+            </FrameLayout>
+        </LinearLayout>
+    </FrameLayout>
+
+</LinearLayout>

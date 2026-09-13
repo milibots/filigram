@@ -1,0 +1,414 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#000000"
+    android:orientation="vertical"
+    android:layoutDirection="rtl">
+
+    <!-- Top Navigation Bar with Safe Cutout Inset -->
+    <LinearLayout
+        android:id="@+id/topBarEnginesDrawer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="60dp"
+        android:background="#0A0A0A"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingTop="38dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="10dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnDrawerClose"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/w_cinema"
+            android:text="بازگشت"
+            android:textColor="@color/gold"
+            android:textSize="13sp"
+            app:icon="@drawable/ic_arrow_back"
+            app:iconGravity="textStart"
+            app:iconPadding="6dp"
+            app:iconTint="@color/gold" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/w_cinema"
+                android:text="تنظیمات فیلیگرام"
+                android:textColor="@android:color/white"
+                android:textSize="17sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvCurrentEngineSub"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/estedad"
+                android:text="موتور فعال: موویلیکس (پیش‌فرض)"
+                android:textColor="@color/muted"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <ImageView
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:contentDescription="فیلیگرام"
+            android:src="@drawable/logo_filigram" />
+    </LinearLayout>
+
+    <!-- Scrollable Content: Status, Contact Support, Engine Selection Only -->
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="16dp"
+            android:paddingTop="14dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="36dp">
+
+            <!-- 1. Status / Server Health Radar Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardOpenRadar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
+                app:cardBackgroundColor="@color/card"
+                app:cardCornerRadius="16dp"
+                app:strokeColor="@color/card_border"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="14dp">
+
+                    <ImageView
+                        android:layout_width="38dp"
+                        android:layout_height="38dp"
+                        android:background="@drawable/bg_search_input"
+                        android:padding="7dp"
+                        android:src="@drawable/ic_radar" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/w_cinema"
+                            android:text="وضعیت و پایداری سرورها (Status)"
+                            android:textColor="@android:color/white"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:fontFamily="@font/estedad"
+                            android:text="بررسی پینگ لحظه‌ای، تاخیر و سلامت اتصال سرورها"
+                            android:textColor="@color/muted"
+                            android:textSize="10sp" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/w_cinema"
+                        android:text="مشاهده وضعیت"
+                        android:textColor="@color/gold"
+                        android:textSize="12sp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- 2. Contact Support Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardDrawerTelegram"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
+                app:cardBackgroundColor="@color/card"
+                app:cardCornerRadius="16dp"
+                app:strokeColor="@color/card_border"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="14dp">
+
+                    <ImageView
+                        android:layout_width="38dp"
+                        android:layout_height="38dp"
+                        android:background="@drawable/bg_search_input"
+                        android:padding="8dp"
+                        android:src="@drawable/ic_telegram_plane"
+                        app:tint="@color/gold" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/w_cinema"
+                            android:text="پشتیبانی و ارتباط با ما (Contact Support)"
+                            android:textColor="@android:color/white"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:fontFamily="@font/estedad"
+                            android:text="ارتباط مستقیم و پشتیبانی ۲۴ ساعته در تلگرام: t.me/filigramapp"
+                            android:textColor="@color/muted"
+                            android:textSize="10sp" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/w_cinema"
+                        android:text="ارتباط با پشتیبانی"
+                        android:textColor="@color/gold"
+                        android:textSize="12sp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- 3. Clear Cache Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardClearCache"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
+                app:cardBackgroundColor="@color/card"
+                app:cardCornerRadius="16dp"
+                app:strokeColor="@color/card_border"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="14dp">
+
+                    <ImageView
+                        android:layout_width="38dp"
+                        android:layout_height="38dp"
+                        android:background="@drawable/bg_search_input"
+                        android:padding="8dp"
+                        android:src="@android:drawable/ic_menu_delete"
+                        app:tint="@color/gold" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/w_cinema"
+                            android:text="پاکسازی حافظه موقت (Clear Cache)"
+                            android:textColor="@android:color/white"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/txtCacheSizeSub"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:fontFamily="@font/estedad"
+                            android:text="حجم کش ذخیره‌شده: در حال محاسبه..."
+                            android:textColor="@color/muted"
+                            android:textSize="10sp" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/w_cinema"
+                        android:text="پاکسازی کش"
+                        android:textColor="@color/gold"
+                        android:textSize="12sp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- 4. Engine Selected / Selection Section -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="22dp"
+                android:layout_marginBottom="12dp"
+                android:fontFamily="@font/w_cinema"
+                android:text="انتخاب منبع و موتور استخراج (Engines):"
+                android:textColor="@color/header_gray"
+                android:textSize="15sp" />
+
+            <!-- Radio Group for Engines in Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/card"
+                app:cardCornerRadius="16dp"
+                app:strokeColor="@color/card_border"
+                app:strokeWidth="1dp">
+
+                <RadioGroup
+                    android:id="@+id/rgEngines"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <!-- 1. Movielix (Default) -->
+                    <RadioButton
+                        android:id="@+id/rbMovielix"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:buttonTint="@color/gold"
+                        android:fontFamily="@font/w_cinema"
+                        android:paddingStart="8dp"
+                        android:text="موویلیکس (Movielix Core) — پیش‌فرض و پایدار"
+                        android:textColor="@android:color/white"
+                        android:textSize="13sp" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="36dp"
+                        android:layout_marginBottom="12dp"
+                        android:fontFamily="@font/estedad"
+                        android:text="کامل‌ترین آرشیو فیلم‌ها و سریال‌ها با استریم پایدار و کیفیت‌های متنوع"
+                        android:textColor="@color/muted"
+                        android:textSize="10sp" />
+
+                    <!-- 2. RezFlix (Beta) -->
+                    <RadioButton
+                        android:id="@+id/rbRezFlix"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:buttonTint="@color/gold"
+                        android:fontFamily="@font/w_cinema"
+                        android:paddingStart="8dp"
+                        android:text="رزفلیکس (RezFlix Engine) — نسخه بتا"
+                        android:textColor="@android:color/white"
+                        android:textSize="13sp" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="36dp"
+                        android:layout_marginBottom="12dp"
+                        android:fontFamily="@font/estedad"
+                        android:text="سرور کمکی با لینک‌های دانلود مستقیم و اختصاصی"
+                        android:textColor="@color/muted"
+                        android:textSize="10sp" />
+
+                    <!-- 3. AlmasMovie (Official API) -->
+                    <RadioButton
+                        android:id="@+id/rbAlmasMovie"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:buttonTint="@color/gold"
+                        android:fontFamily="@font/w_cinema"
+                        android:paddingStart="8dp"
+                        android:text="الماس مووی (AlmasMovie Engine) — API رسمی"
+                        android:textColor="@android:color/white"
+                        android:textSize="13sp" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="36dp"
+                        android:layout_marginBottom="12dp"
+                        android:fontFamily="@font/estedad"
+                        android:text="پایگاه داده مستقیم فیلم‌ها و سریال‌ها با سرعت بالا و زیرنویس چسبیده"
+                        android:textColor="@color/muted"
+                        android:textSize="10sp" />
+
+                    <!-- 4. NextMovie (mihan-cdn) -->
+                    <RadioButton
+                        android:id="@+id/rbNextMovie"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:buttonTint="@color/gold"
+                        android:fontFamily="@font/w_cinema"
+                        android:paddingStart="8dp"
+                        android:text="نکست مووی (NextMovie Engine) — پایگاه پرسرعت"
+                        android:textColor="@android:color/white"
+                        android:textSize="13sp" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="36dp"
+                        android:fontFamily="@font/estedad"
+                        android:text="سرویس فیلم‌ها و سریال‌های روز با لینک‌های استریم مستقیم بدون فیلتر"
+                        android:textColor="@color/muted"
+                        android:textSize="10sp" />
+
+                </RadioGroup>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Apply Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnApplyEngine"
+                style="@style/Widget.Material3.Button"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="20dp"
+                android:backgroundTint="@color/gold"
+                android:fontFamily="@font/w_cinema"
+                android:text="اعمال و تغییر موتور فعال"
+                android:textColor="@android:color/white"
+                android:textSize="14sp"
+                app:cornerRadius="16dp" />
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+</LinearLayout>

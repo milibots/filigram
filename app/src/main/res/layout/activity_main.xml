@@ -1,0 +1,356 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/coordinatorRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/black"
+    android:fitsSystemWindows="true">
+
+    <!-- Top App Bar -->
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/appBarLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/black"
+        app:elevation="0dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="64dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="18dp"
+            android:paddingTop="8dp"
+            android:paddingEnd="18dp"
+            android:paddingBottom="4dp">
+
+            <ImageView
+                android:id="@+id/topLogo"
+                android:layout_width="34dp"
+                android:layout_height="34dp"
+                android:src="@drawable/app_logo_filigram" />
+
+            <TextView
+                android:id="@+id/topTitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_weight="1"
+                android:fontFamily="@font/w_cinema"
+                android:text="فیلیگرام"
+                android:textColor="@color/header_gray"
+                android:textSize="22sp"
+                android:textStyle="bold" />
+
+            <!-- Notification Bell with Unread Badge -->
+            <FrameLayout
+                android:id="@+id/btnTopNotifications"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:contentDescription="اعلان‌ها و اخبار فیلیگرام"
+                android:focusable="true">
+
+                <ImageView
+                    android:id="@+id/icNotificationBell"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:contentDescription="اعلان‌ها"
+                    android:padding="8dp"
+                    android:src="@drawable/ic_bell_gold"
+                    app:tint="@color/gold" />
+
+                <TextView
+                    android:id="@+id/txtNotificationBadge"
+                    android:layout_width="17dp"
+                    android:layout_height="17dp"
+                    android:layout_gravity="top|end"
+                    android:layout_marginTop="2dp"
+                    android:layout_marginEnd="2dp"
+                    android:background="@drawable/bg_badge_unread"
+                    android:fontFamily="@font/estedad_bold"
+                    android:gravity="center"
+                    android:textColor="#FFFFFF"
+                    android:textSize="9sp"
+                    android:textStyle="bold"
+                    android:visibility="gone" />
+            </FrameLayout>
+
+            <ImageView
+                android:id="@+id/btnTopSearch"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:layout_marginStart="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="جستجو"
+                android:padding="8dp"
+                android:src="@android:drawable/ic_menu_search"
+                app:tint="@color/gold" />
+
+            <ImageView
+                android:id="@+id/btnTopMenu"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:layout_marginStart="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="تنظیمات و منو"
+                android:padding="8dp"
+                android:src="@drawable/ic_menu_hamburger"
+                app:tint="@color/gold" />
+        </LinearLayout>
+
+        <!-- Search Bar (Collapsible) -->
+        <LinearLayout
+            android:id="@+id/searchContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingStart="18dp"
+            android:paddingEnd="18dp"
+            android:paddingBottom="12dp"
+            android:visibility="gone">
+
+            <EditText
+                android:id="@+id/etSearch"
+                android:layout_width="0dp"
+                android:layout_height="46dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_search_input"
+                android:fontFamily="@font/estedad"
+                android:hint="جستجوی فیلم، سریال..."
+                android:imeOptions="actionSearch"
+                android:inputType="text"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:textColor="@android:color/white"
+                android:textColorHint="#666666"
+                android:textSize="13sp" />
+
+            <Button
+                android:id="@+id/btnSubmitSearch"
+                android:layout_width="wrap_content"
+                android:layout_height="46dp"
+                android:layout_marginStart="10dp"
+                android:backgroundTint="@color/gold"
+                android:fontFamily="@font/estedad_bold"
+                android:text="جستجو"
+                android:textColor="@color/black"
+                android:textSize="13sp" />
+        </LinearLayout>
+
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <!-- Main Container -->
+    <FrameLayout
+        android:id="@+id/mainContentFrame"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/black"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <!-- 1. Home / Vitrin Screen -->
+        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+            android:id="@+id/swipeRefresh"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <androidx.core.widget.NestedScrollView
+                android:id="@+id/homeScroll"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:paddingBottom="90dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <!-- Hero Banner ViewPager2 -->
+                    <androidx.viewpager2.widget.ViewPager2
+                        android:id="@+id/bannerViewPager"
+                        android:layout_width="match_parent"
+                        android:layout_height="220dp" />
+
+                    <!-- Outer RecyclerView for Sections -->
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/rvVitrinSections"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:nestedScrollingEnabled="false"
+                        android:layoutAnimation="@anim/layout_animation_list"
+                        android:paddingBottom="8dp" />
+
+                    <!-- Vitrin Pagination Footer -->
+                    <LinearLayout
+                        android:id="@+id/vitrinLoadingMore"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:orientation="horizontal"
+                        android:padding="16dp"
+                        android:visibility="gone">
+
+                        <ProgressBar
+                            android:layout_width="22dp"
+                            android:layout_height="22dp"
+                            android:indeterminateTint="@color/gold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="10dp"
+                            android:fontFamily="@font/estedad"
+                            android:text="در حال بارگذاری بخش‌های بیشتر ویترین..."
+                            android:textColor="@color/muted"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                </LinearLayout>
+            </androidx.core.widget.NestedScrollView>
+        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+        <!-- 2. Grid Screen (Movies / Series / Search Results) -->
+        <FrameLayout
+            android:id="@+id/gridScreenContainer"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical">
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvGridMovies"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:layoutAnimation="@anim/layout_animation_grid"
+                    android:clipToPadding="false"
+                    android:paddingStart="8dp"
+                    android:paddingTop="8dp"
+                    android:paddingEnd="8dp"
+                    android:paddingBottom="90dp" />
+
+                <!-- Grid Pagination Footer -->
+                <LinearLayout
+                    android:id="@+id/gridLoadingMore"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="90dp"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:padding="12dp"
+                    android:visibility="gone">
+
+                    <ProgressBar
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:indeterminateTint="@color/gold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:fontFamily="@font/estedad"
+                        android:text="در حال بارگذاری موارد بیشتر..."
+                        android:textColor="@color/muted"
+                        android:textSize="11sp" />
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <ProgressBar
+                android:id="@+id/gridProgressBar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:indeterminateTint="@color/gold"
+                android:visibility="gone" />
+        </FrameLayout>
+
+        <!-- 3. Realtime Logs Screen -->
+        <LinearLayout
+            android:id="@+id/logsScreenContainer"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/black"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:background="#0A0A0A"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:drawableStart="@drawable/ic_radar"
+                    android:drawablePadding="8dp"
+                    android:drawableTint="@color/header_gray"
+                    android:fontFamily="@font/w_cinema"
+                    android:gravity="center_vertical"
+                    android:text="کنسول استریم زنده‌ی لاگ‌ها (Live Logs)"
+                    android:textColor="@color/header_gray"
+                    android:textSize="13sp" />
+
+                <Button
+                    android:id="@+id/btnClearLogs"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/estedad"
+                    android:text="پاکسازی"
+                    android:textColor="#FF4444"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvLogs"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:paddingStart="10dp"
+                android:paddingTop="10dp"
+                android:paddingEnd="10dp"
+                android:paddingBottom="90dp" />
+        </LinearLayout>
+
+        <!-- Loading Indicator -->
+        <ProgressBar
+            android:id="@+id/mainProgressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:indeterminateTint="@color/gold" />
+
+    </FrameLayout>
+
+    <!-- Floating Pill Bottom Navigation Bar -->
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottomNavigation"
+        style="@style/Widget.Filigram.BottomNav"
+        android:layout_width="match_parent"
+        android:layout_height="62dp"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/bg_floating_pill_nav"
+        app:elevation="12dp"
+        app:itemIconTint="@color/nav_item_color"
+        app:itemTextColor="@color/nav_item_color"
+        app:labelVisibilityMode="labeled"
+        app:menu="@menu/bottom_nav_menu" />
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

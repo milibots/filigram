@@ -1,0 +1,22 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_home"
+        android:icon="@android:drawable/ic_menu_today"
+        android:title="خانه" />
+    <item
+        android:id="@+id/nav_movies"
+        android:icon="@android:drawable/ic_media_play"
+        android:title="فیلم‌ها" />
+    <item
+        android:id="@+id/nav_series"
+        android:icon="@android:drawable/ic_menu_slideshow"
+        android:title="سریال‌ها" />
+    <item
+        android:id="@+id/nav_playlists"
+        android:icon="@drawable/ic_playlist_vector"
+        android:title="کتابخانه" />
+    <item
+        android:id="@+id/nav_notifications"
+        android:icon="@drawable/ic_bell_gold"
+        android:title="اعلان‌ها" />
+</menu>

@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="8dp"
+    android:background="@drawable/bg_search_input"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/qualityTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/estedad_bold"
+                android:textColor="@android:color/white"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/qualitySize"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:fontFamily="@font/estedad"
+                android:textColor="@color/muted"
+                android:textSize="10sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:gravity="end|center_vertical"
+        android:orientation="horizontal">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnStreamInApp"
+            android:layout_width="wrap_content"
+            android:layout_height="38dp"
+            android:backgroundTint="@color/gold"
+            android:fontFamily="@font/estedad_bold"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:text="تماشا در برنامه"
+            android:textColor="@color/black"
+            android:textSize="11sp"
+            app:cornerRadius="8dp"
+            app:icon="@drawable/ic_play_black"
+            app:iconGravity="textStart"
+            app:iconPadding="4dp"
+            app:iconSize="14dp"
+            app:iconTint="@color/black" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnDownloadDirect"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="38dp"
+            android:layout_marginStart="8dp"
+            android:fontFamily="@font/estedad_bold"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:text="دانلود مستقیم"
+            android:textColor="@color/gold"
+            android:textSize="11sp"
+            app:cornerRadius="8dp"
+            app:icon="@drawable/ic_download_vector"
+            app:iconGravity="textStart"
+            app:iconPadding="4dp"
+            app:iconSize="14dp"
+            app:iconTint="@color/gold"
+            app:strokeColor="@color/gold" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnPlayExternal"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="38dp"
+            android:layout_marginStart="4dp"
+            android:fontFamily="@font/estedad"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:text="پلیر جانبی"
+            android:textColor="@color/muted"
+            android:textSize="10sp" />
+    </LinearLayout>
+</LinearLayout>

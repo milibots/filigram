@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/cardAnnouncement"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="12dp"
+    android:layout_marginTop="6dp"
+    android:layout_marginEnd="12dp"
+    android:layout_marginBottom="6dp"
+    android:clickable="true"
+    android:focusable="true"
+    app:cardBackgroundColor="#0D0D0D"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="2dp"
+    app:strokeColor="#222222"
+    app:strokeWidth="1dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:layoutDirection="rtl">
+
+        <!-- Header: Title, Date, Status Badge -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/imgAnnouncementIcon"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:src="@drawable/ic_bell_gold"
+                app:tint="@color/gold"
+                android:contentDescription="اعلان" />
+
+            <TextView
+                android:id="@+id/txtAnnouncementTitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:layout_weight="1"
+                android:fontFamily="@font/w_cinema"
+                android:text="عنوان اعلان"
+                android:textColor="@android:color/white"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <!-- Read / Unread Status Badge -->
+            <TextView
+                android:id="@+id/txtStatusBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_badge_unread_tag"
+                android:fontFamily="@font/estedad_bold"
+                android:paddingStart="8dp"
+                android:paddingTop="3dp"
+                android:paddingEnd="8dp"
+                android:paddingBottom="3dp"
+                android:text="جدید"
+                android:textColor="#E50914"
+                android:textSize="10sp" />
+        </LinearLayout>
+
+        <!-- Message Body Text -->
+        <TextView
+            android:id="@+id/txtAnnouncementBody"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:fontFamily="@font/estedad"
+            android:lineSpacingExtra="5dp"
+            android:text="متن پیام اعلان در این قسمت قرار می‌گیرد..."
+            android:textColor="#CCCCCC"
+            android:textSize="13sp" />
+
+        <!-- Footer: Timestamp -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/txtAnnouncementDate"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:fontFamily="@font/estedad"
+                android:text="۱۴۰۵/۰۶/۲۱ - ۰۹:۱۸"
+                android:textColor="@color/muted"
+                android:textSize="11sp" />
+
+            <TextView
+                android:id="@+id/txtTapToReadHint"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/estedad"
+                android:text="برای ثبت خوانده‌شده لمس کنید"
+                android:textColor="@color/gold_dim"
+                android:textSize="10sp"
+                android:visibility="gone" />
+        </LinearLayout>
+
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

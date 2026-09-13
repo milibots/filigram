@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#000000"
+    android:orientation="vertical"
+    android:layoutDirection="rtl">
+
+    <!-- Top Bar with Safe Cutout Inset -->
+    <LinearLayout
+        android:id="@+id/topBarPlaylistDetail"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="56dp"
+        android:background="#0A0A0A"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingTop="38dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="10dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnBackPlaylist"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/estedad_bold"
+            android:text="بازگشت"
+            android:textColor="@color/gold"
+            android:textSize="13sp"
+            app:icon="@drawable/ic_arrow_back"
+            app:iconGravity="textStart"
+            app:iconPadding="6dp"
+            app:iconTint="@color/gold" />
+
+        <TextView
+            android:id="@+id/txtTopPlaylistTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:fontFamily="@font/w_cinema"
+            android:maxLines="1"
+            android:textColor="@android:color/white"
+            android:textSize="16sp" />
+    </LinearLayout>
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- Playlist Hero Banner Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="190dp"
+                app:cardBackgroundColor="@color/card"
+                app:cardCornerRadius="16dp"
+                app:strokeColor="@color/gold_dim"
+                app:strokeWidth="1dp">
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
+
+                    <ImageView
+                        android:id="@+id/imgPlaylistCover"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:scaleType="centerCrop"
+                        android:src="@drawable/bg_movie_placeholder" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@drawable/bg_banner_gradient" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="bottom"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_badge_gold"
+                            android:fontFamily="@font/estedad_bold"
+                            android:paddingStart="8dp"
+                            android:paddingTop="2dp"
+                            android:paddingEnd="8dp"
+                            android:paddingBottom="2dp"
+                            android:text="پلی‌لیست منتخب فیلیگرام"
+                            android:textColor="@color/black"
+                            android:textSize="10sp" />
+
+                        <TextView
+                            android:id="@+id/txtPlaylistTitle"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:fontFamily="@font/w_cinema"
+                            android:textColor="@android:color/white"
+                            android:textSize="18sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/txtPlaylistEnTitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/estedad"
+                            android:textColor="@color/gold"
+                            android:textSize="11sp" />
+                    </LinearLayout>
+                </FrameLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Description -->
+            <TextView
+                android:id="@+id/txtPlaylistDesc"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:fontFamily="@font/estedad"
+                android:lineSpacingExtra="4dp"
+                android:textColor="@color/muted"
+                android:textSize="12sp" />
+
+            <!-- Sequential Playback Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnPlaySequential"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="14dp"
+                android:backgroundTint="@color/gold"
+                android:fontFamily="@font/estedad_bold"
+                android:text="پخش آنلاین ترتیبی پلی‌لیست"
+                android:textColor="@color/black"
+                android:textSize="13sp"
+                app:cornerRadius="10dp"
+                app:icon="@drawable/ic_play_black"
+                app:iconGravity="textStart"
+                app:iconPadding="8dp"
+                app:iconTint="@color/black" />
+
+            <TextView
+                android:id="@+id/txtItemsCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:layout_marginBottom="8dp"
+                android:fontFamily="@font/w_cinema"
+                android:text="عناوین این مجموعه:"
+                android:textColor="@color/header_gray"
+                android:textSize="13sp" />
+
+            <!-- Movies Grid in Playlist -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvPlaylistMovies"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false" />
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+</LinearLayout>
