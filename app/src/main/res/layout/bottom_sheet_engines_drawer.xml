@@ -192,7 +192,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
                             android:fontFamily="@font/yekan_bakh_regular"
-                            android:text="ارتباط مستقیم و پشتیبانی ۲۴ ساعته در تلگرام: t.me/filigramapp"
+                            android:text="ارتباط مستقیم، پشتیبانی و گزارش باگ در تلگرام: t.me/filigramapp?direct"
                             android:textColor="@color/muted"
                             android:textSize="10sp" />
                     </LinearLayout>
@@ -757,6 +757,28 @@
                 app:iconPadding="10dp"
                 app:iconTint="#2ECC71"
                 app:strokeColor="#2ECC71"
+                app:strokeWidth="1.5dp" />
+
+            <!-- ═══════════════════════════════════════════════ -->
+            <!-- Bug Report Button (direct telegram link)         -->
+            <!-- ═══════════════════════════════════════════════ -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnReportBug"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="2dp"
+                android:layout_marginBottom="16dp"
+                android:backgroundTint="#241416"
+                android:fontFamily="@font/yekan_bakh_bold"
+                android:text="گزارش باگ یا مشکل در تلگرام 🐞"
+                android:textColor="#FF6B6B"
+                android:textSize="14sp"
+                app:cornerRadius="16dp"
+                app:icon="@drawable/ic_telegram_plane"
+                app:iconGravity="textStart"
+                app:iconPadding="10dp"
+                app:iconTint="#FF6B6B"
+                app:strokeColor="#FF6B6B"
                 app:strokeWidth="1.5dp" />
 
         </LinearLayout>

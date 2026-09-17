@@ -1832,11 +1832,11 @@ class MainActivity : AppCompatActivity() {
         }
 
         drawerBinding.cardDrawerTelegram.setOnClickListener {
-            val tgUrl = "https://t.me/filigramapp"
+            val tgUrl = "https://t.me/filigramapp?direct"
             try {
                 startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(tgUrl)))
             } catch (e: Exception) {
-                showAppToast("پشتیبانی در تلگرام: t.me/filigramapp", autoDismissMs = 4000L)
+                showAppToast("پشتیبانی و گزارش باگ در تلگرام: t.me/filigramapp?direct", autoDismissMs = 4000L)
             }
         }
 
@@ -1896,6 +1896,15 @@ class MainActivity : AppCompatActivity() {
         drawerBinding.btnShareApp.setOnClickListener {
             dialog.dismiss()
             showShareAppSheet()
+        }
+
+        drawerBinding.btnReportBug.setOnClickListener {
+            val bugUrl = "https://t.me/filigramapp?direct"
+            try {
+                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(bugUrl)))
+            } catch (e: Exception) {
+                showAppToast("ارسال گزارش باگ: t.me/filigramapp?direct", autoDismissMs = 4000L)
+            }
         }
 
         dialog.show()

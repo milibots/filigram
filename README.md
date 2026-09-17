@@ -76,9 +76,18 @@
 
 ---
 
+## 🐞 گزارش باگ، خطاها و پیشنهادات (Bug Reports & Feedback)
+
+اگر در استفاده از اپلیکیشن، پخش آنلاین، دانلود یا بخش‌های دیگر با هرگونه مشکل، باگ یا خطایی مواجه شدید، لطفاً گزارش خود را مستقیماً از طریق لینک زیر در تلگرام برای تیم پشتیبانی و توسعه ارسال نمایید:
+
+👉 **[ارسال مستقیم گزارش باگ در تلگرام (t.me/filigramapp?direct)](https://t.me/filigramapp?direct)**
+
+---
+
 ## 💬 پشتیبانی و ارتباط با ما
 
-- **کانال تلگرام:** [t.me/filigramapp](https://t.me/filigramapp)
+- **کانال رسمی تلگرام:** [t.me/filigramapp](https://t.me/filigramapp)
+- **ارتباط مستقیم و گزارش باگ:** [t.me/filigramapp?direct](https://t.me/filigramapp?direct)
 - **گیت‌هاب:** [github.com/milibots/filigram](https://github.com/milibots/filigram)
 
 ---
