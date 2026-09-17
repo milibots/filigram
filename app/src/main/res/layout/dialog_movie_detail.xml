@@ -12,12 +12,10 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <!-- Fullscreen Cover Hero Banner (Netflix-Style Edge-to-Edge, No Header Bar!) -->
         <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="400dp">
 
-            <!-- High-Res Cover Poster Backdrop (Full Bleed from Screen Top) -->
             <ImageView
                 android:id="@+id/detailPoster"
                 android:layout_width="match_parent"
@@ -25,21 +23,18 @@
                 android:scaleType="centerCrop"
                 android:src="@drawable/placeholder_banner" />
 
-            <!-- Top Subtle Vignette for Floating Controls Visibility -->
             <View
                 android:layout_width="match_parent"
                 android:layout_height="130dp"
                 android:layout_gravity="top"
                 android:background="@drawable/bg_top_gradient" />
 
-            <!-- Bottom Cinematic Fade into Deep Black Surface -->
             <View
                 android:layout_width="match_parent"
                 android:layout_height="220dp"
                 android:layout_gravity="bottom"
                 android:background="@drawable/bg_banner_gradient" />
 
-            <!-- Floating Translucent Top Controls (Safe Cutout Padded) -->
             <LinearLayout
                 android:id="@+id/topBarDetail"
                 android:layout_width="match_parent"
@@ -52,14 +47,13 @@
                 android:paddingEnd="16dp"
                 android:paddingBottom="10dp">
 
-                <!-- Floating Frosted Back Button -->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnBackDetail"
                     style="@style/Widget.Material3.Button.TonalButton"
                     android:layout_width="wrap_content"
                     android:layout_height="40dp"
                     android:backgroundTint="#80000000"
-                    android:fontFamily="@font/estedad_bold"
+                    android:fontFamily="@font/yekan_bakh_bold"
                     android:text="بازگشت"
                     android:textColor="@android:color/white"
                     android:textSize="12sp"
@@ -76,7 +70,6 @@
                     android:layout_height="1dp"
                     android:layout_weight="1" />
 
-                <!-- Floating Frosted Playlist Button -->
                 <ImageButton
                     android:id="@+id/btnAddPlaylistDetail"
                     android:layout_width="40dp"
@@ -87,7 +80,6 @@
                     android:src="@drawable/ic_playlist_vector"
                     app:tint="@android:color/white" />
 
-                <!-- Floating Frosted Favorite / Bookmark Button -->
                 <ImageButton
                     android:id="@+id/btnFavoriteDetail"
                     android:layout_width="40dp"
@@ -98,7 +90,6 @@
                     android:padding="9dp"
                     android:src="@drawable/ic_heart_outline_gold" />
 
-                <!-- Floating Frosted Series Notification Bell Button -->
                 <ImageButton
                     android:id="@+id/btnNotifySeriesDetail"
                     android:layout_width="40dp"
@@ -111,7 +102,6 @@
                     android:visibility="gone" />
             </LinearLayout>
 
-            <!-- Bottom Title and Badges directly over the gradient -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -125,7 +115,7 @@
                     android:id="@+id/detailTitle"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:fontFamily="@font/w_cinema"
+                    android:fontFamily="@font/yekan_bakh_bold"
                     android:shadowColor="#DD000000"
                     android:shadowDx="0"
                     android:shadowDy="2"
@@ -134,7 +124,6 @@
                     android:textSize="24sp"
                     android:textStyle="bold" />
 
-                <!-- Badges & Ratings Row -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -147,7 +136,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:background="@drawable/bg_badge_gold"
-                        android:fontFamily="@font/estedad_bold"
+                        android:fontFamily="@font/yekan_bakh_bold"
                         android:paddingStart="10dp"
                         android:paddingTop="3dp"
                         android:paddingEnd="10dp"
@@ -164,7 +153,7 @@
                         android:background="@drawable/bg_search_input"
                         android:drawableStart="@drawable/ic_star_gold"
                         android:drawablePadding="4dp"
-                        android:fontFamily="@font/estedad_bold"
+                        android:fontFamily="@font/yekan_bakh_bold"
                         android:gravity="center_vertical"
                         android:paddingStart="8dp"
                         android:paddingTop="3dp"
@@ -179,14 +168,13 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="10dp"
-                        android:fontFamily="@font/estedad"
+                        android:fontFamily="@font/yekan_bakh_regular"
                         android:textColor="@color/muted"
                         android:textSize="12sp" />
                 </LinearLayout>
             </LinearLayout>
         </FrameLayout>
 
-        <!-- Body Content Under the Fullscreen Cover -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -196,11 +184,10 @@
             android:paddingEnd="16dp"
             android:paddingBottom="32dp">
 
-            <!-- Plot Storyline -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:fontFamily="@font/w_cinema"
+                android:fontFamily="@font/yekan_bakh_bold"
                 android:text="خلاصه داستان:"
                 android:textColor="@color/header_gray"
                 android:textSize="13sp" />
@@ -210,19 +197,18 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
-                android:fontFamily="@font/estedad"
+                android:fontFamily="@font/yekan_bakh_regular"
                 android:lineSpacingExtra="5dp"
                 android:textColor="@color/text"
                 android:textSize="12sp" />
 
-            <!-- Action Button: Add to Playlists -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnActionAddToPlaylist"
                 style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
                 android:layout_marginTop="14dp"
-                android:fontFamily="@font/estedad_bold"
+                android:fontFamily="@font/yekan_bakh_bold"
                 android:text="افزودن به پلی‌لیست‌های اختصاصی"
                 android:textColor="@color/gold"
                 android:textSize="12sp"
@@ -234,7 +220,6 @@
                 app:strokeColor="@color/gold_dim"
                 app:strokeWidth="1.2dp" />
 
-            <!-- Series Controls: Seasons & Episodes -->
             <LinearLayout
                 android:id="@+id/seriesControlsContainer"
                 android:layout_width="match_parent"
@@ -243,7 +228,6 @@
                 android:orientation="vertical"
                 android:visibility="gone">
 
-                <!-- Series Notification Follow/Unfollow Banner Card -->
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/cardSeriesNotification"
                     android:layout_width="match_parent"
@@ -281,7 +265,7 @@
                                 android:id="@+id/tvSeriesNotificationTitle"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:fontFamily="@font/w_cinema"
+                                android:fontFamily="@font/yekan_bakh_bold"
                                 android:text="اعلان قسمت‌های جدید"
                                 android:textColor="@color/header_gray"
                                 android:textSize="14sp" />
@@ -291,7 +275,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
-                                android:fontFamily="@font/estedad"
+                                android:fontFamily="@font/yekan_bakh_regular"
                                 android:text="خاموش — به محض انتشار قسمت جدید باخبر شوید"
                                 android:textColor="@color/muted"
                                 android:textSize="11sp" />
@@ -303,7 +287,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="38dp"
                             android:backgroundTint="#26D4AF37"
-                            android:fontFamily="@font/estedad_bold"
+                            android:fontFamily="@font/yekan_bakh_bold"
                             android:text="روشن کردن"
                             android:textColor="@color/gold"
                             android:textSize="11sp"
@@ -316,7 +300,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:fontFamily="@font/w_cinema"
+                    android:fontFamily="@font/yekan_bakh_bold"
                     android:text="انتخاب فصل:"
                     android:textColor="@color/header_gray"
                     android:textSize="13sp" />
@@ -328,29 +312,74 @@
                     android:layout_marginTop="6dp"
                     android:orientation="horizontal" />
 
-                <TextView
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:fontFamily="@font/w_cinema"
-                    android:text="انتخاب قسمت:"
-                    android:textColor="@color/header_gray"
-                    android:textSize="13sp" />
+                    android:layout_marginTop="10dp"
+                    android:layout_marginBottom="4dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:fontFamily="@font/yekan_bakh_bold"
+                        android:text="انتخاب قسمت:"
+                        android:textColor="@color/header_gray"
+                        android:textSize="13sp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnDownloadSeasonBatch"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="36dp"
+                        android:fontFamily="@font/yekan_bakh_bold"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:paddingStart="8dp"
+                        android:paddingEnd="8dp"
+                        android:text="دانلود کل این فصل"
+                        android:textColor="@color/gold"
+                        android:textSize="11sp"
+                        app:icon="@drawable/ic_download_vector"
+                        app:iconGravity="textStart"
+                        app:iconPadding="4dp"
+                        app:iconSize="14dp"
+                        app:iconTint="@color/gold" />
+                </LinearLayout>
 
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/rvEpisodes"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
+                    android:layout_marginTop="4dp"
                     android:orientation="horizontal" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnDownloadSeriesBatch"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="44dp"
+                    android:layout_marginTop="12dp"
+                    android:fontFamily="@font/yekan_bakh_bold"
+                    android:text="دانلود تمام فصل‌ها و قسمت‌ها (کل سریال)"
+                    android:textColor="@color/gold"
+                    android:textSize="12sp"
+                    app:cornerRadius="22dp"
+                    app:icon="@drawable/ic_download_vector"
+                    app:iconGravity="textStart"
+                    app:iconPadding="6dp"
+                    app:iconTint="@color/gold"
+                    app:strokeColor="@color/gold_dim"
+                    app:strokeWidth="1dp" />
             </LinearLayout>
 
-            <!-- Qualities & Downloads Section -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
-                android:fontFamily="@font/w_cinema"
+                android:fontFamily="@font/yekan_bakh_bold"
                 android:text="کیفیت‌های پخش آنلاین و دانلود مستقیم:"
                 android:textColor="@color/header_gray"
                 android:textSize="13sp" />

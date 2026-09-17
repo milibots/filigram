@@ -23,7 +23,6 @@
         android:padding="16dp"
         android:layoutDirection="rtl">
 
-        <!-- Header: Title, Date, Status Badge -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -44,41 +43,38 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="10dp"
                 android:layout_weight="1"
-                android:fontFamily="@font/w_cinema"
+                android:fontFamily="@font/yekan_bakh_bold"
                 android:text="عنوان اعلان"
                 android:textColor="@android:color/white"
                 android:textSize="14sp"
                 android:textStyle="bold" />
 
-            <!-- Read / Unread Status Badge -->
             <TextView
                 android:id="@+id/txtStatusBadge"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:background="@drawable/bg_badge_unread_tag"
-                android:fontFamily="@font/estedad_bold"
+                android:fontFamily="@font/yekan_bakh_bold"
                 android:paddingStart="8dp"
                 android:paddingTop="3dp"
                 android:paddingEnd="8dp"
                 android:paddingBottom="3dp"
                 android:text="جدید"
-                android:textColor="#E50914"
+                android:textColor="@android:color/white"
                 android:textSize="10sp" />
         </LinearLayout>
 
-        <!-- Message Body Text -->
         <TextView
             android:id="@+id/txtAnnouncementBody"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
-            android:fontFamily="@font/estedad"
+            android:fontFamily="@font/yekan_bakh_regular"
             android:lineSpacingExtra="5dp"
             android:text="متن پیام اعلان در این قسمت قرار می‌گیرد..."
             android:textColor="#CCCCCC"
             android:textSize="13sp" />
 
-        <!-- Footer: Timestamp -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -91,7 +87,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:fontFamily="@font/estedad"
+                android:fontFamily="@font/yekan_bakh_regular"
                 android:text="۱۴۰۵/۰۶/۲۱ - ۰۹:۱۸"
                 android:textColor="@color/muted"
                 android:textSize="11sp" />
@@ -100,7 +96,7 @@
                 android:id="@+id/txtTapToReadHint"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:fontFamily="@font/estedad"
+                android:fontFamily="@font/yekan_bakh_regular"
                 android:text="برای ثبت خوانده‌شده لمس کنید"
                 android:textColor="@color/gold_dim"
                 android:textSize="10sp"

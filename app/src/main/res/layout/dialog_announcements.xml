@@ -5,16 +5,14 @@
     android:layout_height="match_parent"
     android:background="#000000"
     android:orientation="vertical"
-    android:fitsSystemWindows="true"
     android:layoutDirection="rtl">
 
-    <!-- Top Toolbar with Safe Cutout Inset -->
     <LinearLayout
         android:id="@+id/topBarAnnouncements"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:minHeight="60dp"
-        android:background="#0F0F0F"
+        android:background="@drawable/bg_glass_header"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingStart="12dp"
@@ -27,7 +25,7 @@
             style="@style/Widget.Material3.Button.TextButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:fontFamily="@font/estedad_bold"
+            android:fontFamily="@font/yekan_bakh_bold"
             android:text="بازگشت"
             android:textColor="@color/gold"
             android:textSize="13sp"
@@ -47,9 +45,9 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:fontFamily="@font/w_cinema"
+                android:fontFamily="@font/yekan_bakh_bold"
                 android:text="چه خبر؟ (اعلانات)"
-                android:textColor="@color/header_gray"
+                android:textColor="@android:color/white"
                 android:textSize="17sp"
                 android:textStyle="bold" />
 
@@ -59,13 +57,13 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
                 android:background="@drawable/bg_badge_unread_tag"
-                android:fontFamily="@font/estedad_bold"
+                android:fontFamily="@font/yekan_bakh_bold"
                 android:paddingStart="6dp"
                 android:paddingTop="2dp"
                 android:paddingEnd="6dp"
                 android:paddingBottom="2dp"
                 android:text="۱ جدید"
-                android:textColor="#E50914"
+                android:textColor="@android:color/white"
                 android:textSize="10sp"
                 android:visibility="gone" />
         </LinearLayout>
@@ -75,13 +73,12 @@
             style="@style/Widget.Material3.Button.TextButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:fontFamily="@font/estedad"
+            android:fontFamily="@font/yekan_bakh_regular"
             android:text="خوانده شد همه"
             android:textColor="@color/muted"
             android:textSize="11sp" />
     </LinearLayout>
 
-    <!-- Content Area -->
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
@@ -100,7 +97,6 @@
                 android:paddingBottom="24dp" />
         </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
-        <!-- Loading Indicator -->
         <ProgressBar
             android:id="@+id/loadingAnnouncements"
             android:layout_width="32dp"
@@ -109,7 +105,6 @@
             android:indeterminateTint="@color/gold"
             android:visibility="gone" />
 
-        <!-- Empty State -->
         <LinearLayout
             android:id="@+id/emptyAnnouncementsContainer"
             android:layout_width="match_parent"
@@ -139,7 +134,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
-                android:fontFamily="@font/w_cinema"
+                android:fontFamily="@font/yekan_bakh_bold"
                 android:text="در حال حاضر اعلانی وجود ندارد"
                 android:textColor="@color/header_gray"
                 android:textSize="16sp" />
@@ -148,7 +143,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:fontFamily="@font/estedad"
+                android:fontFamily="@font/yekan_bakh_regular"
                 android:gravity="center"
                 android:text="آخرین اخبار، بروزرسانی‌ها و اطلاعیه‌های فیلیگرام در این بخش نمایش داده می‌شوند."
                 android:textColor="@color/muted"

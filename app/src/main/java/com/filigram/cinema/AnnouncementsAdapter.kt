@@ -33,7 +33,7 @@ class AnnouncementsAdapter(
         holder.binding.txtAnnouncementDate.text = item.getFormattedDate()
 
         if (item.isRead) {
-            // Read state: subtle card, gray tag
+
             holder.binding.cardAnnouncement.strokeColor = Color.parseColor("#222222")
             holder.binding.cardAnnouncement.strokeWidth = 1
             holder.binding.cardAnnouncement.setCardBackgroundColor(Color.parseColor("#0A0A0A"))
@@ -43,7 +43,7 @@ class AnnouncementsAdapter(
             holder.binding.txtAnnouncementTitle.setTextColor(Color.parseColor("#CCCCCC"))
             holder.binding.imgAnnouncementIcon.setColorFilter(Color.parseColor("#666666"))
         } else {
-            // Unread state: glowing card, red/gold badge
+
             holder.binding.cardAnnouncement.strokeColor = ContextCompat.getColor(context, R.color.gold)
             holder.binding.cardAnnouncement.strokeWidth = 2
             holder.binding.cardAnnouncement.setCardBackgroundColor(Color.parseColor("#121008"))

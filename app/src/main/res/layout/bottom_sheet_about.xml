@@ -46,7 +46,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:fontFamily="@font/w_cinema"
+                android:fontFamily="@font/yekan_bakh_bold"
                 android:text="فیلیگرام (Filigram Cinema)"
                 android:textColor="@color/gold"
                 android:textSize="20sp"
@@ -56,7 +56,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
-                android:fontFamily="@font/estedad"
+                android:fontFamily="@font/yekan_bakh_regular"
                 android:text="نسخه ۱.۰.۰ نیتیو کاتلین"
                 android:textColor="@color/muted"
                 android:textSize="12sp" />
@@ -67,7 +67,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:fontFamily="@font/estedad"
+        android:fontFamily="@font/yekan_bakh_regular"
         android:lineSpacingExtra="5dp"
         android:text="سینمای اختصاصی فیلیگرام با کیفیت بالا، بدون تبلیغات و با استریم پرسرعت و دانلود مستقیم. برای پشتیبانی و دریافت اخبار و بروزرسانی‌ها با ما در تلگرام در ارتباط باشید."
         android:textColor="@color/text"
@@ -110,7 +110,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:fontFamily="@font/w_cinema"
+                    android:fontFamily="@font/yekan_bakh_bold"
                     android:text="کانال تلگرام فیلیگرام"
                     android:textColor="@android:color/white"
                     android:textSize="14sp" />
@@ -129,7 +129,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:fontFamily="@font/estedad_bold"
+                android:fontFamily="@font/yekan_bakh_bold"
                 android:text="عضویت"
                 android:textColor="@color/gold"
                 android:textSize="12sp" />

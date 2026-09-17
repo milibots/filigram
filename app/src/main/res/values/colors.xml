@@ -1,31 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Netflix Cinema AMOLED Black & Dark Charcoal Palette -->
+
     <color name="black">#000000</color>
     <color name="deep">#000000</color>
-    <color name="surface">#141414</color>
-    <color name="card">#181818</color>
-    <color name="card_border">#2A2A2A</color>
+    <color name="surface">#000000</color>
+    <color name="card">#000000</color>
+    <color name="card_border">#1A1A1A</color>
 
-    <!-- Netflix Red Primary Accents -->
     <color name="primary_red">#E50914</color>
     <color name="primary_red_dark">#B20710</color>
     <color name="primary_red_glow">#33E50914</color>
 
-    <!-- Remap gold/yellow accents to Netflix Red -->
-    <color name="gold">#E50914</color>
-    <color name="gold_dim">#801015</color>
-    <color name="gold_glow">#33E50914</color>
+    <color name="gold">#FFFFFF</color>
+    <color name="gold_dim">#888888</color>
+    <color name="gold_glow">#20FFFFFF</color>
 
-    <!-- Radar Status Indicators -->
     <color name="status_operational">#00E560</color>
     <color name="status_outage">#E50914</color>
     <color name="status_warn">#FF9800</color>
 
-    <!-- Netflix Typography Colors -->
     <color name="text">#FFFFFF</color>
-    <color name="muted">#B3B3B3</color>
-    <color name="sub">#808080</color>
-    <color name="header_gray">#D1D5DB</color>
-    <color name="header_gray_light">#E5E7EB</color>
+    <color name="muted">#CCCCCC</color>
+    <color name="sub">#999999</color>
+    <color name="header_gray">#FFFFFF</color>
+    <color name="header_gray_light">#E0E0E0</color>
 </resources>

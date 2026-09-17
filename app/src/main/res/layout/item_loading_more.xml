@@ -17,7 +17,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="10dp"
-        android:fontFamily="@font/estedad"
+        android:fontFamily="@font/yekan_bakh_regular"
         android:text="در حال دریافت موارد بیشتر..."
         android:textColor="@color/muted"
         android:textSize="12sp" />

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="movie_card_vitrin_width">165dp</dimen>
+    <dimen name="movie_card_poster_height">240dp</dimen>
+</resources>

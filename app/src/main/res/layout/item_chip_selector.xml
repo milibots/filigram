@@ -7,7 +7,7 @@
     android:background="@drawable/bg_chip_selector"
     android:clickable="true"
     android:focusable="true"
-    android:fontFamily="@font/estedad_bold"
+    android:fontFamily="@font/yekan_bakh_bold"
     android:gravity="center"
     android:paddingStart="14dp"
     android:paddingEnd="14dp"

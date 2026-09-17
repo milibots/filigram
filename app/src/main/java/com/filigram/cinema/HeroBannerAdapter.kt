@@ -3,11 +3,13 @@ package com.filigram.cinema
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import android.view.HapticFeedbackConstants
 import com.filigram.cinema.databinding.ItemHeroSlideBinding
 
 class HeroBannerAdapter(
     private val items: List<MovieItem>,
-    private val onItemClick: (MovieItem) -> Unit
+    private val onItemClick: (MovieItem) -> Unit,
+    private val onItemLongClick: ((MovieItem) -> Unit)? = null
 ) : RecyclerView.Adapter<HeroBannerAdapter.BannerViewHolder>() {
 
     inner class BannerViewHolder(val binding: ItemHeroSlideBinding) : RecyclerView.ViewHolder(binding.root)
@@ -26,6 +28,16 @@ class HeroBannerAdapter(
 
         holder.itemView.setOnClickListener {
             onItemClick(item)
+        }
+
+        holder.itemView.setOnLongClickListener {
+            it.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+            if (onItemLongClick != null) {
+                onItemLongClick.invoke(item)
+                true
+            } else {
+                false
+            }
         }
     }
 

@@ -1,0 +1,358 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_sheet_bottom"
+    android:orientation="vertical"
+    android:paddingStart="20dp"
+    android:paddingTop="14dp"
+    android:paddingEnd="20dp"
+    android:paddingBottom="24dp"
+    android:layoutDirection="rtl">
+
+    <!-- Drag Handle -->
+    <View
+        android:layout_width="44dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="16dp"
+        android:background="#333333" />
+
+    <!-- Movie / Series Header -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="16dp">
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="60dp"
+            android:layout_height="86dp"
+            app:cardCornerRadius="10dp"
+            app:cardBackgroundColor="#111111"
+            app:cardElevation="4dp">
+
+            <ImageView
+                android:id="@+id/ivQuickPoster"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:src="@drawable/bg_movie_placeholder"
+                android:contentDescription="پوستر" />
+        </androidx.cardview.widget.CardView>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="14dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tvQuickTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/yekan_bakh_bold"
+                android:textColor="@android:color/white"
+                android:textSize="15sp"
+                android:maxLines="2"
+                android:ellipsize="end" />
+
+            <!-- Badges Row -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/tvQuickTypeBadge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_badge_gold"
+                    android:paddingStart="8dp"
+                    android:paddingTop="2dp"
+                    android:paddingEnd="8dp"
+                    android:paddingBottom="2dp"
+                    android:fontFamily="@font/yekan_bakh_bold"
+                    android:textColor="@color/black"
+                    android:textSize="10sp"
+                    android:text="فیلم" />
+
+                <TextView
+                    android:id="@+id/tvQuickRating"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:fontFamily="@font/yekan_bakh_bold"
+                    android:textColor="@android:color/white"
+                    android:textSize="11sp"
+                    android:text="★ 8.5" />
+
+                <TextView
+                    android:id="@+id/tvQuickYear"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:fontFamily="@font/yekan_bakh_regular"
+                    android:textColor="@color/sub"
+                    android:textSize="11sp"
+                    android:text="2024" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tvQuickGenre"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:fontFamily="@font/yekan_bakh_regular"
+                android:textColor="@color/muted"
+                android:textSize="11sp"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:text="اکشن، هیجان‌انگیز" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#1A1A1A"
+        android:layout_marginBottom="8dp" />
+
+    <!-- Actions List -->
+    <!-- 1. Favorite / Like Action -->
+    <LinearLayout
+        android:id="@+id/btnActionLike"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/selectableItemBackground"
+        android:clickable="true"
+        android:focusable="true"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingVertical="10dp">
+
+        <ImageView
+            android:id="@+id/ivActionLikeIcon"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_heart_outline_gold"
+            app:tint="@color/gold"
+            android:contentDescription="علاقه‌مندی" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="14dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tvActionLikeTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/yekan_bakh_bold"
+                android:textColor="@android:color/white"
+                android:textSize="13sp"
+                android:text="نشان کردن (علاقه‌مندی‌ها)" />
+
+            <TextView
+                android:id="@+id/tvActionLikeSub"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:fontFamily="@font/yekan_bakh_regular"
+                android:textColor="@color/sub"
+                android:textSize="11sp"
+                android:text="دسترسی سریع در برگه علاقه‌مندی‌ها" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- 2. Add to Playlist Action -->
+    <LinearLayout
+        android:id="@+id/btnActionAddToPlaylist"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/selectableItemBackground"
+        android:clickable="true"
+        android:focusable="true"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingVertical="10dp">
+
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_playlist_vector"
+            app:tint="@color/gold"
+            android:contentDescription="پلی‌لیست" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="14dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/yekan_bakh_bold"
+                android:textColor="@android:color/white"
+                android:textSize="13sp"
+                android:text="افزودن به لیست پخش" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:fontFamily="@font/yekan_bakh_regular"
+                android:textColor="@color/sub"
+                android:textSize="11sp"
+                android:text="دسته‌بندی در کالکشن‌های اختصاصی شما" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- 3. Schedule / New Episode Alerts Action -->
+    <LinearLayout
+        android:id="@+id/btnActionScheduleEpisode"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/selectableItemBackground"
+        android:clickable="true"
+        android:focusable="true"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingVertical="10dp">
+
+        <ImageView
+            android:id="@+id/ivActionScheduleIcon"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_bell_gold"
+            app:tint="@color/gold"
+            android:contentDescription="زمان‌بندی" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="14dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tvActionScheduleTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/yekan_bakh_bold"
+                android:textColor="@android:color/white"
+                android:textSize="13sp"
+                android:text="زمان‌بندی و اعلان قسمت‌های جدید" />
+
+            <TextView
+                android:id="@+id/tvActionScheduleSub"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:fontFamily="@font/yekan_bakh_regular"
+                android:textColor="@color/sub"
+                android:textSize="11sp"
+                android:text="اطلاع‌رسانی خودکار به محض انتشار قسمت جدید" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- 4. Download Action -->
+    <LinearLayout
+        android:id="@+id/btnActionDownload"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/selectableItemBackground"
+        android:clickable="true"
+        android:focusable="true"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingVertical="10dp">
+
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_download_vector"
+            app:tint="@color/gold"
+            android:contentDescription="دانلود" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="14dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/yekan_bakh_bold"
+                android:textColor="@android:color/white"
+                android:textSize="13sp"
+                android:text="دانلود اثر" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:fontFamily="@font/yekan_bakh_regular"
+                android:textColor="@color/sub"
+                android:textSize="11sp"
+                android:text="انتخاب کیفیت و دریافت چندبخشی پرسرعت" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- 5. Details Action -->
+    <LinearLayout
+        android:id="@+id/btnActionDetails"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/selectableItemBackground"
+        android:clickable="true"
+        android:focusable="true"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingVertical="10dp">
+
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_play_vector"
+            app:tint="@color/gold"
+            android:contentDescription="جزئیات" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="14dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/yekan_bakh_bold"
+                android:textColor="@android:color/white"
+                android:textSize="13sp"
+                android:text="مشاهده صفحه اختصاصی و پخش" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:fontFamily="@font/yekan_bakh_regular"
+                android:textColor="@color/sub"
+                android:textSize="11sp"
+                android:text="خلاصه، تریلر، عوامل و تمامی لینک‌های تماشا" />
+        </LinearLayout>
+    </LinearLayout>
+
+</LinearLayout>

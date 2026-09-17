@@ -48,3 +48,7 @@ h.xml
 window_dump.xml
 *.png
 movielix_token_cache.json
+newfonttouse/
+*.py
+*.php
+.agents/

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="8dp"
+    android:background="@drawable/bg_search_input"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <!-- Title shimmer -->
+    <View
+        android:layout_width="140dp"
+        android:layout_height="14dp"
+        android:background="#1AFFFFFF"
+        android:tag="shimmer" />
+
+    <!-- Subtitle shimmer -->
+    <View
+        android:layout_width="80dp"
+        android:layout_height="10dp"
+        android:layout_marginTop="6dp"
+        android:background="#12FFFFFF"
+        android:tag="shimmer" />
+
+    <!-- Buttons row shimmer -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:gravity="end"
+        android:orientation="horizontal">
+
+        <View
+            android:layout_width="110dp"
+            android:layout_height="38dp"
+            android:background="#1AFFFFFF"
+            android:tag="shimmer" />
+
+        <View
+            android:layout_width="95dp"
+            android:layout_height="38dp"
+            android:layout_marginStart="8dp"
+            android:background="#12FFFFFF"
+            android:tag="shimmer" />
+
+        <View
+            android:layout_width="60dp"
+            android:layout_height="38dp"
+            android:layout_marginStart="4dp"
+            android:background="#0AFFFFFF"
+            android:tag="shimmer" />
+    </LinearLayout>
+</LinearLayout>

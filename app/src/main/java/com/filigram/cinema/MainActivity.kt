@@ -2,6 +2,8 @@ package com.filigram.cinema
 
 import android.content.Context
 import android.content.Intent
+import android.content.ClipboardManager
+import android.content.ClipData
 import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
@@ -32,6 +34,7 @@ import android.graphics.drawable.ColorDrawable
 import android.view.Gravity
 import android.view.View
 import android.view.Window
+import android.view.WindowManager
 import android.view.animation.DecelerateInterpolator
 import android.view.animation.OvershootInterpolator
 import android.widget.EditText
@@ -42,14 +45,28 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MimeTypes
+import androidx.media3.common.C
 import androidx.media3.common.Player
 import androidx.media3.common.PlaybackException
 import androidx.media3.exoplayer.ExoPlayer
+import android.app.PictureInPictureParams
+import android.util.Rational
 import com.google.android.material.button.MaterialButton
 import com.filigram.cinema.databinding.BottomSheetAboutBinding
+import com.filigram.cinema.databinding.BottomSheetAddToPlaylistBinding
+import com.filigram.cinema.databinding.BottomSheetConfirmDialogBinding
+import com.filigram.cinema.databinding.BottomSheetCreatePlaylistBinding
 import com.filigram.cinema.databinding.BottomSheetEnginesDrawerBinding
+import com.filigram.cinema.databinding.BottomSheetItemSelectorBinding
+import com.filigram.cinema.databinding.BottomSheetJoinChannelBinding
+import com.filigram.cinema.databinding.BottomSheetMovieQuickActionsBinding
 import com.filigram.cinema.databinding.BottomSheetRadarBinding
+import com.filigram.cinema.databinding.BottomSheetSearchDrawerBinding
 import com.filigram.cinema.databinding.DialogAnnouncementsBinding
+import com.filigram.cinema.databinding.DialogBatchDownloadSelectorBinding
+import com.filigram.cinema.databinding.DialogDownloadSettingsBinding
+import com.filigram.cinema.databinding.DialogDownloadsHubBinding
 import com.filigram.cinema.databinding.DialogFavoritesBinding
 import com.filigram.cinema.databinding.DialogInAppPlayerBinding
 import com.filigram.cinema.databinding.DialogMovieDetailBinding
@@ -57,8 +74,15 @@ import com.filigram.cinema.databinding.DialogPlaylistDetailBinding
 import com.filigram.cinema.databinding.DialogPlaylistsHubBinding
 import com.filigram.cinema.databinding.ItemQualityRowBinding
 import com.filigram.cinema.databinding.ItemRadarServiceRowBinding
+import com.filigram.cinema.databinding.ItemSearchHistoryChipBinding
+import com.filigram.cinema.download.DownloadForegroundService
+import com.filigram.cinema.download.DownloadManager
+import com.filigram.cinema.download.DownloadStatus
+import com.filigram.cinema.download.DownloadTask
+import com.filigram.cinema.download.DownloadsAdapter
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -75,23 +99,23 @@ class MainActivity : AppCompatActivity() {
 
     private var currentTab = R.id.nav_home
 
-    // Active Engine: "movielix" (default), "rezflix", "almasmovie", "nextmovie"
     private var activeEngine = "movielix"
     private var activeExoPlayer: ExoPlayer? = null
 
-    // -- Export/Import launchers (SAF) --
     private var pendingExportJson: String = ""
     private lateinit var exportLauncher: ActivityResultLauncher<String>
     private lateinit var importLauncher: ActivityResultLauncher<Array<String>>
+    private lateinit var storageFolderLauncher: ActivityResultLauncher<Uri?>
+    private var onStorageFolderSelected: ((String) -> Unit)? = null
+    private var activePlayerDialog: Dialog? = null
 
-    // Notification Permission Launcher (Android 13+)
     private val notificationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
-            Toast.makeText(this, "مجوز اعلان فعال شد 🔔", Toast.LENGTH_SHORT).show()
+            showAppToast("مجوز اعلان فعال شد 🔔")
         } else {
-            Toast.makeText(this, "برای دریافت اعلان قسمت‌های جدید به مجوز نوتیفیکیشن نیاز است", Toast.LENGTH_LONG).show()
+            showAppToast("برای دریافت اعلان قسمت‌های جدید به مجوز نوتیفیکیشن نیاز است", autoDismissMs = 4000L)
         }
     }
 
@@ -103,16 +127,14 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // Vitrin Pagination state
     private var vitrinPage = 1
     private var isVitrinLoadingMore = false
     private var hasMoreVitrin = true
 
-    // Grid Pagination state
     private var gridPage = 1
     private var isGridLoadingMore = false
     private var hasMoreGrid = true
-    private var currentGridType = 0 // 0 = movie, 1 = series, 2 = search
+    private var currentGridType = 0
     private var currentSearchQuery = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -120,16 +142,15 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Register SAF launchers for export / import
         exportLauncher = registerForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
             if (uri != null && pendingExportJson.isNotEmpty()) {
                 try {
                     contentResolver.openOutputStream(uri)?.use { out ->
                         out.write(pendingExportJson.toByteArray(Charsets.UTF_8))
                     }
-                    Toast.makeText(this, "فایل با موفقیت ذخیره شد", Toast.LENGTH_SHORT).show()
+                    showAppToast("فایل با موفقیت ذخیره شد")
                 } catch (e: Exception) {
-                    Toast.makeText(this, "خطا در ذخیره فایل: ${e.message}", Toast.LENGTH_LONG).show()
+                    showAppToast("خطا در ذخیره فایل: ${e.message}", autoDismissMs = 4000L)
                 } finally {
                     pendingExportJson = ""
                 }
@@ -139,44 +160,113 @@ class MainActivity : AppCompatActivity() {
             if (uri != null) doImport(uri)
         }
 
-        // Dark status & navigation bar
+        storageFolderLauncher = registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+            if (uri != null) {
+                try {
+                    val flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                    contentResolver.takePersistableUriPermission(uri, flags)
+                } catch (_: Exception) {}
+
+                val resolvedPath = uri.path?.let { path ->
+                    if (path.contains(":")) {
+                        val parts = path.split(":")
+                        if (parts.size > 1) {
+                            val segment = parts[1]
+                            val extStorage = android.os.Environment.getExternalStorageDirectory()
+                            java.io.File(extStorage, segment).absolutePath
+                        } else uri.toString()
+                    } else uri.toString()
+                } ?: uri.toString()
+                onStorageFolderSelected?.invoke(resolvedPath)
+            }
+        }
+
         window.statusBarColor = 0xFF000000.toInt()
         window.navigationBarColor = 0xFF000000.toInt()
 
-        // Smooth window transitions
         window.setWindowAnimations(R.style.Anim_Filigram_Window)
 
-        // Load saved engine
         val prefs = getSharedPreferences("filigram_prefs", Context.MODE_PRIVATE)
         activeEngine = prefs.getString("active_engine", "movielix") ?: "movielix"
 
         FavoritesManager.init(this)
+        HistoryManager.init(this)
         SeriesSubscriptionManager.init(this)
         SeriesNotificationHelper.createNotificationChannel(this)
         SeriesUpdateWorker.schedulePeriodicCheck(this)
         ImageLoader.init(this)
         AppCacheManager.init(this)
         movielixApi = MovielixApi(this)
+        DownloadManager.init(this)
+        PlaybackProgressManager.init(this)
+        setupDownloadsBadge()
 
         setupAdapters()
         setupBottomNav()
         setupSearch()
         setupTopMenu()
+        setupTopDownloads()
         setupSwipeRefresh()
         setupLogsListener()
         setupPaginationScrollListeners()
 
         handleSeriesNotificationIntent(intent)
 
-        // Animate root in
         binding.root.alpha = 0f
         binding.root.animate().alpha(1f).setDuration(400).setInterpolator(DecelerateInterpolator()).start()
 
-        // Load initial home vitrin
         loadHomeData()
 
-        // Fetch announcements and update unread badge
         refreshAnnouncementsBadge()
+        checkAndSendWelcomeNotification()
+        checkAppOpenCountAndPromptChannel()
+
+        lifecycleScope.launch {
+            RemoteConfigRepository.getConfigs(this@MainActivity)
+        }
+    }
+
+    private fun checkAppOpenCountAndPromptChannel() {
+        val prefs = getSharedPreferences("filigram_prefs", Context.MODE_PRIVATE)
+        val hasHandledInvite = prefs.getBoolean("channel_invite_dismissed_or_joined", false)
+        if (hasHandledInvite) return
+
+        val launchCount = prefs.getInt("app_launch_count", 0) + 1
+        prefs.edit().putInt("app_launch_count", launchCount).apply()
+
+        if (launchCount >= 5) {
+            binding.root.postDelayed({
+                if (!isFinishing && !isDestroyed) {
+                    showJoinChannelBottomSheet()
+                }
+            }, 1800)
+        }
+    }
+
+    private fun showJoinChannelBottomSheet() {
+        val prefs = getSharedPreferences("filigram_prefs", Context.MODE_PRIVATE)
+        val dialog = createStyledBottomSheetDialog()
+        val sheetBinding = BottomSheetJoinChannelBinding.inflate(layoutInflater)
+        dialog.setContentView(sheetBinding.root)
+
+        sheetBinding.btnJoinChannelConfirm.setOnClickListener {
+            prefs.edit().putBoolean("channel_invite_dismissed_or_joined", true).apply()
+            dialog.dismiss()
+            val tgUrl = "https://t.me/filigramapp"
+            try {
+                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(tgUrl)))
+            } catch (e: Exception) {
+                showAppToast("کانال تلگرام: t.me/filigramapp", autoDismissMs = 4000L)
+            }
+        }
+
+        sheetBinding.btnJoinChannelLater.setOnClickListener {
+            // Do not permanently block if user selects later; reset counter to 0 so it prompts again after another 5 opens
+            prefs.edit().putInt("app_launch_count", 0).apply()
+            dialog.dismiss()
+        }
+
+        dialog.show()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -192,8 +282,25 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun checkAndSendWelcomeNotification() {
+        val prefs = getSharedPreferences("filigram_prefs", Context.MODE_PRIVATE)
+        val hasSentWelcome = prefs.getBoolean("has_sent_welcome_notification", false)
+        if (!hasSentWelcome) {
+            prefs.edit().putBoolean("has_sent_welcome_notification", true).apply()
+            binding.root.postDelayed({
+                SeriesNotificationHelper.sendWelcomeNotification(this@MainActivity)
+            }, 1200)
+        }
+    }
+
     private fun handleSeriesNotificationIntent(intent: Intent?) {
         if (intent == null) return
+        if (intent.action == "com.filigram.cinema.ACTION_OPEN_ANNOUNCEMENTS") {
+            binding.root.postDelayed({
+                showAnnouncementsDialog()
+            }, 300)
+            return
+        }
         val seriesId = intent.getIntExtra(SeriesNotificationHelper.EXTRA_OPEN_SERIES_ID, -1)
         if (seriesId != -1) {
             val title = intent.getStringExtra(SeriesNotificationHelper.EXTRA_OPEN_SERIES_TITLE) ?: ""
@@ -207,7 +314,7 @@ class MainActivity : AppCompatActivity() {
                 id = seriesId,
                 title = title,
                 image = image,
-                type = 1, // Series
+                type = 1,
                 slug = slug
             )
             binding.root.postDelayed({
@@ -216,21 +323,14 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // ───────────────────────────────────────────────────────────────
-    //  Animation helpers
-    // ───────────────────────────────────────────────────────────────
-
-    /** Apply full-screen slide-up enter / slide-down exit to a Dialog window */
     private fun Dialog.applyFullscreenAnimation() {
         window?.setWindowAnimations(R.style.Anim_Filigram_Dialog_Fullscreen)
     }
 
-    /** Apply compact slide-up enter / slide-down exit to a Dialog window */
     private fun Dialog.applyCompactAnimation() {
         window?.setWindowAnimations(R.style.Anim_Filigram_Dialog_Compact)
     }
 
-    /** Ensure fullscreen dialog top bar safely clears camera cutouts, notches, and status bars */
     private fun applyDialogStatusBarInsets(topBar: View) {
         val resId = resources.getIdentifier("status_bar_height", "dimen", "android")
         val fallbackStatusHeight = if (resId > 0) resources.getDimensionPixelSize(resId) else (38 * resources.displayMetrics.density).toInt()
@@ -240,7 +340,6 @@ class MainActivity : AppCompatActivity() {
         val initialPaddingEnd = topBar.paddingEnd
         val extraSpacer = (8 * resources.displayMetrics.density).toInt()
 
-        // Set safe padding immediately so content is never drawn under the notch
         topBar.setPaddingRelative(initialPaddingStart, safeTop + extraSpacer, initialPaddingEnd, initialPaddingBottom)
 
         ViewCompat.setOnApplyWindowInsetsListener(topBar) { v, insets ->
@@ -251,7 +350,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /** Fade a View in from 0 to 1 with optional offset-Y slide */
     private fun View.animateIn(durationMs: Long = 260, startDelayMs: Long = 0, fromY: Float = 30f) {
         alpha = 0f
         translationY = fromY
@@ -264,7 +362,6 @@ class MainActivity : AppCompatActivity() {
             .start()
     }
 
-    /** Cross-fade between two visible containers */
     private fun crossFade(hideView: View, showView: View, duration: Long = 220) {
         if (showView.isVisible) return
         showView.alpha = 0f
@@ -277,22 +374,24 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupAdapters() {
-        // Vitrin Adapter
-        vitrinAdapter = VitrinSectionAdapter(mutableListOf()) { item ->
-            showMovieDetail(item)
-        }
+
+        vitrinAdapter = VitrinSectionAdapter(
+            mutableListOf(),
+            onItemClick = { item -> showMovieDetail(item) },
+            onItemLongClick = { item -> showMediaQuickActionsBottomSheet(item) }
+        )
         binding.rvVitrinSections.layoutManager = LinearLayoutManager(this)
         binding.rvVitrinSections.adapter = vitrinAdapter
 
-        // Grid Adapter for Movies / Series / Search
-        gridAdapter = MovieCardAdapter(mutableListOf()) { item ->
-            showMovieDetail(item)
-        }
-        val gridLm = GridLayoutManager(this, 3)
+        gridAdapter = MovieCardAdapter(
+            mutableListOf(),
+            onItemClick = { item -> showMovieDetail(item) },
+            onItemLongClick = { item -> showMediaQuickActionsBottomSheet(item) }
+        )
+        val gridLm = GridLayoutManager(this, 2)
         binding.rvGridMovies.layoutManager = gridLm
         binding.rvGridMovies.adapter = gridAdapter
 
-        // Logs Adapter
         logsAdapter = LogsAdapter()
         val logsLm = LinearLayoutManager(this)
         logsLm.stackFromEnd = true
@@ -307,16 +406,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupTopMenu() {
-        binding.btnTopNotifications.setOnClickListener {
-            showAnnouncementsDialog()
-        }
         binding.btnTopMenu.setOnClickListener {
             showEnginesDrawer()
         }
     }
 
     private fun setupPaginationScrollListeners() {
-        // 1. Vitrin Infinite Scroll
+
         binding.homeScroll.setOnScrollChangeListener(NestedScrollView.OnScrollChangeListener { v, _, scrollY, _, _ ->
             if (currentTab == R.id.nav_home && hasMoreVitrin && !isVitrinLoadingMore && activeEngine == "movielix") {
                 val totalContentHeight = v.getChildAt(0)?.measuredHeight ?: 0
@@ -327,7 +423,6 @@ class MainActivity : AppCompatActivity() {
             }
         })
 
-        // 2. Grid Infinite Scroll
         binding.rvGridMovies.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 super.onScrolled(recyclerView, dx, dy)
@@ -411,6 +506,44 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // ─── In-app notification (replaces all Toast.makeText) ───────────────────
+    private var activeNotifSheet: BottomSheetDialog? = null
+
+    private fun showAppToast(
+        title: String,
+        subtitle: String? = null,
+        iconRes: Int = R.drawable.ic_star_gold,
+        isLoading: Boolean = false,
+        autoDismissMs: Long = 2500L
+    ): BottomSheetDialog {
+        activeNotifSheet?.dismiss()
+        val sheet = BottomSheetDialog(this)
+        val view = layoutInflater.inflate(R.layout.bottom_sheet_notification, null)
+        sheet.setContentView(view)
+        sheet.behavior.peekHeight = view.measuredHeight
+        sheet.behavior.isDraggable = true
+
+        view.findViewById<android.widget.ImageView>(R.id.notifIcon).setImageResource(iconRes)
+        view.findViewById<android.widget.TextView>(R.id.notifTitle).text = title
+
+        val subtitleView = view.findViewById<android.widget.TextView>(R.id.notifSubtitle)
+        if (!subtitle.isNullOrEmpty()) {
+            subtitleView.text = subtitle
+            subtitleView.visibility = android.view.View.VISIBLE
+        }
+
+        val progressView = view.findViewById<android.widget.ProgressBar>(R.id.notifProgress)
+        if (isLoading) progressView.visibility = android.view.View.VISIBLE
+
+        sheet.show()
+        activeNotifSheet = sheet
+
+        if (!isLoading) {
+            view.postDelayed({ if (sheet.isShowing) sheet.dismiss() }, autoDismissMs)
+        }
+        return sheet
+    }
+
     private fun showHomeScreen() {
         currentTab = R.id.nav_home
         binding.topTitle.text = if (activeEngine == "movielix") "فیلیگرام" else "فیلیگرام (${getEngineName(activeEngine)})"
@@ -466,34 +599,114 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupSearch() {
+        binding.searchContainer.isVisible = false
         binding.btnTopSearch.setOnClickListener {
-            val isVisible = binding.searchContainer.isVisible
-            binding.searchContainer.isVisible = !isVisible
-            if (!isVisible) {
-                binding.etSearch.requestFocus()
-                val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
-                imm?.showSoftInput(binding.etSearch, InputMethodManager.SHOW_IMPLICIT)
-            }
+            showSearchBottomSheet()
+        }
+    }
+
+    private fun showSearchBottomSheet() {
+        val dialog = createStyledBottomSheetDialog()
+        val searchBinding = BottomSheetSearchDrawerBinding.inflate(layoutInflater)
+        dialog.setContentView(searchBinding.root)
+
+        dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+
+        searchBinding.tvSearchEngineSubtitle.text = "موتور فعال: ${getEngineName(activeEngine)}"
+
+        searchBinding.btnSearchDrawerClose.setOnClickListener {
+            dialog.dismiss()
         }
 
-        val doSearch = {
-            val query = binding.etSearch.text.toString().trim()
+        val renderDrawerSearchHistory = {
+            val queries = SearchHistoryManager.getQueries(this@MainActivity)
+            if (queries.isEmpty()) {
+                searchBinding.recentSearchesSectionDrawer.isVisible = false
+            } else {
+                searchBinding.recentSearchesSectionDrawer.isVisible = true
+                searchBinding.layoutSearchChipsDrawer.removeAllViews()
+                for (q in queries) {
+                    val chipBinding = ItemSearchHistoryChipBinding.inflate(layoutInflater, searchBinding.layoutSearchChipsDrawer, false)
+                    chipBinding.txtSearchQuery.text = q
+                    chipBinding.chipRoot.setOnClickListener {
+                        dialog.dismiss()
+                        SearchHistoryManager.addQuery(this@MainActivity, q)
+                        initSearch(q)
+                    }
+                    chipBinding.btnRemoveQuery.setOnClickListener {
+                        SearchHistoryManager.removeQuery(this@MainActivity, q)
+                        val updated = SearchHistoryManager.getQueries(this@MainActivity)
+                        if (updated.isEmpty()) {
+                            searchBinding.recentSearchesSectionDrawer.isVisible = false
+                        } else {
+                            searchBinding.layoutSearchChipsDrawer.removeView(chipBinding.root)
+                        }
+                    }
+                    searchBinding.layoutSearchChipsDrawer.addView(chipBinding.root)
+                }
+            }
+        }
+        renderDrawerSearchHistory()
+
+        searchBinding.btnClearSearchHistoryDrawer.setOnClickListener {
+            SearchHistoryManager.clearQueries(this@MainActivity)
+            searchBinding.recentSearchesSectionDrawer.isVisible = false
+            searchBinding.layoutSearchChipsDrawer.removeAllViews()
+        }
+
+        searchBinding.etSearchDrawer.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                searchBinding.btnClearSearchDrawerText.isVisible = !s.isNullOrEmpty()
+            }
+            override fun afterTextChanged(s: android.text.Editable?) {}
+        })
+
+        searchBinding.btnClearSearchDrawerText.setOnClickListener {
+            searchBinding.etSearchDrawer.setText("")
+        }
+
+        val executeSearch = {
+            val query = searchBinding.etSearchDrawer.text.toString().trim()
             if (query.isNotEmpty()) {
-                val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
-                imm?.hideSoftInputFromWindow(binding.etSearch.windowToken, 0)
+                SearchHistoryManager.addQuery(this@MainActivity, query)
+                dialog.dismiss()
                 initSearch(query)
+            } else {
+                showAppToast("لطفاً عبارت جستجو را وارد کنید")
             }
         }
 
-        binding.btnSubmitSearch.setOnClickListener { doSearch() }
-        binding.etSearch.setOnEditorActionListener { _, actionId, _ ->
+        searchBinding.btnSubmitSearchDrawer.setOnClickListener {
+            executeSearch()
+        }
+
+        searchBinding.etSearchDrawer.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_SEARCH) {
-                doSearch()
+                executeSearch()
                 true
             } else {
                 false
             }
         }
+
+        dialog.setOnShowListener {
+            val bottomSheet = dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
+            bottomSheet?.setBackgroundColor(Color.TRANSPARENT)
+            bottomSheet?.elevation = 0f
+            if (bottomSheet != null) {
+                val behavior = com.google.android.material.bottomsheet.BottomSheetBehavior.from(bottomSheet)
+                behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
+                behavior.skipCollapsed = true
+            }
+            searchBinding.etSearchDrawer.postDelayed({
+                searchBinding.etSearchDrawer.requestFocus()
+                val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+                imm?.showSoftInput(searchBinding.etSearchDrawer, InputMethodManager.SHOW_IMPLICIT)
+            }, 180)
+        }
+
+        dialog.show()
     }
 
     private fun setupSwipeRefresh() {
@@ -542,6 +755,14 @@ class MainActivity : AppCompatActivity() {
                         val section = VitrinSection(1, "منتخب فیلم‌های نکست‌مووی (NextMovie)", nextMovies)
                         vitrinAdapter.updateData(listOf(section))
                     }
+                } else if (activeEngine == "bj") {
+                    val bjSections = BjApi.getHomeSections()
+                    withContext(Dispatchers.Main) {
+                        binding.mainProgressBar.isVisible = false
+                        binding.swipeRefresh.isRefreshing = false
+                        binding.bannerViewPager.isVisible = false
+                        vitrinAdapter.updateData(bjSections)
+                    }
                 } else {
                     val (banners, sections) = movielixApi.getVitrinSections(1)
                     withContext(Dispatchers.Main) {
@@ -550,9 +771,11 @@ class MainActivity : AppCompatActivity() {
 
                         if (banners.isNotEmpty()) {
                             binding.bannerViewPager.isVisible = true
-                            binding.bannerViewPager.adapter = HeroBannerAdapter(banners) { bannerItem ->
-                                showMovieDetail(bannerItem)
-                            }
+                            binding.bannerViewPager.adapter = HeroBannerAdapter(
+                                banners,
+                                onItemClick = { bannerItem -> showMovieDetail(bannerItem) },
+                                onItemLongClick = { bannerItem -> showMediaQuickActionsBottomSheet(bannerItem) }
+                            )
                         } else {
                             binding.bannerViewPager.isVisible = false
                         }
@@ -565,7 +788,7 @@ class MainActivity : AppCompatActivity() {
                     binding.mainProgressBar.isVisible = false
                     binding.swipeRefresh.isRefreshing = false
                     AppLogger.e("MainActivity", "خطا در دریافت اطلاعات خانه: ${e.message}")
-                    Toast.makeText(this@MainActivity, "خطا در اتصال به شبکه", Toast.LENGTH_SHORT).show()
+                    showAppToast("خطا در اتصال به شبکه")
                 }
             }
         }
@@ -617,6 +840,19 @@ class MainActivity : AppCompatActivity() {
                             hasMoreVitrin = false
                         }
                     }
+                } else if (activeEngine == "bj") {
+                    val more = BjApi.getMovies(nextPage)
+                    withContext(Dispatchers.Main) {
+                        isVitrinLoadingMore = false
+                        binding.vitrinLoadingMore.isVisible = false
+                        if (more.isNotEmpty()) {
+                            vitrinPage = nextPage
+                            val section = VitrinSection(nextPage, "عناوین بیشتر BJ (صفحه $nextPage)", more)
+                            vitrinAdapter.appendData(listOf(section))
+                        } else {
+                            hasMoreVitrin = false
+                        }
+                    }
                 } else {
                     val (_, newSections) = movielixApi.getVitrinSections(nextPage)
                     withContext(Dispatchers.Main) {
@@ -654,6 +890,7 @@ class MainActivity : AppCompatActivity() {
                     "almasmovie" -> AlmasMovieApi.getRecent(1)
                     "rezflix" -> RezFlixApi.getMovies(1)
                     "nextmovie" -> NextMovieApi.getRecent(1)
+                    "bj" -> if (type == 1) BjApi.getSeries(1) else BjApi.getMovies(1)
                     else -> {
                         val keyword = if (type == 1) "سریال" else "2024"
                         movielixApi.search(keyword, type = type, page = 1)
@@ -676,6 +913,21 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private suspend fun searchInEngine(engine: String, query: String, page: Int): List<MovieItem> = withContext(Dispatchers.IO) {
+        try {
+            when (engine) {
+                "almasmovie" -> AlmasMovieApi.search(query, page)
+                "rezflix" -> RezFlixApi.search(query, page)
+                "nextmovie" -> NextMovieApi.search(query, page)
+                "bj" -> BjApi.search(query, page)
+                else -> movielixApi.search(query, type = 2, page = page)
+            }
+        } catch (e: Exception) {
+            AppLogger.e("MainActivity", "خطا در جستجوی موتور $engine: ${e.message}")
+            emptyList()
+        }
+    }
+
     private fun initSearch(query: String) {
         currentGridType = 2
         currentSearchQuery = query
@@ -688,25 +940,62 @@ class MainActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             try {
-                val results = when (activeEngine) {
-                    "almasmovie" -> AlmasMovieApi.search(query, 1)
-                    "rezflix" -> RezFlixApi.search(query, 1)
-                    "nextmovie" -> NextMovieApi.search(query, 1)
-                    else -> movielixApi.search(query, type = 2, page = 1)
+                // 1. First search in active engine
+                val primaryResults = searchInEngine(activeEngine, query, 1)
+                if (primaryResults.isNotEmpty()) {
+                    withContext(Dispatchers.Main) {
+                        binding.gridProgressBar.isVisible = false
+                        gridAdapter.updateData(primaryResults)
+                    }
+                    return@launch
+                }
+
+                // 2. If no result in activeEngine, automatically try ALL other engines!
+                withContext(Dispatchers.Main) {
+                    showAppToast("در ${getEngineName(activeEngine)} یافت نشد؛ در حال بررسی سایر موتورها...")
+                }
+
+                val allEngines = listOf("movielix", "rezflix", "almasmovie", "nextmovie", "bj")
+                val fallbackEngines = allEngines.filter { it != activeEngine }
+
+                // Query all fallback engines in parallel for high speed
+                val fallbackDeferreds = fallbackEngines.map { eng ->
+                    eng to async(Dispatchers.IO) { searchInEngine(eng, query, 1) }
+                }
+
+                var foundEngine: String? = null
+                var foundResults: List<MovieItem> = emptyList()
+
+                for ((eng, deferred) in fallbackDeferreds) {
+                    val res = deferred.await()
+                    if (foundResults.isEmpty() && res.isNotEmpty()) {
+                        foundResults = res
+                        foundEngine = eng
+                    }
                 }
 
                 withContext(Dispatchers.Main) {
                     binding.gridProgressBar.isVisible = false
-                    gridAdapter.updateData(results)
-                    if (results.isEmpty()) {
+                    if (foundResults.isNotEmpty() && foundEngine != null) {
+                        activeEngine = foundEngine
+                        getSharedPreferences("filigram_prefs", Context.MODE_PRIVATE)
+                            .edit()
+                            .putString("active_engine", activeEngine)
+                            .apply()
+
+                        gridAdapter.updateData(foundResults)
+                        showAppToast("نتیجه از موتور ${getEngineName(foundEngine)} بارگذاری شد 🎯")
+                    } else {
                         hasMoreGrid = false
-                        Toast.makeText(this@MainActivity, "موردی یافت نشد", Toast.LENGTH_SHORT).show()
+                        gridAdapter.updateData(emptyList())
+                        showAppToast("نتیجه‌ای یافت نشد", iconRes = R.drawable.ic_close_vector)
                     }
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     binding.gridProgressBar.isVisible = false
-                    AppLogger.e("MainActivity", "خطا در جستجو: ${e.message}")
+                    AppLogger.e("MainActivity", "خطا در فرآیند جستجو: ${e.message}")
+                    showAppToast("خطا در جستجو: ${e.message}")
                 }
             }
         }
@@ -741,6 +1030,15 @@ class MainActivity : AppCompatActivity() {
                             NextMovieApi.getRecent(nextPage)
                         }
                     }
+                    "bj" -> {
+                        if (currentGridType == 2 && currentSearchQuery.isNotBlank()) {
+                            BjApi.search(currentSearchQuery, nextPage)
+                        } else if (currentGridType == 1) {
+                            BjApi.getSeries(nextPage)
+                        } else {
+                            BjApi.getMovies(nextPage)
+                        }
+                    }
                     else -> {
                         val keyword = if (currentGridType == 2) currentSearchQuery else if (currentGridType == 1) "سریال" else "2024"
                         movielixApi.search(keyword, type = currentGridType, page = nextPage)
@@ -767,14 +1065,17 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showMovieDetail(item: MovieItem) {
-        val dialog = Dialog(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
+        HistoryManager.addVisit(this, item)
+        val dialog = Dialog(this, R.style.Theme_Filigram_Dialog_Fullscreen)
         dialog.applyFullscreenAnimation()
-        val detailBinding = DialogMovieDetailBinding.inflate(layoutInflater)
+        val detailBinding = DialogMovieDetailBinding.inflate(dialog.layoutInflater)
         dialog.setContentView(detailBinding.root)
-        dialog.window?.setBackgroundDrawableResource(android.R.color.black)
+        dialog.window?.let { w ->
+            w.setBackgroundDrawableResource(android.R.color.black)
+            applyDialogBlurBehind(w)
+        }
         applyDialogStatusBarInsets(detailBinding.topBarDetail)
 
-        // Animate content in after open
         detailBinding.root.post {
             detailBinding.detailTitle.animateIn(durationMs = 300, startDelayMs = 60)
             detailBinding.detailPoster.animateIn(durationMs = 380, startDelayMs = 0, fromY = 20f)
@@ -784,7 +1085,6 @@ class MainActivity : AppCompatActivity() {
             dialog.dismiss()
         }
 
-        // Favorites / Like state
         val updateFavIcon = {
             val isFav = FavoritesManager.isFavorite(item.id)
             detailBinding.btnFavoriteDetail.setImageResource(
@@ -797,10 +1097,9 @@ class MainActivity : AppCompatActivity() {
             val isNowFav = FavoritesManager.toggleFavorite(this@MainActivity, item)
             updateFavIcon()
             val msg = if (isNowFav) "«${item.title}» به لیست نشان‌شده‌ها اضافه شد" else "از لیست نشان‌شده‌ها حذف شد"
-            Toast.makeText(this@MainActivity, msg, Toast.LENGTH_SHORT).show()
+            showAppToast(msg, iconRes = R.drawable.ic_heart_outline_gold)
         }
 
-        // Add to Playlist click listeners
         detailBinding.btnAddPlaylistDetail.setOnClickListener {
             showAddToPlaylistDialog(item)
         }
@@ -809,7 +1108,6 @@ class MainActivity : AppCompatActivity() {
             showAddToPlaylistDialog(item)
         }
 
-        // Series Notification Subscription tracking
         var latestKnownSeason = 1
         var latestKnownEpisode = 0
         var latestKnownEpTitle: String? = null
@@ -820,9 +1118,9 @@ class MainActivity : AppCompatActivity() {
                 detailBinding.btnNotifySeriesDetail.setImageResource(R.drawable.ic_bell_gold)
                 detailBinding.btnNotifySeriesDetail.imageTintList = null
                 detailBinding.btnToggleSeriesNotification.text = "خاموش کردن"
-                detailBinding.btnToggleSeriesNotification.backgroundTintList = ColorStateList.valueOf(0x33FF4444.toInt())
-                detailBinding.btnToggleSeriesNotification.setTextColor(0xFFFF6666.toInt())
-                detailBinding.btnToggleSeriesNotification.strokeColor = ColorStateList.valueOf(0xFFFF4444.toInt())
+                detailBinding.btnToggleSeriesNotification.backgroundTintList = ColorStateList.valueOf(0x22FFFFFF.toInt())
+                detailBinding.btnToggleSeriesNotification.setTextColor(0xFFCCCCCC.toInt())
+                detailBinding.btnToggleSeriesNotification.strokeColor = ColorStateList.valueOf(0x55FFFFFF.toInt())
                 detailBinding.tvSeriesNotificationStatus.text = "روشن — به محض انتشار قسمت جدید به شما خبر داده می‌شود"
                 detailBinding.tvSeriesNotificationStatus.setTextColor(0xFF4CAF50.toInt())
             } else {
@@ -848,8 +1146,8 @@ class MainActivity : AppCompatActivity() {
                 epTitle = latestKnownEpTitle
             )
             updateSeriesNotificationUI()
-            val msg = if (isNowSub) "اعلان قسمت‌های جدید «${item.title}» فعال شد 🔔" else "اعلان «${item.title}» خاموش شد"
-            Toast.makeText(this@MainActivity, msg, Toast.LENGTH_SHORT).show()
+            val msg = if (isNowSub) "اعلان قسمت‌های جدید «${item.title}» فعال شد" else "اعلان «${item.title}» خاموش شد"
+            showAppToast(msg, iconRes = R.drawable.ic_bell_gold)
         }
 
         detailBinding.btnNotifySeriesDetail.setOnClickListener { onToggleSeriesNotification() }
@@ -874,6 +1172,7 @@ class MainActivity : AppCompatActivity() {
                     "almasmovie" -> AlmasMovieApi.getDetails(item.id, if (item.type == 1) "tvshow" else "movie")
                     "rezflix" -> RezFlixApi.getDetails(item.id)
                     "nextmovie" -> NextMovieApi.getDetails(item.id)
+                    "bj" -> BjApi.getDetails(item.id)
                     else -> movielixApi.getMovieDetails(item.id)
                 }
 
@@ -953,6 +1252,7 @@ class MainActivity : AppCompatActivity() {
                     val episodes = when (activeEngine) {
                         "almasmovie" -> AlmasMovieApi.getEpisodes(detail.id, seasonNum)
                         "nextmovie" -> NextMovieApi.getEpisodes(detail.id, seasonNum)
+                        "bj" -> BjApi.getEpisodes(detail.id, seasonNum)
                         else -> movielixApi.getEpisodes(detail.id, seasonNum)
                     }
                     withContext(Dispatchers.Main) {
@@ -1001,27 +1301,69 @@ class MainActivity : AppCompatActivity() {
         detailBinding.rvSeasons.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
         detailBinding.rvSeasons.adapter = seasonAdapter
 
+        detailBinding.btnDownloadSeasonBatch.setOnClickListener {
+            showBatchDownloadDialog(
+                title = "دانلود تمام قسمت‌های ${seasons.find { it.season == selectedSeason }?.title ?: "فصل $selectedSeason"}",
+                subtitle = "سریال «${detail.title}»",
+                movieId = detail.id,
+                isSeries = true,
+                seasons = listOf(selectedSeason)
+            )
+        }
+
+        detailBinding.btnDownloadSeriesBatch.setOnClickListener {
+            showBatchDownloadDialog(
+                title = "دانلود تمام فصل‌ها و قسمت‌ها",
+                subtitle = "سریال «${detail.title}» (${seasons.size} فصل)",
+                movieId = detail.id,
+                isSeries = true,
+                seasons = seasons.map { it.season }
+            )
+        }
+
         loadEpisodesForSeason(selectedSeason)
     }
 
     private fun loadMovieQualities(detailBinding: DialogMovieDetailBinding, movieId: Int) {
-        detailBinding.detailLoading.isVisible = true
+        detailBinding.detailLoading.isVisible = false
         detailBinding.qualityListContainer.removeAllViews()
+
+        // Add 3 skeleton rows with pulsing alpha animation
+        val skeletonViews = (0 until 3).map {
+            val skeletonView = LayoutInflater.from(this@MainActivity)
+                .inflate(R.layout.item_quality_skeleton, detailBinding.qualityListContainer, false)
+            detailBinding.qualityListContainer.addView(skeletonView)
+            skeletonView
+        }
+
+        // Pulse animation for shimmer effect
+        val pulseAnimator = android.animation.ValueAnimator.ofFloat(0.3f, 1f).apply {
+            duration = 900
+            repeatCount = android.animation.ValueAnimator.INFINITE
+            repeatMode = android.animation.ValueAnimator.REVERSE
+            addUpdateListener { anim ->
+                val alpha = anim.animatedValue as Float
+                skeletonViews.forEach { it.alpha = alpha }
+            }
+            start()
+        }
 
         lifecycleScope.launch {
             try {
                 val qualities = when (activeEngine) {
                     "almasmovie" -> AlmasMovieApi.getQualities(movieId)
                     "nextmovie" -> NextMovieApi.getQualities(movieId)
+                    "bj" -> BjApi.getQualities(movieId)
                     else -> movielixApi.getQualities(movieId)
                 }
                 withContext(Dispatchers.Main) {
-                    detailBinding.detailLoading.isVisible = false
+                    pulseAnimator.cancel()
                     populateQualities(detailBinding, movieId, qualities, isSeries = false)
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    detailBinding.detailLoading.isVisible = false
+                    pulseAnimator.cancel()
+                    detailBinding.qualityListContainer.removeAllViews()
                 }
             }
         }
@@ -1106,7 +1448,7 @@ class MainActivity : AppCompatActivity() {
         movieId: Int,
         qualityId: Int,
         directUrl: String? = null,
-        action: Int, // 1: In-App Player, 2: Download Direct, 3: External Player
+        action: Int,
         mediaTitle: String,
         qualityLabel: String,
         isSeries: Boolean = false,
@@ -1117,8 +1459,15 @@ class MainActivity : AppCompatActivity() {
             when (action) {
                 1 -> playVideoInApp(mediaTitle, qualityLabel, directUrl)
                 2 -> {
-                    val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(directUrl))
-                    startActivity(browserIntent)
+                    startTurboDownload(
+                        movieId = movieId,
+                        mediaTitle = mediaTitle,
+                        qualityLabel = qualityLabel,
+                        url = directUrl,
+                        isSeries = isSeries,
+                        season = season,
+                        episode = episode
+                    )
                 }
                 3 -> {
                     val videoIntent = Intent(Intent.ACTION_VIEW).apply {
@@ -1136,10 +1485,10 @@ class MainActivity : AppCompatActivity() {
 
         val notice = when (action) {
             1 -> "آماده‌سازی پخش آنلاین در برنامه..."
-            2 -> "دریافت لینک دانلود مستقیم..."
+            2 -> "آماده‌سازی لینک برای دانلود توربو..."
             else -> "آماده‌سازی پخش با پلیر جانبی..."
         }
-        Toast.makeText(this, notice, Toast.LENGTH_SHORT).show()
+        val loadingSheet = showAppToast(notice, isLoading = true)
         lifecycleScope.launch {
             try {
                 val streamUrl = movielixApi.getStreamUrl(
@@ -1149,12 +1498,20 @@ class MainActivity : AppCompatActivity() {
                     episode = if (isSeries) episode else -1
                 )
                 withContext(Dispatchers.Main) {
+                    loadingSheet.dismiss()
                     if (!streamUrl.isNullOrEmpty()) {
                         when (action) {
                             1 -> playVideoInApp(mediaTitle, qualityLabel, streamUrl)
                             2 -> {
-                                val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(streamUrl))
-                                startActivity(browserIntent)
+                                startTurboDownload(
+                                    movieId = movieId,
+                                    mediaTitle = mediaTitle,
+                                    qualityLabel = qualityLabel,
+                                    url = streamUrl,
+                                    isSeries = isSeries,
+                                    season = season,
+                                    episode = episode
+                                )
                             }
                             3 -> {
                                 val videoIntent = Intent(Intent.ACTION_VIEW).apply {
@@ -1168,92 +1525,292 @@ class MainActivity : AppCompatActivity() {
                             }
                         }
                     } else {
-                        Toast.makeText(this@MainActivity, "خطا در استخراج آدرس رسانه", Toast.LENGTH_SHORT).show()
+                        showAppToast("خطا در استخراج آدرس رسانه")
                     }
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
+                    loadingSheet.dismiss()
                     AppLogger.e("MainActivity", "خطا در استخراج آدرس: ${e.message}")
-                    Toast.makeText(this@MainActivity, "خطا در برقراری ارتباط با سرور", Toast.LENGTH_SHORT).show()
+                    showAppToast("خطا در برقراری ارتباط با سرور")
                 }
             }
         }
     }
 
-    private fun playVideoInApp(title: String, quality: String, streamUrl: String) {
+    private fun playVideoInApp(
+        title: String,
+        quality: String,
+        streamUrl: String,
+        subtitlePath: String? = null,
+        isOffline: Boolean = false
+    ) {
         try {
-            val dialog = Dialog(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
+            val dialog = Dialog(this, R.style.Theme_Filigram_Dialog_Fullscreen)
             dialog.applyFullscreenAnimation()
-            val playerBinding = DialogInAppPlayerBinding.inflate(LayoutInflater.from(this))
+            val playerBinding = DialogInAppPlayerBinding.inflate(dialog.layoutInflater)
             dialog.setContentView(playerBinding.root)
             dialog.window?.setBackgroundDrawableResource(android.R.color.black)
 
+            activePlayerDialog = dialog
             playerBinding.txtPlayerTitle.text = title
             playerBinding.txtPlayerQuality.text = quality
+            playerBinding.txtPlayerBadge.text = if (isOffline) "فایل دانلودشده" else "استریم آنلاین"
             playerBinding.playerLoading.visibility = View.VISIBLE
 
             activeExoPlayer?.release()
 
-            val player = ExoPlayer.Builder(this).build().apply {
-                val mediaItem = MediaItem.fromUri(streamUrl)
-                setMediaItem(mediaItem)
-                prepare()
-                playWhenReady = true
-                addListener(object : Player.Listener {
-                    override fun onPlaybackStateChanged(playbackState: Int) {
-                        when (playbackState) {
-                            Player.STATE_BUFFERING -> {
-                                playerBinding.playerLoading.visibility = View.VISIBLE
-                            }
-                            Player.STATE_READY -> {
-                                playerBinding.playerLoading.visibility = View.GONE
-                            }
-                            Player.STATE_ENDED -> {
-                                playerBinding.playerLoading.visibility = View.GONE
-                            }
-                            Player.STATE_IDLE -> {}
-                        }
-                    }
-
-                    override fun onPlayerError(error: PlaybackException) {
-                        playerBinding.playerLoading.visibility = View.GONE
-                        AppLogger.e("InAppPlayer", "خطا در پخش استریم: ${error.message}")
-                        Toast.makeText(this@MainActivity, "خطا در پخش آنلاین ویدیو", Toast.LENGTH_LONG).show()
-                    }
-                })
-            }
-            activeExoPlayer = player
-            playerBinding.playerView.player = player
-
-            playerBinding.btnClosePlayer.setOnClickListener {
-                dialog.dismiss()
-            }
-
-            dialog.setOnDismissListener {
-                player.stop()
-                player.release()
-                if (activeExoPlayer == player) {
-                    activeExoPlayer = null
+            var activeSubtitleUri: Uri? = null
+            if (!subtitlePath.isNullOrEmpty()) {
+                val subFile = java.io.File(subtitlePath)
+                if (subFile.exists() && subFile.length() > 0) {
+                    activeSubtitleUri = Uri.fromFile(subFile)
+                }
+            } else if (isOffline) {
+                val assumedSub = java.io.File(streamUrl.replaceAfterLast('.', "srt"))
+                if (assumedSub.exists() && assumedSub.length() > 0) {
+                    activeSubtitleUri = Uri.fromFile(assumedSub)
                 }
             }
 
+            fun buildMediaItem(subUri: Uri?): MediaItem {
+                val builder = MediaItem.Builder().setUri(streamUrl)
+                if (subUri != null) {
+                    val subConfig = MediaItem.SubtitleConfiguration.Builder(subUri)
+                        .setMimeType(MimeTypes.APPLICATION_SUBRIP)
+                        .setLanguage("fa")
+                        .setSelectionFlags(C.SELECTION_FLAG_DEFAULT)
+                        .build()
+                    builder.setSubtitleConfigurations(listOf(subConfig))
+                }
+                return builder.build()
+            }
+
+            val player = ExoPlayer.Builder(this).build()
+            activeExoPlayer = player
+            playerBinding.playerView.player = player
+
+            val mediaItem = buildMediaItem(activeSubtitleUri)
+            player.setMediaItem(mediaItem)
+
+            val progressKey = if (isOffline) "file://$streamUrl" else streamUrl
+            val savedPosition = PlaybackProgressManager.getProgress(this, progressKey)
+            if (savedPosition > 3000L) {
+                player.seekTo(savedPosition)
+                showAppToast("ادامه پخش از ${PlaybackProgressManager.formatTime(savedPosition)}")
+            }
+
+            player.prepare()
+            player.playWhenReady = true
+
+            player.addListener(object : Player.Listener {
+                override fun onPlaybackStateChanged(playbackState: Int) {
+                    when (playbackState) {
+                        Player.STATE_BUFFERING -> playerBinding.playerLoading.visibility = View.VISIBLE
+                        Player.STATE_READY -> playerBinding.playerLoading.visibility = View.GONE
+                        Player.STATE_ENDED -> {
+                            playerBinding.playerLoading.visibility = View.GONE
+                            PlaybackProgressManager.clearProgress(this@MainActivity, progressKey)
+                        }
+                        Player.STATE_IDLE -> {}
+                    }
+                }
+                override fun onPlayerError(error: PlaybackException) {
+                    playerBinding.playerLoading.visibility = View.GONE
+                    AppLogger.e("InAppPlayer", "خطا در پخش: ${error.message}")
+                    showAppToast("خطا در پخش مدیا", autoDismissMs = 4000L)
+                }
+            })
+
+            // ── Speed control ──────────────────────────────────────────────
+            val speedSteps = listOf(0.75f, 1f, 1.25f, 1.5f, 2f)
+            val speedLabels = listOf("0.75×", "1×", "1.25×", "1.5×", "2×")
+            var speedIndex = 1 // default 1×
+            playerBinding.btnPlayerSpeed.setOnClickListener {
+                speedIndex = (speedIndex + 1) % speedSteps.size
+                val speed = speedSteps[speedIndex]
+                player.setPlaybackSpeed(speed)
+                playerBinding.btnPlayerSpeed.text = speedLabels[speedIndex]
+                showAppToast("سرعت پخش: ${speedLabels[speedIndex]}")
+            }
+
+            // ── Rotate ─────────────────────────────────────────────────────
+            playerBinding.btnPlayerRotate.setOnClickListener {
+                requestedOrientation = when (requestedOrientation) {
+                    android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE,
+                    android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE -> {
+                        android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                    }
+                    else -> android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                }
+            }
+
+            // ── Subtitles ──────────────────────────────────────────────────
+            playerBinding.btnPlayerSubtitles.setOnClickListener {
+                val subOptions = listOf(
+                    "خاموش (بدون زیرنویس)",
+                    if (activeSubtitleUri != null) "زیرنویس فارسی هماهنگ (فعال)" else "زیرنویس فارسی (یافت نشد)"
+                )
+                showSelectionBottomSheet(
+                    title = "انتخاب و مدیریت زیرنویس",
+                    subtitle = "زیرنویس مورد نظر خود را برای این فیلم انتخاب کنید:",
+                    options = subOptions
+                ) { which ->
+                    when (which) {
+                        0 -> {
+                            val pos = player.currentPosition; val p = player.playWhenReady
+                            player.setMediaItem(buildMediaItem(null), pos); player.playWhenReady = p
+                            showAppToast("زیرنویس غیرفعال شد")
+                        }
+                        1 -> {
+                            if (activeSubtitleUri != null) {
+                                val pos = player.currentPosition; val p = player.playWhenReady
+                                player.setMediaItem(buildMediaItem(activeSubtitleUri), pos); player.playWhenReady = p
+                                showAppToast("زیرنویس فارسی فعال شد")
+                            } else showAppToast("فایل زیرنویس برای این ویدیو موجود نیست")
+                        }
+                    }
+                }
+            }
+
+            // ── PiP ────────────────────────────────────────────────────────
+            playerBinding.btnPlayerPip.setOnClickListener {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    try {
+                        val params = PictureInPictureParams.Builder()
+                            .setAspectRatio(Rational(16, 9)).build()
+                        enterPictureInPictureMode(params)
+                    } catch (e: Exception) {
+                        showAppToast("امکان تصویر در تصویر وجود ندارد: ${e.message}")
+                    }
+                } else showAppToast("تصویر در تصویر نیازمند اندروید ۸ به بالا است")
+            }
+
+            // ── Close ──────────────────────────────────────────────────────
+            playerBinding.btnClosePlayer.setOnClickListener { dialog.dismiss() }
+
+            // ── Dismiss: save progress & restore orientation ───────────────
+            dialog.setOnDismissListener {
+                val currentPos = player.currentPosition
+                val duration = player.duration
+                if (currentPos > 0L) PlaybackProgressManager.saveProgress(this, progressKey, currentPos, duration)
+                player.stop()
+                player.release()
+                requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                if (activeExoPlayer == player) activeExoPlayer = null
+                if (activePlayerDialog == dialog) activePlayerDialog = null
+            }
+
             dialog.show()
-            AppLogger.i("InAppPlayer", "استریم ویدیو آغاز شد: $title")
+            AppLogger.i("InAppPlayer", "پلیر اجرا شد: $title")
         } catch (e: Exception) {
             AppLogger.e("InAppPlayer", "خطا در ایجاد پلیر: ${e.message}")
-            Toast.makeText(this, "امکان پخش آنلاین در این دستگاه وجود ندارد: ${e.message}", Toast.LENGTH_LONG).show()
+            showAppToast("امکان پخش در این دستگاه وجود ندارد: ${e.message}", autoDismissMs = 4000L)
         }
     }
 
+    private fun gregorianToJalali(gy: Int, gm: Int, gd: Int): Triple<Int, Int, Int> {
+        val gdm = intArrayOf(0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334)
+        val gy2 = if (gm > 2) gy + 1 else gy
+        var days = 355666 + (365 * gy) + ((gy2 + 3) / 4) - ((gy2 + 99) / 100) + ((gy2 + 399) / 400) + gd + gdm[gm - 1]
+        var jy = -1595 + (33 * (days / 12053))
+        days %= 12053
+        jy += 4 * (days / 1461)
+        days %= 1461
+        if (days > 365) {
+            jy += (days - 1) / 365
+            days = (days - 1) % 365
+        }
+        val jm: Int
+        val jd: Int
+        if (days < 186) {
+            jm = 1 + (days / 31)
+            jd = 1 + (days % 31)
+        } else {
+            jm = 7 + ((days - 186) / 30)
+            jd = 1 + ((days - 186) % 30)
+        }
+        return Triple(jy, jm, jd)
+    }
+
+    private fun toPersianDigits(str: String): String {
+        val persianDigits = charArrayOf('۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹')
+        val sb = StringBuilder()
+        for (ch in str) {
+            if (ch in '0'..'9') {
+                sb.append(persianDigits[ch - '0'])
+            } else {
+                sb.append(ch)
+            }
+        }
+        return sb.toString()
+    }
+
     private fun showEnginesDrawer() {
-        val dialog = Dialog(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
+        val dialog = Dialog(this, R.style.Theme_Filigram_Dialog_Fullscreen)
         dialog.applyFullscreenAnimation()
-        val drawerBinding = BottomSheetEnginesDrawerBinding.inflate(layoutInflater)
+        val drawerBinding = BottomSheetEnginesDrawerBinding.inflate(dialog.layoutInflater)
         dialog.setContentView(drawerBinding.root)
         dialog.window?.setBackgroundDrawableResource(android.R.color.black)
         applyDialogStatusBarInsets(drawerBinding.topBarEnginesDrawer)
 
         drawerBinding.tvCurrentEngineSub.text = "موتور فعال: ${getEngineName(activeEngine)}"
+
+        try {
+            val manufacturer = Build.MANUFACTURER.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+            val model = Build.MODEL
+            drawerBinding.tvDeviceInfoModel.text = "$manufacturer $model"
+
+            val abis = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                Build.SUPPORTED_ABIS.joinToString(", ")
+            } else {
+                Build.CPU_ABI
+            }
+            drawerBinding.tvDeviceInfoCpu.text = abis.ifEmpty { "ARM / x86" }
+
+            val androidVersion = Build.VERSION.RELEASE
+            val sdkInt = Build.VERSION.SDK_INT
+            drawerBinding.tvDeviceInfoAndroid.text = "اندروید $androidVersion (API $sdkInt)"
+
+            val pInfo = packageManager.getPackageInfo(packageName, 0)
+            val versionName = pInfo.versionName ?: "1.0.0"
+            val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                pInfo.longVersionCode
+            } else {
+                @Suppress("DEPRECATION")
+                pInfo.versionCode.toLong()
+            }
+            drawerBinding.tvDeviceInfoAppVersion.text = "v$versionName (کد بیلد $versionCode)"
+
+            val installTimeMs = when {
+                pInfo.firstInstallTime > 946684800000L -> pInfo.firstInstallTime
+                pInfo.lastUpdateTime > 946684800000L -> pInfo.lastUpdateTime
+                else -> {
+                    val apkFile = java.io.File(applicationInfo.sourceDir)
+                    if (apkFile.exists() && apkFile.lastModified() > 946684800000L) {
+                        apkFile.lastModified()
+                    } else {
+                        System.currentTimeMillis()
+                    }
+                }
+            }
+
+            val cal = java.util.Calendar.getInstance().apply { timeInMillis = installTimeMs }
+            val gy = cal.get(java.util.Calendar.YEAR)
+            val gm = cal.get(java.util.Calendar.MONTH) + 1
+            val gd = cal.get(java.util.Calendar.DAY_OF_MONTH)
+            val hour = String.format(java.util.Locale.US, "%02d", cal.get(java.util.Calendar.HOUR_OF_DAY))
+            val minute = String.format(java.util.Locale.US, "%02d", cal.get(java.util.Calendar.MINUTE))
+
+            val (jy, jm, jd) = gregorianToJalali(gy, gm, gd)
+            val persianMonthNames = arrayOf("", "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند")
+            val monthName = persianMonthNames.getOrElse(jm) { "" }
+
+            val formattedDate = "$jd $monthName $jy — $hour:$minute"
+            drawerBinding.tvDeviceInfoInstallDate.text = toPersianDigits(formattedDate)
+        } catch (e: Exception) {
+            AppLogger.e("MainActivity", "خطا در استخراج اطلاعات دستگاه: ${e.message}")
+        }
 
         drawerBinding.btnDrawerClose.setOnClickListener {
             dialog.dismiss()
@@ -1264,6 +1821,7 @@ class MainActivity : AppCompatActivity() {
             "rezflix" -> drawerBinding.rbRezFlix.isChecked = true
             "almasmovie" -> drawerBinding.rbAlmasMovie.isChecked = true
             "nextmovie" -> drawerBinding.rbNextMovie.isChecked = true
+            "bj" -> drawerBinding.rbBjEngine.isChecked = true
         }
 
         drawerBinding.cardOpenRadar.setOnClickListener {
@@ -1271,30 +1829,28 @@ class MainActivity : AppCompatActivity() {
             showSystemRadarDialog()
         }
 
-        // Contact Support Link
         drawerBinding.cardDrawerTelegram.setOnClickListener {
             val tgUrl = "https://t.me/filigramapp"
             try {
                 startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(tgUrl)))
             } catch (e: Exception) {
-                Toast.makeText(this@MainActivity, "پشتیبانی در تلگرام: t.me/filigramapp", Toast.LENGTH_LONG).show()
+                showAppToast("پشتیبانی در تلگرام: t.me/filigramapp", autoDismissMs = 4000L)
             }
         }
 
-        // Clear Cache
         val currentCacheSize = AppCacheManager.getCacheSizeBytes(this@MainActivity)
         drawerBinding.txtCacheSizeSub.text = "حجم کش ذخیره‌شده: ${AppCacheManager.formatSize(currentCacheSize)}"
         drawerBinding.cardClearCache.setOnClickListener {
-            androidx.appcompat.app.AlertDialog.Builder(this@MainActivity)
-                .setTitle("پاکسازی حافظه موقت")
-                .setMessage("آیا مایل به حذف تمام داده‌های موقت، تصاویر کش‌شده و پاسخ‌های سرور هستید؟")
-                .setPositiveButton("پاکسازی کش") { _, _ ->
-                    AppCacheManager.clearAll(this@MainActivity)
-                    drawerBinding.txtCacheSizeSub.text = "حجم کش ذخیره‌شده: ۰ مگابایت"
-                    Toast.makeText(this@MainActivity, "حافظه موقت با موفقیت پاکسازی شد", Toast.LENGTH_SHORT).show()
-                }
-                .setNegativeButton("انصراف", null)
-                .show()
+            showConfirmBottomSheet(
+                title = "پاکسازی حافظه موقت",
+                message = "آیا مایل به حذف تمام داده‌های موقت، تصاویر کش‌شده و پاسخ‌های سرور هستید؟ این عمل فضای ذخیره‌سازی را آزاد می‌کند.",
+                positiveText = "پاکسازی کش",
+                isDestructive = true
+            ) {
+                AppCacheManager.clearAll(this@MainActivity)
+                drawerBinding.txtCacheSizeSub.text = "حجم کش ذخیره‌شده: ۰ مگابایت"
+                showAppToast("حافظه موقت با موفقیت پاکسازی شد")
+            }
         }
 
         drawerBinding.btnApplyEngine.setOnClickListener {
@@ -1302,6 +1858,7 @@ class MainActivity : AppCompatActivity() {
                 R.id.rbRezFlix -> "rezflix"
                 R.id.rbAlmasMovie -> "almasmovie"
                 R.id.rbNextMovie -> "nextmovie"
+                R.id.rbBjEngine -> "bj"
                 else -> "movielix"
             }
 
@@ -1312,18 +1869,33 @@ class MainActivity : AppCompatActivity() {
                 .apply()
 
             AppLogger.i("MainActivity", "موتور فعال به $selected تغییر یافت")
-            Toast.makeText(this, "موتور فعال: ${getEngineName(activeEngine)}", Toast.LENGTH_SHORT).show()
+            showAppToast("موتور فعال: ${getEngineName(activeEngine)}")
             dialog.dismiss()
 
             showHomeScreen()
             loadHomeData()
         }
 
+        val donationWalletAddress = "TZBA9oggSuLveqs98s85yiSGaUVKZmpuBp"
+        val copyDonationAction = {
+            try {
+                val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                val clip = ClipData.newPlainText("Filigram Donation Wallet", donationWalletAddress)
+                clipboard.setPrimaryClip(clip)
+                showAppToast("آدرس کیف پول ترون کپی شد 📋")
+            } catch (e: Exception) {
+                showAppToast("خطا در کپی آدرس: ${e.message}")
+            }
+        }
+        drawerBinding.btnCopyDonationAddress.setOnClickListener { copyDonationAction() }
+        drawerBinding.boxDonationAddress.setOnClickListener { copyDonationAction() }
+        drawerBinding.tvDonationAddress.setOnClickListener { copyDonationAction() }
+
         dialog.show()
     }
 
     private fun showSystemRadarDialog() {
-        val dialog = BottomSheetDialog(this)
+        val dialog = createStyledBottomSheetDialog()
         val radarBinding = BottomSheetRadarBinding.inflate(layoutInflater)
         dialog.setContentView(radarBinding.root)
 
@@ -1384,16 +1956,17 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun getEngineName(key: String): String = when (key) {
-        "rezflix" -> "رزفلیکس (RezFlix)"
-        "almasmovie" -> "الماس مووی (AlmasMovie)"
-        "nextmovie" -> "نکست مووی (NextMovie)"
-        else -> "موویلیکس (Movielix)"
+        "rezflix" -> "موتور RF"
+        "almasmovie" -> "موتور AM"
+        "nextmovie" -> "موتور NM"
+        "bj" -> "موتور BJ"
+        else -> "موتور MX"
     }
 
     private fun showPlaylistsHubDialog(initialTab: Int = 0) {
-        val dialog = Dialog(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
+        val dialog = Dialog(this, R.style.Theme_Filigram_Dialog_Fullscreen)
         dialog.applyFullscreenAnimation()
-        val hubBinding = DialogPlaylistsHubBinding.inflate(layoutInflater)
+        val hubBinding = DialogPlaylistsHubBinding.inflate(dialog.layoutInflater)
         dialog.setContentView(hubBinding.root)
         dialog.window?.setBackgroundDrawableResource(android.R.color.black)
         applyDialogStatusBarInsets(hubBinding.topBarPlaylistsHub)
@@ -1411,10 +1984,12 @@ class MainActivity : AppCompatActivity() {
             } else {
                 hubBinding.emptyFavoritesContainer.isVisible = false
                 hubBinding.rvFavoritesHub.isVisible = true
-                val favAdapter = MovieCardAdapter(favs.toMutableList()) { item ->
-                    showMovieDetail(item)
-                }
-                hubBinding.rvFavoritesHub.layoutManager = GridLayoutManager(this@MainActivity, 3)
+                val favAdapter = MovieCardAdapter(
+                    favs.toMutableList(),
+                    onItemClick = { item -> showMovieDetail(item) },
+                    onItemLongClick = { item -> showMediaQuickActionsBottomSheet(item) }
+                )
+                hubBinding.rvFavoritesHub.layoutManager = GridLayoutManager(this@MainActivity, 2)
                 hubBinding.rvFavoritesHub.adapter = favAdapter
             }
         }
@@ -1438,81 +2013,135 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        val selectTab = { isFav: Boolean ->
-            hubBinding.tabFavorites.isSelected = isFav
-            hubBinding.tabPlaylists.isSelected = !isFav
-            hubBinding.containerFavorites.isVisible = isFav
-            hubBinding.containerPlaylists.isVisible = !isFav
+        val loadHistory = {
+            val history = HistoryManager.getHistory(this@MainActivity)
+            hubBinding.badgeHistoryCount.text = "${history.size}"
+            hubBinding.headerActionsHistory.isVisible = history.isNotEmpty()
+            hubBinding.txtHistoryHeaderCount.text = "عناوین مشاهده‌شده (${history.size} عنوان)"
+            if (history.isEmpty()) {
+                hubBinding.emptyHistoryContainer.isVisible = true
+                hubBinding.rvHistoryHub.isVisible = false
+            } else {
+                hubBinding.emptyHistoryContainer.isVisible = false
+                hubBinding.rvHistoryHub.isVisible = true
+                val historyAdapter = MovieCardAdapter(
+                    history.toMutableList(),
+                    onItemClick = { item -> showMovieDetail(item) },
+                    onItemLongClick = { item -> showMediaQuickActionsBottomSheet(item) }
+                )
+                hubBinding.rvHistoryHub.layoutManager = GridLayoutManager(this@MainActivity, 2)
+                hubBinding.rvHistoryHub.adapter = historyAdapter
+            }
+        }
+
+        val selectTab = { tabIndex: Int ->
+            hubBinding.tabFavorites.isSelected = (tabIndex == 0)
+            hubBinding.tabPlaylists.isSelected = (tabIndex == 1)
+            hubBinding.tabHistory.isSelected = (tabIndex == 2)
+
+            hubBinding.containerFavorites.isVisible = (tabIndex == 0)
+            hubBinding.containerPlaylists.isVisible = (tabIndex == 1)
+            hubBinding.containerHistory.isVisible = (tabIndex == 2)
 
             val mutedColor = ContextCompat.getColor(this@MainActivity, R.color.muted)
 
-            if (isFav) {
+            if (tabIndex == 0) {
                 hubBinding.icTabFav.imageTintList = ColorStateList.valueOf(Color.WHITE)
                 hubBinding.txtTabFav.setTextColor(Color.WHITE)
                 hubBinding.badgeFavCount.setTextColor(Color.WHITE)
                 hubBinding.badgeFavCount.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#35000000"))
-
-                hubBinding.icTabPlaylists.imageTintList = ColorStateList.valueOf(mutedColor)
-                hubBinding.txtTabPlaylists.setTextColor(mutedColor)
-                hubBinding.badgePlaylistsCount.setTextColor(mutedColor)
-                hubBinding.badgePlaylistsCount.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#20FFFFFF"))
-                loadFavorites()
             } else {
                 hubBinding.icTabFav.imageTintList = ColorStateList.valueOf(mutedColor)
                 hubBinding.txtTabFav.setTextColor(mutedColor)
                 hubBinding.badgeFavCount.setTextColor(mutedColor)
                 hubBinding.badgeFavCount.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#20FFFFFF"))
+            }
 
+            if (tabIndex == 1) {
                 hubBinding.icTabPlaylists.imageTintList = ColorStateList.valueOf(Color.WHITE)
                 hubBinding.txtTabPlaylists.setTextColor(Color.WHITE)
                 hubBinding.badgePlaylistsCount.setTextColor(Color.WHITE)
                 hubBinding.badgePlaylistsCount.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#35000000"))
-                loadPlaylists()
+            } else {
+                hubBinding.icTabPlaylists.imageTintList = ColorStateList.valueOf(mutedColor)
+                hubBinding.txtTabPlaylists.setTextColor(mutedColor)
+                hubBinding.badgePlaylistsCount.setTextColor(mutedColor)
+                hubBinding.badgePlaylistsCount.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#20FFFFFF"))
+            }
+
+            if (tabIndex == 2) {
+                hubBinding.icTabHistory.imageTintList = ColorStateList.valueOf(Color.WHITE)
+                hubBinding.txtTabHistory.setTextColor(Color.WHITE)
+                hubBinding.badgeHistoryCount.setTextColor(Color.WHITE)
+                hubBinding.badgeHistoryCount.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#35000000"))
+            } else {
+                hubBinding.icTabHistory.imageTintList = ColorStateList.valueOf(mutedColor)
+                hubBinding.txtTabHistory.setTextColor(mutedColor)
+                hubBinding.badgeHistoryCount.setTextColor(mutedColor)
+                hubBinding.badgeHistoryCount.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#20FFFFFF"))
+            }
+
+            when (tabIndex) {
+                0 -> loadFavorites()
+                1 -> loadPlaylists()
+                2 -> loadHistory()
             }
         }
 
-        hubBinding.tabFavorites.setOnClickListener { selectTab(true) }
-        hubBinding.tabPlaylists.setOnClickListener { selectTab(false) }
+        hubBinding.tabFavorites.setOnClickListener { selectTab(0) }
+        hubBinding.tabPlaylists.setOnClickListener { selectTab(1) }
+        hubBinding.tabHistory.setOnClickListener { selectTab(2) }
 
         hubBinding.btnClearAllFavorites.setOnClickListener {
-            androidx.appcompat.app.AlertDialog.Builder(this@MainActivity)
-                .setTitle("حذف همه نشان‌ها")
-                .setMessage("آیا از پاکسازی تمام فیلم‌ها و سریال‌های نشان‌شده اطمینان دارید؟")
-                .setPositiveButton("حذف همه") { _, _ ->
-                    FavoritesManager.clearAllFavorites(this@MainActivity)
-                    loadFavorites()
-                    Toast.makeText(this@MainActivity, "تمام نشان‌ها حذف شدند", Toast.LENGTH_SHORT).show()
-                }
-                .setNegativeButton("انصراف", null)
-                .show()
+            showConfirmBottomSheet(
+                title = "حذف همه نشان‌ها",
+                message = "آیا از پاکسازی تمام فیلم‌ها و سریال‌های نشان‌شده اطمینان دارید؟",
+                positiveText = "حذف همه",
+                isDestructive = true
+            ) {
+                FavoritesManager.clearAllFavorites(this@MainActivity)
+                loadFavorites()
+                showAppToast("تمام نشان‌ها حذف شدند")
+            }
         }
 
         hubBinding.btnClearAllPlaylists.setOnClickListener {
-            androidx.appcompat.app.AlertDialog.Builder(this@MainActivity)
-                .setTitle("حذف همه پلی‌لیست‌ها")
-                .setMessage("آیا از حذف تمامی پلی‌لیست‌های اختصاصی خود اطمینان دارید؟ این عمل غیرقابل بازگشت است.")
-                .setPositiveButton("حذف همه") { _, _ ->
-                    PlaylistsManager.clearAllPlaylists(this@MainActivity)
-                    loadPlaylists()
-                    Toast.makeText(this@MainActivity, "تمامی پلی‌لیست‌ها حذف شدند", Toast.LENGTH_SHORT).show()
-                }
-                .setNegativeButton("انصراف", null)
-                .show()
+            showConfirmBottomSheet(
+                title = "حذف همه پلی‌لیست‌ها",
+                message = "آیا از حذف تمامی پلی‌لیست‌های اختصاصی خود اطمینان دارید؟ این عمل غیرقابل بازگشت است.",
+                positiveText = "حذف همه",
+                isDestructive = true
+            ) {
+                PlaylistsManager.clearAllPlaylists(this@MainActivity)
+                loadPlaylists()
+                showAppToast("تمامی پلی‌لیست‌ها حذف شدند")
+            }
         }
 
-        // Export / Import — Favorites tab
+        hubBinding.btnClearAllHistory.setOnClickListener {
+            showConfirmBottomSheet(
+                title = "پاکسازی تاریخچه",
+                message = "آیا از حذف تمام عناوین مشاهده‌شده در تاریخچه اطمینان دارید؟",
+                positiveText = "پاکسازی",
+                isDestructive = true
+            ) {
+                HistoryManager.clearAllHistory(this@MainActivity)
+                loadHistory()
+                showAppToast("تاریخچه با موفقیت پاک شد")
+            }
+        }
+
         hubBinding.btnExportFavorites.setOnClickListener {
             exportCombinedBackup()
-            Toast.makeText(this@MainActivity, "در حال آماده‌سازی فایل پشتیبان...", Toast.LENGTH_SHORT).show()
+            showAppToast("در حال آماده‌سازی فایل پشتیبان...")
         }
         hubBinding.btnImportFavorites.setOnClickListener {
             importLauncher.launch(arrayOf("application/json", "*/*"))
         }
 
-        // Export / Import — Playlists tab
         hubBinding.btnExportPlaylists.setOnClickListener {
             exportCombinedBackup()
-            Toast.makeText(this@MainActivity, "در حال آماده‌سازی فایل پشتیبان...", Toast.LENGTH_SHORT).show()
+            showAppToast("در حال آماده‌سازی فایل پشتیبان...")
         }
         hubBinding.btnImportPlaylists.setOnClickListener {
             importLauncher.launch(arrayOf("application/json", "*/*"))
@@ -1529,15 +2158,15 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        selectTab(initialTab == 0)
+        selectTab(initialTab)
 
         dialog.show()
     }
 
     private fun showPlaylistDetailDialog(playlist: Playlist) {
-        val dialog = Dialog(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
+        val dialog = Dialog(this, R.style.Theme_Filigram_Dialog_Fullscreen)
         dialog.applyFullscreenAnimation()
-        val plBinding = DialogPlaylistDetailBinding.inflate(layoutInflater)
+        val plBinding = DialogPlaylistDetailBinding.inflate(dialog.layoutInflater)
         dialog.setContentView(plBinding.root)
         dialog.window?.setBackgroundDrawableResource(android.R.color.black)
         applyDialogStatusBarInsets(plBinding.topBarPlaylistDetail)
@@ -1551,16 +2180,17 @@ class MainActivity : AppCompatActivity() {
 
         ImageLoader.load(playlist.cover, plBinding.imgPlaylistCover)
 
-        val movieAdapter = MovieCardAdapter(playlist.items.toMutableList()) { movie ->
-            showMovieDetail(movie)
-        }
-        plBinding.rvPlaylistMovies.layoutManager = GridLayoutManager(this, 3)
+        val movieAdapter = MovieCardAdapter(
+            playlist.items.toMutableList(),
+            onItemClick = { movie -> showMovieDetail(movie) },
+            onItemLongClick = { movie -> showMediaQuickActionsBottomSheet(movie) }
+        )
+        plBinding.rvPlaylistMovies.layoutManager = GridLayoutManager(this, 2)
         plBinding.rvPlaylistMovies.adapter = movieAdapter
-
         plBinding.btnPlaySequential.setOnClickListener {
             if (playlist.items.isNotEmpty()) {
                 val firstMovie = playlist.items.first()
-                Toast.makeText(this, "آغاز پخش ترتیبی پلی‌لیست: ${firstMovie.title}", Toast.LENGTH_SHORT).show()
+                showAppToast("آغاز پخش ترتیبی پلی‌لیست: ${firstMovie.title}")
                 showMovieDetail(firstMovie)
             }
         }
@@ -1569,9 +2199,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showFavoritesDialog() {
-        val dialog = Dialog(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
+        val dialog = Dialog(this, R.style.Theme_Filigram_Dialog_Fullscreen)
         dialog.applyFullscreenAnimation()
-        val favBinding = DialogFavoritesBinding.inflate(layoutInflater)
+        val favBinding = DialogFavoritesBinding.inflate(dialog.layoutInflater)
         dialog.setContentView(favBinding.root)
         dialog.window?.setBackgroundDrawableResource(android.R.color.black)
         applyDialogStatusBarInsets(favBinding.topBarFavorites)
@@ -1588,33 +2218,70 @@ class MainActivity : AppCompatActivity() {
             } else {
                 favBinding.emptyFavoritesContainer.isVisible = false
                 favBinding.rvFavorites.isVisible = true
-                val favAdapter = MovieCardAdapter(favs.toMutableList()) { item ->
-                    showMovieDetail(item)
-                }
-                favBinding.rvFavorites.layoutManager = GridLayoutManager(this@MainActivity, 3)
+                val favAdapter = MovieCardAdapter(
+                    favs.toMutableList(),
+                    onItemClick = { item -> showMovieDetail(item) },
+                    onItemLongClick = { item -> showMediaQuickActionsBottomSheet(item) }
+                )
+                favBinding.rvFavorites.layoutManager = GridLayoutManager(this@MainActivity, 2)
                 favBinding.rvFavorites.adapter = favAdapter
             }
         }
 
         favBinding.btnClearAllFavoritesStandalone.setOnClickListener {
-            androidx.appcompat.app.AlertDialog.Builder(this@MainActivity)
-                .setTitle("حذف همه نشان‌ها")
-                .setMessage("آیا از پاکسازی تمام فیلم‌ها و سریال‌های نشان‌شده اطمینان دارید؟")
-                .setPositiveButton("حذف همه") { _, _ ->
-                    FavoritesManager.clearAllFavorites(this@MainActivity)
-                    refreshList()
-                    Toast.makeText(this@MainActivity, "تمام نشان‌ها حذف شدند", Toast.LENGTH_SHORT).show()
-                }
-                .setNegativeButton("انصراف", null)
-                .show()
+            showConfirmBottomSheet(
+                title = "حذف همه نشان‌ها",
+                message = "آیا از پاکسازی تمام فیلم‌ها و سریال‌های نشان‌شده اطمینان دارید؟",
+                positiveText = "حذف همه",
+                isDestructive = true
+            ) {
+                FavoritesManager.clearAllFavorites(this@MainActivity)
+                refreshList()
+                showAppToast("تمام نشان‌ها حذف شدند")
+            }
         }
 
         refreshList()
         dialog.show()
     }
 
+    private fun createStyledBottomSheetDialog(): BottomSheetDialog {
+        val dialog = BottomSheetDialog(this, R.style.Theme_Filigram_BottomSheetDialog)
+        dialog.setOnShowListener {
+            val bottomSheet = dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
+            bottomSheet?.setBackgroundColor(Color.TRANSPARENT)
+            bottomSheet?.elevation = 0f
+            if (bottomSheet != null) {
+                val behavior = com.google.android.material.bottomsheet.BottomSheetBehavior.from(bottomSheet)
+                behavior.skipCollapsed = true
+            }
+        }
+        dialog.window?.let { w ->
+            w.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                try {
+                    w.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+                    w.attributes.blurBehindRadius = 40
+                } catch (_: Exception) {}
+            }
+            w.setDimAmount(0.45f)
+        }
+        return dialog
+    }
+
+    private fun applyDialogBlurBehind(window: Window?) {
+        window?.let { w ->
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                try {
+                    w.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+                    w.attributes.blurBehindRadius = 40
+                } catch (_: Exception) {}
+            }
+        }
+    }
+
     private fun showAboutDialog() {
-        val dialog = BottomSheetDialog(this)
+        val dialog = createStyledBottomSheetDialog()
         val aboutBinding = BottomSheetAboutBinding.inflate(layoutInflater)
         dialog.setContentView(aboutBinding.root)
 
@@ -1624,8 +2291,217 @@ class MainActivity : AppCompatActivity() {
             try {
                 startActivity(tgIntent)
             } catch (e: Exception) {
-                Toast.makeText(this, "کانال تلگرام: t.me/filigramapp", Toast.LENGTH_LONG).show()
+                showAppToast("کانال تلگرام: t.me/filigramapp", autoDismissMs = 4000L)
             }
+        }
+
+        dialog.show()
+    }
+
+    private fun showConfirmBottomSheet(
+        title: String,
+        message: String,
+        positiveText: String = "تایید",
+        negativeText: String = "انصراف",
+        isDestructive: Boolean = false,
+        iconRes: Int = R.drawable.ic_bell_gold,
+        onConfirm: () -> Unit
+    ) {
+        val dialog = createStyledBottomSheetDialog()
+        val confirmBinding = BottomSheetConfirmDialogBinding.inflate(layoutInflater)
+        dialog.setContentView(confirmBinding.root)
+
+        confirmBinding.tvConfirmTitle.text = title
+        confirmBinding.tvConfirmTitle.setTextColor(Color.WHITE)
+        confirmBinding.tvConfirmMessage.text = message
+        confirmBinding.tvConfirmMessage.setTextColor(Color.parseColor("#CCCCCC"))
+        confirmBinding.btnConfirmPositive.text = positiveText
+        confirmBinding.btnConfirmPositive.setTextColor(Color.WHITE)
+        confirmBinding.btnConfirmNegative.text = negativeText
+        confirmBinding.btnConfirmNegative.setTextColor(Color.parseColor("#CCCCCC"))
+        confirmBinding.ivConfirmIcon.setImageResource(iconRes)
+
+        if (isDestructive) {
+            val redBgColor = Color.parseColor("#E50914")
+            confirmBinding.btnConfirmPositive.backgroundTintList = ColorStateList.valueOf(redBgColor)
+            confirmBinding.btnConfirmPositive.setTextColor(Color.WHITE)
+            confirmBinding.ivConfirmIcon.imageTintList = ColorStateList.valueOf(Color.WHITE)
+        } else {
+            val neutralBgColor = Color.parseColor("#222222")
+            confirmBinding.btnConfirmPositive.backgroundTintList = ColorStateList.valueOf(neutralBgColor)
+            confirmBinding.btnConfirmPositive.setTextColor(Color.WHITE)
+            confirmBinding.ivConfirmIcon.imageTintList = ColorStateList.valueOf(Color.WHITE)
+        }
+
+        confirmBinding.btnConfirmNegative.setOnClickListener {
+            dialog.dismiss()
+        }
+        confirmBinding.btnConfirmPositive.setOnClickListener {
+            dialog.dismiss()
+            onConfirm()
+        }
+        dialog.show()
+    }
+
+    private fun showSelectionBottomSheet(
+        title: String,
+        subtitle: String? = null,
+        options: List<String>,
+        selectedIndex: Int = -1,
+        onSelected: (Int) -> Unit
+    ) {
+        val dialog = createStyledBottomSheetDialog()
+        val selectorBinding = BottomSheetItemSelectorBinding.inflate(layoutInflater)
+        dialog.setContentView(selectorBinding.root)
+
+        selectorBinding.tvSelectorTitle.text = title
+        selectorBinding.tvSelectorTitle.setTextColor(Color.WHITE)
+        if (!subtitle.isNullOrEmpty()) {
+            selectorBinding.tvSelectorSubtitle.text = subtitle
+            selectorBinding.tvSelectorSubtitle.setTextColor(Color.parseColor("#999999"))
+            selectorBinding.tvSelectorSubtitle.isVisible = true
+        }
+
+        val density = resources.displayMetrics.density
+
+        options.forEachIndexed { index, optionText ->
+            val itemBtn = MaterialButton(this, null, com.google.android.material.R.attr.borderlessButtonStyle).apply {
+                text = optionText
+                setTextColor(if (index == selectedIndex) Color.WHITE else Color.parseColor("#CCCCCC"))
+                textSize = 13f
+                typeface = ResourcesCompat.getFont(this@MainActivity, R.font.yekan_bakh_regular)
+                textAlignment = View.TEXT_ALIGNMENT_VIEW_START
+                val isCurrent = (index == selectedIndex)
+                if (isCurrent) {
+                    icon = ContextCompat.getDrawable(this@MainActivity, R.drawable.ic_star_gold)
+                    iconTint = ColorStateList.valueOf(Color.WHITE)
+                }
+                val padH = (12 * density).toInt()
+                val padV = (10 * density).toInt()
+                setPadding(padH, padV, padH, padV)
+                setOnClickListener {
+                    dialog.dismiss()
+                    onSelected(index)
+                }
+            }
+            selectorBinding.layoutSelectorOptions.addView(itemBtn)
+        }
+
+        dialog.show()
+    }
+
+    private fun showMediaQuickActionsBottomSheet(item: MovieItem) {
+        val dialog = createStyledBottomSheetDialog()
+        val quickBinding = BottomSheetMovieQuickActionsBinding.inflate(layoutInflater)
+        dialog.setContentView(quickBinding.root)
+
+        quickBinding.tvQuickTitle.text = item.title
+        quickBinding.tvQuickTitle.setTextColor(Color.WHITE)
+        ImageLoader.load(item.image, quickBinding.ivQuickPoster)
+
+        quickBinding.tvQuickTypeBadge.text = if (item.type == 1) "سریال" else "فیلم"
+        quickBinding.tvQuickTypeBadge.setTextColor(Color.WHITE)
+        if (item.hasDub) {
+            quickBinding.tvQuickTypeBadge.text = "دوبله"
+        } else if (item.hasSub) {
+            quickBinding.tvQuickTypeBadge.text = "زیرنویس"
+        }
+
+        val rating = item.rating?.takeIf { it.isNotBlank() && it != "null" }
+        if (rating != null) {
+            quickBinding.tvQuickRating.text = "★ $rating"
+            quickBinding.tvQuickRating.setTextColor(Color.WHITE)
+            quickBinding.tvQuickRating.isVisible = true
+        } else {
+            quickBinding.tvQuickRating.isVisible = false
+        }
+
+        val year = item.year?.trim()?.takeIf { it.isNotBlank() && it != "null" && it != "0" }
+        if (year != null) {
+            quickBinding.tvQuickYear.text = year
+            quickBinding.tvQuickYear.setTextColor(Color.parseColor("#999999"))
+            quickBinding.tvQuickYear.isVisible = true
+        } else {
+            quickBinding.tvQuickYear.isVisible = false
+        }
+
+        quickBinding.tvQuickGenre.text = item.genre?.takeIf { it.isNotBlank() } ?: (if (item.type == 1) "سریال" else "سینمایی")
+        quickBinding.tvQuickGenre.setTextColor(Color.parseColor("#CCCCCC"))
+
+        FavoritesManager.init(this)
+        var isFav = FavoritesManager.isFavorite(item.id)
+        val updateFavUi = {
+            if (isFav) {
+                quickBinding.ivActionLikeIcon.setImageResource(R.drawable.ic_heart_filled_gold)
+                quickBinding.ivActionLikeIcon.imageTintList = ColorStateList.valueOf(Color.WHITE)
+                quickBinding.tvActionLikeTitle.text = "حذف از نشان‌ها (علاقه‌مندی‌ها)"
+                quickBinding.tvActionLikeTitle.setTextColor(Color.WHITE)
+                quickBinding.tvActionLikeSub.text = "این اثر در لیست علاقه‌مندی‌های شما قرار دارد"
+                quickBinding.tvActionLikeSub.setTextColor(Color.parseColor("#999999"))
+            } else {
+                quickBinding.ivActionLikeIcon.setImageResource(R.drawable.ic_heart_outline_gold)
+                quickBinding.ivActionLikeIcon.imageTintList = ColorStateList.valueOf(Color.WHITE)
+                quickBinding.tvActionLikeTitle.text = "نشان کردن (علاقه‌مندی‌ها)"
+                quickBinding.tvActionLikeTitle.setTextColor(Color.WHITE)
+                quickBinding.tvActionLikeSub.text = "دسترسی سریع در بخش علاقه‌مندی‌ها"
+                quickBinding.tvActionLikeSub.setTextColor(Color.parseColor("#999999"))
+            }
+        }
+        updateFavUi()
+
+        quickBinding.btnActionLike.setOnClickListener {
+            isFav = FavoritesManager.toggleFavorite(this, item)
+            updateFavUi()
+            val msg = if (isFav) "«${item.title}» به نشان‌ها افزوده شد" else "«${item.title}» از نشان‌ها حذف شد"
+            showAppToast(msg, iconRes = R.drawable.ic_playlist_vector)
+        }
+
+        // 2. Add to Playlist Action
+        quickBinding.btnActionAddToPlaylist.setOnClickListener {
+            dialog.dismiss()
+            showAddToPlaylistDialog(item)
+        }
+
+        // 3. Schedule / Episodes Alert Action
+        val isSeries = (item.type == 1)
+        var isSubscribed = SeriesSubscriptionManager.isSubscribed(item.id)
+        val updateScheduleUi = {
+            quickBinding.ivActionScheduleIcon.imageTintList = ColorStateList.valueOf(Color.WHITE)
+            if (isSubscribed) {
+                quickBinding.tvActionScheduleTitle.text = if (isSeries) "لغو اعلان قسمت‌های جدید" else "لغو یادآوری انتشار"
+                quickBinding.tvActionScheduleTitle.setTextColor(Color.WHITE)
+                quickBinding.tvActionScheduleSub.text = "اعلان خودکار برای این اثر فعال است"
+                quickBinding.tvActionScheduleSub.setTextColor(Color.parseColor("#999999"))
+            } else {
+                quickBinding.tvActionScheduleTitle.text = if (isSeries) "زمان‌بندی و اعلان قسمت‌های جدید" else "یادآوری انتشار و تماشا"
+                quickBinding.tvActionScheduleTitle.setTextColor(Color.WHITE)
+                quickBinding.tvActionScheduleSub.text = if (isSeries) "اطلاع‌رسانی خودکار به محض انتشار قسمت جدید" else "یادآوری زمان انتشار و کیفیت‌های تازه"
+                quickBinding.tvActionScheduleSub.setTextColor(Color.parseColor("#999999"))
+            }
+        }
+        updateScheduleUi()
+
+        quickBinding.btnActionScheduleEpisode.setOnClickListener {
+            isSubscribed = SeriesSubscriptionManager.toggleSubscription(this, item, activeEngine)
+            updateScheduleUi()
+            val msg = if (isSubscribed) {
+                "اعلان قسمت‌های جدید «${item.title}» فعال شد"
+            } else {
+                "اعلان «${item.title}» غیرفعال شد"
+            }
+            showAppToast(msg, iconRes = R.drawable.ic_playlist_vector)
+        }
+
+        // 4. Download Action
+        quickBinding.btnActionDownload.setOnClickListener {
+            dialog.dismiss()
+            showMovieDetail(item)
+        }
+
+        // 5. Details Action
+        quickBinding.btnActionDetails.setOnClickListener {
+            dialog.dismiss()
+            showMovieDetail(item)
         }
 
         dialog.show()
@@ -1633,156 +2509,94 @@ class MainActivity : AppCompatActivity() {
 
     private fun showAddToPlaylistDialog(item: MovieItem) {
         val playlists = PlaylistsManager.getAllPlaylists(this@MainActivity)
-        val dialog = Dialog(this@MainActivity)
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
-        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        val dialog = createStyledBottomSheetDialog()
+        val sheetBinding = BottomSheetAddToPlaylistBinding.inflate(layoutInflater)
+        dialog.setContentView(sheetBinding.root)
 
-        val layout = LinearLayout(this@MainActivity).apply {
-            orientation = LinearLayout.VERTICAL
-            setBackgroundResource(R.drawable.bg_dialog_glass)
-            val pad = (20 * resources.displayMetrics.density).toInt()
-            setPadding(pad, pad, pad, pad)
-            layoutDirection = View.LAYOUT_DIRECTION_RTL
-        }
+        sheetBinding.tvAddToPlaylistTitle.setTextColor(Color.WHITE)
+        sheetBinding.tvAddToPlaylistSubtitle.text = "انتخاب پلی‌لیست برای «${item.title}»:"
+        sheetBinding.tvAddToPlaylistSubtitle.setTextColor(Color.parseColor("#CCCCCC"))
 
-        val headerText = TextView(this@MainActivity).apply {
-            text = "افزودن به پلی‌لیست"
-            setTextColor(ContextCompat.getColor(this@MainActivity, R.color.gold))
-            textSize = 16f
-            typeface = ResourcesCompat.getFont(this@MainActivity, R.font.estedad_bold)
-            gravity = Gravity.CENTER_HORIZONTAL
-        }
-        layout.addView(headerText)
+        val density = resources.displayMetrics.density
 
-        val subText = TextView(this@MainActivity).apply {
-            text = "انتخاب پلی‌لیست برای «${item.title}»:"
-            setTextColor(ContextCompat.getColor(this@MainActivity, R.color.muted))
-            textSize = 12f
-            typeface = ResourcesCompat.getFont(this@MainActivity, R.font.estedad)
-            val topMargin = (8 * resources.displayMetrics.density).toInt()
-            setPadding(0, topMargin, 0, topMargin)
-        }
-        layout.addView(subText)
-
-        val scrollView = androidx.core.widget.NestedScrollView(this@MainActivity).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                (200 * resources.displayMetrics.density).toInt()
-            )
-        }
-        val listContainer = LinearLayout(this@MainActivity).apply {
-            orientation = LinearLayout.VERTICAL
-        }
-
-        for (pl in playlists) {
-            val itemBtn = MaterialButton(this@MainActivity, null, com.google.android.material.R.attr.borderlessButtonStyle).apply {
-                text = "${pl.title} (${pl.items.size} اثر)"
-                setTextColor(Color.WHITE)
-                textSize = 12f
-                typeface = ResourcesCompat.getFont(this@MainActivity, R.font.estedad)
-                textAlignment = View.TEXT_ALIGNMENT_VIEW_START
-                icon = ContextCompat.getDrawable(this@MainActivity, R.drawable.ic_playlist_vector)
-                iconTint = ColorStateList.valueOf(ContextCompat.getColor(this@MainActivity, R.color.gold))
-                iconGravity = MaterialButton.ICON_GRAVITY_TEXT_START
-                setOnClickListener {
-                    val added = PlaylistsManager.addItemToPlaylist(this@MainActivity, pl.id, item)
-                    if (added) {
-                        Toast.makeText(this@MainActivity, "«${item.title}» به پلی‌لیست «${pl.title}» افزوده شد", Toast.LENGTH_SHORT).show()
-                    } else {
-                        Toast.makeText(this@MainActivity, "این اثر قبلاً در این پلی‌لیست قرار گرفته است", Toast.LENGTH_SHORT).show()
+        if (playlists.isEmpty()) {
+            sheetBinding.tvNoPlaylistsNotice.isVisible = true
+            sheetBinding.tvNoPlaylistsNotice.setTextColor(Color.parseColor("#999999"))
+        } else {
+            sheetBinding.tvNoPlaylistsNotice.isVisible = false
+            for (pl in playlists) {
+                val itemBtn = MaterialButton(this@MainActivity, null, com.google.android.material.R.attr.borderlessButtonStyle).apply {
+                    text = "${pl.title} (${pl.items.size} اثر)"
+                    setTextColor(Color.WHITE)
+                    textSize = 13f
+                    typeface = ResourcesCompat.getFont(this@MainActivity, R.font.yekan_bakh_regular)
+                    textAlignment = View.TEXT_ALIGNMENT_VIEW_START
+                    icon = ContextCompat.getDrawable(this@MainActivity, R.drawable.ic_playlist_vector)
+                    iconTint = ColorStateList.valueOf(Color.WHITE)
+                    iconGravity = MaterialButton.ICON_GRAVITY_TEXT_START
+                    val padH = (12 * density).toInt()
+                    val padV = (10 * density).toInt()
+                    setPadding(padH, padV, padH, padV)
+                    setOnClickListener {
+                        val added = PlaylistsManager.addItemToPlaylist(this@MainActivity, pl.id, item)
+                        if (added) {
+                            showAppToast("«${item.title}» به پلی‌لیست «${pl.title}» افزوده شد")
+                        } else {
+                            showAppToast("این اثر قبلاً در این پلی‌لیست قرار گرفته است")
+                        }
+                        dialog.dismiss()
                     }
-                    dialog.dismiss()
                 }
-            }
-            listContainer.addView(itemBtn)
-        }
-        scrollView.addView(listContainer)
-        layout.addView(scrollView)
-
-        // Button to create a new custom playlist
-        val btnCreatePl = MaterialButton(this@MainActivity).apply {
-            text = "+ ایجاد پلی‌لیست جدید"
-            setTextColor(Color.BLACK)
-            setBackgroundColor(ContextCompat.getColor(this@MainActivity, R.color.gold))
-            typeface = ResourcesCompat.getFont(this@MainActivity, R.font.estedad_bold)
-            cornerRadius = (20 * resources.displayMetrics.density).toInt()
-            val mt = (12 * resources.displayMetrics.density).toInt()
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
-                setMargins(0, mt, 0, 0)
-            }
-            setOnClickListener {
-                dialog.dismiss()
-                showCreatePlaylistDialog(item)
+                sheetBinding.layoutPlaylistsList.addView(itemBtn)
             }
         }
-        layout.addView(btnCreatePl)
 
-        dialog.setContentView(layout)
+        sheetBinding.btnCreatePlaylistFromAdd.setTextColor(Color.BLACK)
+        sheetBinding.btnCreatePlaylistFromAdd.backgroundTintList = ColorStateList.valueOf(Color.WHITE)
+        sheetBinding.btnCreatePlaylistFromAdd.setOnClickListener {
+            dialog.dismiss()
+            showCreatePlaylistDialog(item)
+        }
+
         dialog.show()
     }
 
     private fun showCreatePlaylistDialog(item: MovieItem? = null, onCreated: (() -> Unit)? = null) {
-        val dialog = Dialog(this@MainActivity)
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
-        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        val dialog = createStyledBottomSheetDialog()
+        val sheetBinding = BottomSheetCreatePlaylistBinding.inflate(layoutInflater)
+        dialog.setContentView(sheetBinding.root)
 
-        val layout = LinearLayout(this@MainActivity).apply {
-            orientation = LinearLayout.VERTICAL
-            setBackgroundResource(R.drawable.bg_dialog_glass)
-            val pad = (20 * resources.displayMetrics.density).toInt()
-            setPadding(pad, pad, pad, pad)
-            layoutDirection = View.LAYOUT_DIRECTION_RTL
+        sheetBinding.tvCreatePlaylistTitle.setTextColor(Color.WHITE)
+        sheetBinding.tvCreatePlaylistSubtitle.setTextColor(Color.parseColor("#CCCCCC"))
+        sheetBinding.btnCancelCreatePlaylist.setTextColor(Color.parseColor("#CCCCCC"))
+        sheetBinding.btnSubmitCreatePlaylist.setTextColor(Color.BLACK)
+        sheetBinding.btnSubmitCreatePlaylist.backgroundTintList = ColorStateList.valueOf(Color.WHITE)
+
+        if (item != null) {
+            sheetBinding.btnSubmitCreatePlaylist.text = "ایجاد و افزودن اثر"
         }
 
-        val titleTv = TextView(this@MainActivity).apply {
-            text = "ایجاد پلی‌لیست جدید"
-            setTextColor(ContextCompat.getColor(this@MainActivity, R.color.gold))
-            textSize = 15f
-            typeface = ResourcesCompat.getFont(this@MainActivity, R.font.estedad_bold)
+        sheetBinding.btnCancelCreatePlaylist.setOnClickListener {
+            dialog.dismiss()
         }
-        layout.addView(titleTv)
 
-        val input = EditText(this@MainActivity).apply {
-            hint = "نام پلی‌لیست (مثلاً: فیلم‌های آخر هفته)"
-            setHintTextColor(Color.parseColor("#777777"))
-            setTextColor(Color.WHITE)
-            typeface = ResourcesCompat.getFont(this@MainActivity, R.font.estedad)
-            setBackgroundResource(R.drawable.bg_search_input)
-            val p = (12 * resources.displayMetrics.density).toInt()
-            setPadding(p, p, p, p)
-            val mt = (12 * resources.displayMetrics.density).toInt()
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
-                setMargins(0, mt, 0, mt)
-            }
-        }
-        layout.addView(input)
-
-        val btnConfirm = MaterialButton(this@MainActivity).apply {
-            text = if (item != null) "ایجاد و افزودن اثر" else "ایجاد پلی‌لیست"
-            setTextColor(Color.BLACK)
-            setBackgroundColor(ContextCompat.getColor(this@MainActivity, R.color.gold))
-            typeface = ResourcesCompat.getFont(this@MainActivity, R.font.estedad_bold)
-            cornerRadius = (20 * resources.displayMetrics.density).toInt()
-            setOnClickListener {
-                val plName = input.text.toString().trim()
-                if (plName.isNotEmpty()) {
-                    val pl = PlaylistsManager.createPlaylist(this@MainActivity, plName, "پلی‌لیست اختصاصی کاربر")
-                    if (item != null) {
-                        PlaylistsManager.addItemToPlaylist(this@MainActivity, pl.id, item)
-                        Toast.makeText(this@MainActivity, "پلی‌لیست «$plName» ایجاد و اثر به آن افزوده شد", Toast.LENGTH_SHORT).show()
-                    } else {
-                        Toast.makeText(this@MainActivity, "پلی‌لیست «$plName» با موفقیت ایجاد شد", Toast.LENGTH_SHORT).show()
-                    }
-                    dialog.dismiss()
-                    onCreated?.invoke()
+        sheetBinding.btnSubmitCreatePlaylist.setOnClickListener {
+            val plName = sheetBinding.etPlaylistNameInput.text.toString().trim()
+            if (plName.isNotEmpty()) {
+                val pl = PlaylistsManager.createPlaylist(this@MainActivity, plName, "پلی‌لیست اختصاصی کاربر")
+                if (item != null) {
+                    PlaylistsManager.addItemToPlaylist(this@MainActivity, pl.id, item)
+                    showAppToast("پلی‌لیست «$plName» ایجاد و اثر به آن افزوده شد")
                 } else {
-                    Toast.makeText(this@MainActivity, "لطفاً نام پلی‌لیست را وارد کنید", Toast.LENGTH_SHORT).show()
+                    showAppToast("پلی‌لیست «$plName» با موفقیت ایجاد شد")
                 }
+                dialog.dismiss()
+                onCreated?.invoke()
+            } else {
+                showAppToast("لطفاً نام پلی‌لیست را وارد کنید")
             }
         }
-        layout.addView(btnConfirm)
 
-        dialog.setContentView(layout)
         dialog.show()
     }
 
@@ -1800,8 +2614,6 @@ class MainActivity : AppCompatActivity() {
         val prefs = getSharedPreferences("filigram_prefs", Context.MODE_PRIVATE)
         val showDevLogs = prefs.getBoolean("show_dev_logs", false)
         if (unreadCount > 0) {
-            binding.txtNotificationBadge.isVisible = true
-            binding.txtNotificationBadge.text = if (unreadCount > 9) "+9" else unreadCount.toString()
             if (!showDevLogs) {
                 try {
                     val badge = binding.bottomNavigation.getOrCreateBadge(R.id.nav_notifications)
@@ -1811,7 +2623,6 @@ class MainActivity : AppCompatActivity() {
                 } catch (_: Exception) {}
             }
         } else {
-            binding.txtNotificationBadge.isVisible = false
             try {
                 binding.bottomNavigation.removeBadge(R.id.nav_notifications)
             } catch (_: Exception) {}
@@ -1819,9 +2630,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showAnnouncementsDialog() {
-        val dialog = Dialog(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
+        val dialog = Dialog(this, R.style.Theme_Filigram_Dialog_Fullscreen)
         dialog.applyFullscreenAnimation()
-        val anBinding = DialogAnnouncementsBinding.inflate(layoutInflater)
+        val anBinding = DialogAnnouncementsBinding.inflate(dialog.layoutInflater)
         dialog.setContentView(anBinding.root)
         dialog.window?.setBackgroundDrawableResource(android.R.color.black)
         applyDialogStatusBarInsets(anBinding.topBarAnnouncements)
@@ -1867,6 +2678,7 @@ class MainActivity : AppCompatActivity() {
                 AnnouncementsManager.markAsRead(this@MainActivity, clickedItem.id)
                 updateHeaderBadge()
             }
+            showAnnouncementDetailBottomSheet(clickedItem)
         }
 
         anBinding.rvAnnouncements.layoutManager = LinearLayoutManager(this@MainActivity)
@@ -1880,7 +2692,7 @@ class MainActivity : AppCompatActivity() {
             AnnouncementsManager.markAllAsRead(this@MainActivity)
             adapter.updateData(AnnouncementsManager.getCachedAnnouncements())
             updateHeaderBadge()
-            Toast.makeText(this@MainActivity, "تمامی اعلانات به عنوان خوانده شده علامت‌گذاری شدند", Toast.LENGTH_SHORT).show()
+            showAppToast("تمامی اعلانات به عنوان خوانده شده علامت‌گذاری شدند")
         }
 
         if (initialList.isEmpty()) {
@@ -1892,35 +2704,58 @@ class MainActivity : AppCompatActivity() {
         dialog.show()
     }
 
+    private fun showAnnouncementDetailBottomSheet(announcement: Announcement) {
+        val bottomSheet = createStyledBottomSheetDialog()
+        val bsBinding = com.filigram.cinema.databinding.BottomSheetAnnouncementDetailBinding.inflate(layoutInflater)
+        bottomSheet.setContentView(bsBinding.root)
+
+        bsBinding.tvAnnouncementDetailTitle.text = announcement.title
+        bsBinding.tvAnnouncementDetailDate.text = announcement.getFormattedDate()
+        bsBinding.tvAnnouncementDetailBody.text = announcement.text
+
+        bsBinding.btnJoinTelegramChannel.setOnClickListener {
+            try {
+                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://t.me/filigramapp")))
+            } catch (e: Exception) {
+                showAppToast("کانال تلگرام: @filigramapp")
+            }
+        }
+
+        bsBinding.btnContactSupport.setOnClickListener {
+            try {
+                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://t.me/kiorcode")))
+            } catch (e: Exception) {
+                showAppToast("آیدی پشتیبانی: @kiorcode")
+            }
+        }
+
+        bottomSheet.show()
+    }
+
+    override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: android.content.res.Configuration) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
+        activePlayerDialog?.window?.decorView?.findViewById<View>(R.id.playerTopBar)?.isVisible = !isInPictureInPictureMode
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         activeExoPlayer?.release()
         activeExoPlayer = null
+        activePlayerDialog = null
     }
 
-    // ── Export / Import helpers ──────────────────────────────────────────────
-
-    /** Call once from onCreate to register SAF launchers */
     fun registerDataLaunchers(
         onImportResult: (String) -> Unit,
         defaultExportName: String = "filigram_backup.json"
     ) {
-        // (Unused overload kept for API clarity — actual launchers registered in onCreate)
+
     }
 
-    /**
-     * Export a JSON string to a user-chosen file via SAF.
-     * [suggestedName] e.g. "filigram_likes_2026.json"
-     */
     fun exportJsonToFile(json: String, suggestedName: String) {
         pendingExportJson = json
         exportLauncher.launch(suggestedName)
     }
 
-    /**
-     * Build and export a combined backup JSON:
-     *   { "version": 1, "exported_at": "…", "favorites": […], "playlists": […] }
-     */
     fun exportCombinedBackup() {
         val favs = FavoritesManager.getFavorites(this)
         val playlists = PlaylistsManager.getAllPlaylists(this)
@@ -1978,7 +2813,6 @@ class MainActivity : AppCompatActivity() {
         exportJsonToFile(root.toString(2), "filigram_backup_$ts.json")
     }
 
-    /** Import a combined backup JSON from a SAF-chosen file */
     private fun doImport(uri: Uri) {
         lifecycleScope.launch(Dispatchers.IO) {
             try {
@@ -1993,9 +2827,8 @@ class MainActivity : AppCompatActivity() {
                 var favImported = 0
                 var plImported = 0
 
-                // Import favorites
                 val favsArr = if (root.has("favorites")) root.getJSONArray("favorites")
-                              else JSONArray(jsonStr) // v1 compat: plain array of favorites
+                              else JSONArray(jsonStr)
                 for (i in 0 until favsArr.length()) {
                     val obj = favsArr.getJSONObject(i)
                     val item = MovieItem(
@@ -2014,7 +2847,6 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
 
-                // Import playlists (only in combined/v2 backup)
                 if (version >= 2 && root.has("playlists")) {
                     val plArr = root.getJSONArray("playlists")
                     for (i in 0 until plArr.length()) {
@@ -2045,18 +2877,387 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(
-                        this@MainActivity,
-                        "وارد شد: $favImported نشان + $plImported پلی‌لیست",
-                        Toast.LENGTH_LONG
-                    ).show()
+                    showAppToast("وارد شد: $favImported نشان + $plImported پلی‌لیست", autoDismissMs = 4000L)
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(this@MainActivity, "خطا در وارد کردن: ${e.message}", Toast.LENGTH_LONG).show()
+                    showAppToast("خطا در وارد کردن: ${e.message}", autoDismissMs = 4000L)
                 }
             }
         }
     }
+
+    private fun setupTopDownloads() {
+        binding.btnTopDownloads.setOnClickListener {
+            showDownloadsHubDialog()
+        }
+    }
+
+    private fun setupDownloadsBadge() {
+        DownloadManager.addListener(object : DownloadManager.DownloadListener {
+            override fun onTaskUpdated(task: DownloadTask) {
+                runOnUiThread { updateTopDownloadsBadge() }
+            }
+
+            override fun onQueueChanged() {
+                runOnUiThread { updateTopDownloadsBadge() }
+            }
+
+            override fun onTotalSpeedUpdated(totalBytesPerSec: Long, activeCount: Int) {
+                runOnUiThread { updateTopDownloadsBadge() }
+            }
+        })
+        updateTopDownloadsBadge()
+    }
+
+    private fun updateTopDownloadsBadge() {
+        val activeCount = DownloadManager.getActiveDownloadsCount()
+        if (activeCount > 0) {
+            binding.badgeTopDownloadsCount.isVisible = true
+            binding.badgeTopDownloadsCount.text = "$activeCount"
+        } else {
+            binding.badgeTopDownloadsCount.isVisible = false
+        }
+    }
+
+    private fun startTurboDownload(
+        movieId: Int,
+        mediaTitle: String,
+        qualityLabel: String,
+        url: String,
+        isSeries: Boolean,
+        season: Int,
+        episode: Int
+    ) {
+        DownloadManager.enqueue(
+            context = this,
+            mediaId = movieId,
+            title = mediaTitle,
+            seriesTitle = if (isSeries) mediaTitle.substringBefore(" - ") else null,
+            season = season,
+            episode = episode,
+            qualityLabel = qualityLabel,
+            url = url
+        )
+        DownloadForegroundService.startService(this)
+        showAppToast("«$mediaTitle» با سرعت توربو به صف دانلود اضافه شد ⚡")
+        showDownloadsHubDialog()
+    }
+
+    private fun showDownloadsHubDialog() {
+        val dialog = Dialog(this, R.style.Theme_Filigram_Dialog_Fullscreen)
+        dialog.applyFullscreenAnimation()
+        val dBinding = DialogDownloadsHubBinding.inflate(dialog.layoutInflater)
+        dialog.setContentView(dBinding.root)
+        dialog.window?.setBackgroundDrawableResource(android.R.color.black)
+        applyDialogStatusBarInsets(dBinding.topBarDownloadsHub)
+
+        dBinding.btnBackDownloadsHub.setOnClickListener { dialog.dismiss() }
+
+        val downloadsAdapter = DownloadsAdapter(
+            onPauseResumeClick = { task ->
+                if (task.status == DownloadStatus.DOWNLOADING || task.status == DownloadStatus.CONNECTING) {
+                    DownloadManager.pauseTask(this, task.id)
+                } else {
+                    DownloadManager.resumeTask(this, task.id)
+                    DownloadForegroundService.startService(this)
+                }
+            },
+            onCancelDeleteClick = { task ->
+                showConfirmBottomSheet(
+                    title = "حذف دانلود",
+                    message = "آیا از حذف «${task.title}» و فایل دانلودشده اطمینان دارید؟ این فایل به طور کامل از حافظه پاک می‌شود.",
+                    positiveText = "حذف فایل و دانلود",
+                    isDestructive = true
+                ) {
+                    DownloadManager.cancelTask(this, task.id, deleteFile = true)
+                }
+            },
+            onPlayDownloadedClick = { task ->
+                playDownloadedVideo(task)
+            }
+        )
+
+        dBinding.rvDownloads.layoutManager = LinearLayoutManager(this)
+        dBinding.rvDownloads.adapter = downloadsAdapter
+
+        val updateList = {
+            val tasks = DownloadManager.getTasks()
+            downloadsAdapter.submitList(tasks)
+            dBinding.emptyDownloadsContainer.isVisible = tasks.isEmpty()
+            dBinding.rvDownloads.isVisible = tasks.isNotEmpty()
+
+            val speed = DownloadManager.getTotalSpeed()
+            dBinding.tvTotalSpeedSummary.text = "سرعت کل: ${DownloadManager.formatSpeed(speed)}"
+        }
+
+        updateList()
+
+        val listener = object : DownloadManager.DownloadListener {
+            override fun onTaskUpdated(task: DownloadTask) {
+                runOnUiThread { updateList() }
+            }
+
+            override fun onQueueChanged() {
+                runOnUiThread { updateList() }
+            }
+
+            override fun onTotalSpeedUpdated(totalBytesPerSec: Long, activeCount: Int) {
+                runOnUiThread {
+                    dBinding.tvTotalSpeedSummary.text = "سرعت کل: ${DownloadManager.formatSpeed(totalBytesPerSec)} ($activeCount فعال)"
+                }
+            }
+        }
+
+        DownloadManager.addListener(listener)
+        dialog.setOnDismissListener {
+            DownloadManager.removeListener(listener)
+        }
+
+        dBinding.btnPauseAll.setOnClickListener {
+            DownloadManager.pauseAll(this)
+            showAppToast("همه دانلودها متوقف شدند")
+        }
+
+        dBinding.btnResumeAll.setOnClickListener {
+            DownloadManager.resumeAll(this)
+            DownloadForegroundService.startService(this)
+            showAppToast("همه دانلودها از سر گرفته شدند")
+        }
+
+        dBinding.btnClearDownloads.setOnClickListener {
+            DownloadManager.clearCompleted(this)
+            showAppToast("دانلودهای پایان‌یافته پاکسازی شدند")
+        }
+
+        dBinding.btnDownloadSettings.setOnClickListener {
+            showDownloadSettingsDialog {
+                updateList()
+            }
+        }
+
+        dialog.show()
+    }
+
+    private fun showDownloadSettingsDialog(onSaved: (() -> Unit)? = null) {
+        val dialog = createStyledBottomSheetDialog()
+        val sBinding = DialogDownloadSettingsBinding.inflate(layoutInflater)
+        dialog.setContentView(sBinding.root)
+
+        sBinding.sliderConcurrent.value = DownloadManager.settings.maxConcurrentTasks.toFloat()
+        sBinding.sliderThreads.value = DownloadManager.settings.threadsPerTask.toFloat()
+
+        sBinding.tvLabelConcurrent.text = "تعداد دانلودهای همزمان: ${DownloadManager.settings.maxConcurrentTasks}"
+        sBinding.tvLabelThreads.text = "تعداد تکه‌های هر فایل: ${DownloadManager.settings.threadsPerTask} تکه موازی"
+
+        sBinding.sliderConcurrent.addOnChangeListener { _, value, _ ->
+            sBinding.tvLabelConcurrent.text = "تعداد دانلودهای همزمان: ${value.toInt()}"
+        }
+
+        sBinding.sliderThreads.addOnChangeListener { _, value, _ ->
+            sBinding.tvLabelThreads.text = "تعداد تکه‌های هر فایل: ${value.toInt()} تکه موازی"
+        }
+
+        sBinding.switchWifiOnly.isChecked = DownloadManager.settings.wifiOnly
+        sBinding.switchNightScheduler.isChecked = DownloadManager.settings.nightSchedulerEnabled
+        sBinding.switchAutoSubtitles.isChecked = DownloadManager.settings.autoDownloadSubtitles
+
+        var selectedCustomPath = DownloadManager.settings.customStoragePath
+        val updatePathDisplay = {
+            sBinding.tvCurrentStoragePath.text = if (!selectedCustomPath.isNullOrEmpty()) {
+                selectedCustomPath
+            } else {
+                "Download/Filigram (پیش‌فرض)"
+            }
+        }
+        updatePathDisplay()
+
+        sBinding.btnChangeStorageLocation.setOnClickListener {
+            onStorageFolderSelected = { pickedPath ->
+                selectedCustomPath = pickedPath
+                updatePathDisplay()
+                showAppToast("پوشه انتخاب شد")
+            }
+            try {
+                storageFolderLauncher.launch(null)
+            } catch (e: Exception) {
+                showAppToast("امکان باز کردن انتخابگر پوشه وجود ندارد")
+            }
+        }
+
+        sBinding.btnSaveDownloadSettings.setOnClickListener {
+            val maxCon = sBinding.sliderConcurrent.value.toInt()
+            val thr = sBinding.sliderThreads.value.toInt()
+            val wifiOnly = sBinding.switchWifiOnly.isChecked
+            val nightSched = sBinding.switchNightScheduler.isChecked
+            val autoSub = sBinding.switchAutoSubtitles.isChecked
+
+            DownloadManager.updateSettings(
+                context = this,
+                maxConcurrent = maxCon,
+                threads = thr,
+                wifiOnly = wifiOnly,
+                nightScheduler = nightSched,
+                nightStart = 2,
+                nightEnd = 7,
+                autoSubtitles = autoSub,
+                customPath = selectedCustomPath
+            )
+            showAppToast("تنظیمات پیشرفته دانلود ذخیره شد")
+            dialog.dismiss()
+            onSaved?.invoke()
+        }
+
+        dialog.show()
+    }
+
+    private fun playDownloadedVideo(task: DownloadTask) {
+        try {
+            val file = java.io.File(task.filePath)
+            if (!file.exists()) {
+                showAppToast("فایل ویدیویی در حافظه یافت نشد")
+                return
+            }
+
+            val options = listOf("پخش درون برنامه‌ای (با پشتیبانی از زیرنویس و PiP)", "پخش در پلیرهای خارجی (VLC, MX Player, ...)")
+            showSelectionBottomSheet(
+                title = task.title,
+                subtitle = "نحوه پخش فایل آفلاین را انتخاب کنید:",
+                options = options
+            ) { which ->
+                when (which) {
+                    0 -> {
+                        playVideoInApp(
+                            title = task.title,
+                            quality = "آفلاین (${task.qualityLabel})",
+                            streamUrl = file.absolutePath,
+                            subtitlePath = task.subtitlePath,
+                            isOffline = true
+                        )
+                    }
+                    1 -> {
+                        try {
+                            val uri = Uri.fromFile(file)
+                            val videoIntent = Intent(Intent.ACTION_VIEW).apply {
+                                setDataAndType(uri, "video/*")
+                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            }
+                            startActivity(Intent.createChooser(videoIntent, "پخش با پلیر خارجی:"))
+                        } catch (e: Exception) {
+                            showAppToast("خطا در فراخوانی پلیر خارجی: ${e.message}")
+                        }
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            showAppToast("خطا در پخش فایل: ${e.message}")
+        }
+    }
+
+    private fun showBatchDownloadDialog(
+        title: String,
+        subtitle: String,
+        movieId: Int,
+        isSeries: Boolean,
+        seasons: List<Int>
+    ) {
+        val dialog = createStyledBottomSheetDialog()
+        val bBinding = DialogBatchDownloadSelectorBinding.inflate(layoutInflater)
+        dialog.setContentView(bBinding.root)
+
+        bBinding.tvBatchTitle.text = title
+        bBinding.tvBatchSubtitle.text = subtitle
+
+        bBinding.btnStartBatchDownload.setOnClickListener {
+            val preferredResolution = when (bBinding.rgBatchQualities.checkedRadioButtonId) {
+                R.id.rbQuality1080 -> "1080"
+                R.id.rbQuality480 -> "480"
+                else -> "720"
+            }
+
+            bBinding.batchLoading.isVisible = true
+            bBinding.btnStartBatchDownload.isEnabled = false
+
+            lifecycleScope.launch {
+                try {
+                    val tasksToEnqueue = mutableListOf<DownloadTask>()
+                    for (seasonNum in seasons) {
+                        val episodes = when (activeEngine) {
+                            "almasmovie" -> AlmasMovieApi.getEpisodes(movieId, seasonNum)
+                            "nextmovie" -> NextMovieApi.getEpisodes(movieId, seasonNum)
+                            "bj" -> BjApi.getEpisodes(movieId, seasonNum)
+                            else -> movielixApi.getEpisodes(movieId, seasonNum)
+                        }
+
+                        for (ep in episodes) {
+                            val chosenQuality = ep.qualities.find { it.type.contains(preferredResolution) || it.title.contains(preferredResolution) }
+                                ?: ep.qualities.firstOrNull()
+
+                            if (chosenQuality != null) {
+                                val streamUrl = if (!chosenQuality.directUrl.isNullOrEmpty()) {
+                                    chosenQuality.directUrl
+                                } else {
+                                    movielixApi.getStreamUrl(
+                                        id = movieId,
+                                        qualityId = chosenQuality.id,
+                                        season = seasonNum,
+                                        episode = ep.episode
+                                    )
+                                }
+
+                                if (!streamUrl.isNullOrEmpty()) {
+                                    val safeFileName = "${subtitle.replace("سریال «", "").replace("»", "")} S${seasonNum}E${ep.episode} - ${chosenQuality.title}.mp4"
+                                        .replace("[\\\\/:*?\"<>|]".toRegex(), "_")
+                                    val targetFile = java.io.File(
+                                        android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS),
+                                        "Filigram/$safeFileName"
+                                    )
+                                    targetFile.parentFile?.mkdirs()
+
+                                    tasksToEnqueue.add(
+                                        DownloadTask(
+                                            id = java.util.UUID.randomUUID().toString(),
+                                            mediaId = movieId,
+                                            title = "${subtitle.replace("سریال «", "").replace("»", "")} S${seasonNum}E${ep.episode} - ${chosenQuality.title}",
+                                            seriesTitle = subtitle,
+                                            season = seasonNum,
+                                            episode = ep.episode,
+                                            qualityLabel = chosenQuality.title,
+                                            url = streamUrl,
+                                            filePath = targetFile.absolutePath,
+                                            partsCount = DownloadManager.settings.threadsPerTask,
+                                            status = DownloadStatus.QUEUED
+                                        )
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    withContext(Dispatchers.Main) {
+                        bBinding.batchLoading.isVisible = false
+                        dialog.dismiss()
+                        if (tasksToEnqueue.isNotEmpty()) {
+                            DownloadManager.enqueueBatch(this@MainActivity, tasksToEnqueue)
+                            DownloadForegroundService.startService(this@MainActivity)
+                            showAppToast("${tasksToEnqueue.size} قسمت به صف دانلود توربو اضافه شد", autoDismissMs = 3500L)
+                            showDownloadsHubDialog()
+                        } else {
+                            showAppToast("لینکی برای دانلود قسمت‌ها پیدا نشد")
+                        }
+                    }
+                } catch (e: Exception) {
+                    withContext(Dispatchers.Main) {
+                        bBinding.batchLoading.isVisible = false
+                        bBinding.btnStartBatchDownload.isEnabled = true
+                        showAppToast("خطا در پردازش قسمت‌ها: ${e.message}")
+                    }
+                }
+            }
+        }
+
+        dialog.show()
+    }
 }
+
 

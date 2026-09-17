@@ -7,13 +7,12 @@
     android:orientation="vertical"
     android:layoutDirection="rtl">
 
-    <!-- Top Bar with Safe Inset Area -->
     <LinearLayout
         android:id="@+id/topBarPlaylistsHub"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:minHeight="60dp"
-        android:background="#0A0A0A"
+        android:background="@drawable/bg_glass_header"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingStart="16dp"
@@ -26,7 +25,7 @@
             style="@style/Widget.Material3.Button.TextButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:fontFamily="@font/estedad_bold"
+            android:fontFamily="@font/yekan_bakh_bold"
             android:text="بازگشت"
             android:textColor="@color/gold"
             android:textSize="13sp"
@@ -40,7 +39,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:layout_weight="1"
-            android:fontFamily="@font/w_cinema"
+            android:fontFamily="@font/yekan_bakh_bold"
             android:text="کتابخانه من"
             android:textColor="@android:color/white"
             android:textSize="18sp"
@@ -51,8 +50,8 @@
             style="@style/Widget.Material3.Button.TonalButton"
             android:layout_width="wrap_content"
             android:layout_height="36dp"
-            android:backgroundTint="#1F1A10"
-            android:fontFamily="@font/estedad_bold"
+            android:backgroundTint="#000000"
+            android:fontFamily="@font/yekan_bakh_bold"
             android:paddingStart="12dp"
             android:paddingEnd="12dp"
             android:text="+ پلی‌لیست جدید"
@@ -63,36 +62,34 @@
             app:strokeWidth="1dp" />
     </LinearLayout>
 
-    <!-- Two Modern Segmented Pill Tabs -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#050505"
+        android:background="#000000"
         android:orientation="horizontal"
-        android:paddingStart="16dp"
+        android:paddingStart="12dp"
         android:paddingTop="10dp"
-        android:paddingEnd="16dp"
+        android:paddingEnd="12dp"
         android:paddingBottom="12dp">
 
-        <!-- Tab 1: Favorites / Likes -->
         <LinearLayout
             android:id="@+id/tabFavorites"
             android:layout_width="0dp"
-            android:layout_height="44dp"
-            android:layout_marginEnd="6dp"
+            android:layout_height="42dp"
+            android:layout_marginEnd="4dp"
             android:layout_weight="1"
             android:background="@drawable/bg_chip_selector"
             android:clickable="true"
             android:focusable="true"
             android:gravity="center"
             android:orientation="horizontal"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp">
+            android:paddingStart="6dp"
+            android:paddingEnd="6dp">
 
             <ImageView
                 android:id="@+id/icTabFav"
-                android:layout_width="18dp"
-                android:layout_height="18dp"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
                 android:src="@drawable/ic_heart_filled_gold"
                 app:tint="@android:color/white" />
 
@@ -100,47 +97,47 @@
                 android:id="@+id/txtTabFav"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="6dp"
-                android:fontFamily="@font/estedad_bold"
-                android:text="نشان‌ها و علاقه‌مندی‌ها"
+                android:layout_marginStart="4dp"
+                android:fontFamily="@font/yekan_bakh_bold"
+                android:text="علاقه‌مندی‌ها"
                 android:textColor="@android:color/white"
-                android:textSize="12sp" />
+                android:textSize="11sp" />
 
             <TextView
                 android:id="@+id/badgeFavCount"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="6dp"
+                android:layout_marginStart="4dp"
                 android:background="@drawable/bg_badge_counter_pill"
-                android:fontFamily="@font/estedad_bold"
-                android:paddingStart="8dp"
-                android:paddingTop="2dp"
-                android:paddingEnd="8dp"
-                android:paddingBottom="2dp"
+                android:fontFamily="@font/yekan_bakh_bold"
+                android:paddingStart="6dp"
+                android:paddingTop="1dp"
+                android:paddingEnd="6dp"
+                android:paddingBottom="1dp"
                 android:text="۰"
                 android:textColor="@android:color/white"
-                android:textSize="11sp" />
+                android:textSize="10sp" />
         </LinearLayout>
 
-        <!-- Tab 2: User Playlists -->
         <LinearLayout
             android:id="@+id/tabPlaylists"
             android:layout_width="0dp"
-            android:layout_height="44dp"
-            android:layout_marginStart="6dp"
+            android:layout_height="42dp"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
             android:layout_weight="1"
             android:background="@drawable/bg_chip_selector"
             android:clickable="true"
             android:focusable="true"
             android:gravity="center"
             android:orientation="horizontal"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp">
+            android:paddingStart="6dp"
+            android:paddingEnd="6dp">
 
             <ImageView
                 android:id="@+id/icTabPlaylists"
-                android:layout_width="18dp"
-                android:layout_height="18dp"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
                 android:src="@drawable/ic_playlist_vector"
                 app:tint="@color/muted" />
 
@@ -148,26 +145,73 @@
                 android:id="@+id/txtTabPlaylists"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="6dp"
-                android:fontFamily="@font/estedad_bold"
-                android:text="پلی‌لیست‌های من"
+                android:layout_marginStart="4dp"
+                android:fontFamily="@font/yekan_bakh_bold"
+                android:text="پلی‌لیست‌ها"
                 android:textColor="@color/muted"
-                android:textSize="12sp" />
+                android:textSize="11sp" />
 
             <TextView
                 android:id="@+id/badgePlaylistsCount"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="6dp"
+                android:layout_marginStart="4dp"
                 android:background="@drawable/bg_badge_counter_pill"
-                android:fontFamily="@font/estedad_bold"
-                android:paddingStart="8dp"
-                android:paddingTop="2dp"
-                android:paddingEnd="8dp"
-                android:paddingBottom="2dp"
+                android:fontFamily="@font/yekan_bakh_bold"
+                android:paddingStart="6dp"
+                android:paddingTop="1dp"
+                android:paddingEnd="6dp"
+                android:paddingBottom="1dp"
                 android:text="۰"
                 android:textColor="@color/muted"
+                android:textSize="10sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/tabHistory"
+            android:layout_width="0dp"
+            android:layout_height="42dp"
+            android:layout_marginStart="4dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_chip_selector"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:paddingStart="6dp"
+            android:paddingEnd="6dp">
+
+            <ImageView
+                android:id="@+id/icTabHistory"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:src="@drawable/ic_history_vector"
+                app:tint="@color/muted" />
+
+            <TextView
+                android:id="@+id/txtTabHistory"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:fontFamily="@font/yekan_bakh_bold"
+                android:text="تاریخچه"
+                android:textColor="@color/muted"
                 android:textSize="11sp" />
+
+            <TextView
+                android:id="@+id/badgeHistoryCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:background="@drawable/bg_badge_counter_pill"
+                android:fontFamily="@font/yekan_bakh_bold"
+                android:paddingStart="6dp"
+                android:paddingTop="1dp"
+                android:paddingEnd="6dp"
+                android:paddingBottom="1dp"
+                android:text="۰"
+                android:textColor="@color/muted"
+                android:textSize="10sp" />
         </LinearLayout>
     </LinearLayout>
 
@@ -175,14 +219,12 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <!-- Container 1: Favorites / Likes Screen -->
         <LinearLayout
             android:id="@+id/containerFavorites"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical">
 
-            <!-- Favorites Action Bar -->
             <LinearLayout
                 android:id="@+id/headerActionsFavorites"
                 android:layout_width="match_parent"
@@ -199,7 +241,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:fontFamily="@font/w_cinema"
+                    android:fontFamily="@font/yekan_bakh_bold"
                     android:text="آرشیو فیلم‌ها و سریال‌های نشان‌شده"
                     android:textColor="@color/header_gray"
                     android:textSize="13sp" />
@@ -209,7 +251,7 @@
                     style="@style/Widget.Material3.Button.TextButton"
                     android:layout_width="wrap_content"
                     android:layout_height="36dp"
-                    android:fontFamily="@font/w_cinema"
+                    android:fontFamily="@font/yekan_bakh_bold"
                     android:insetTop="0dp"
                     android:insetBottom="0dp"
                     android:paddingStart="6dp"
@@ -227,7 +269,7 @@
                     style="@style/Widget.Material3.Button.TextButton"
                     android:layout_width="wrap_content"
                     android:layout_height="36dp"
-                    android:fontFamily="@font/w_cinema"
+                    android:fontFamily="@font/yekan_bakh_bold"
                     android:insetTop="0dp"
                     android:insetBottom="0dp"
                     android:paddingStart="6dp"
@@ -245,7 +287,7 @@
                     style="@style/Widget.Material3.Button.TextButton"
                     android:layout_width="wrap_content"
                     android:layout_height="36dp"
-                    android:fontFamily="@font/w_cinema"
+                    android:fontFamily="@font/yekan_bakh_bold"
                     android:insetTop="0dp"
                     android:insetBottom="0dp"
                     android:paddingStart="8dp"
@@ -274,7 +316,6 @@
                     android:paddingEnd="10dp"
                     android:paddingBottom="24dp" />
 
-                <!-- Empty Favorites -->
                 <LinearLayout
                     android:id="@+id/emptyFavoritesContainer"
                     android:layout_width="match_parent"
@@ -304,7 +345,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="16dp"
-                        android:fontFamily="@font/w_cinema"
+                        android:fontFamily="@font/yekan_bakh_bold"
                         android:text="هنوز فیلمی را نشان نکرده‌اید!"
                         android:textColor="@color/header_gray"
                         android:textSize="16sp" />
@@ -313,7 +354,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
-                        android:fontFamily="@font/estedad"
+                        android:fontFamily="@font/yekan_bakh_regular"
                         android:gravity="center"
                         android:lineSpacingExtra="4dp"
                         android:text="با زدن آیکون قلب در جزییات فیلم‌ها، آن‌ها در این تب ذخیره می‌شوند."
@@ -323,7 +364,6 @@
             </FrameLayout>
         </LinearLayout>
 
-        <!-- Container 2: User Playlists Screen -->
         <LinearLayout
             android:id="@+id/containerPlaylists"
             android:layout_width="match_parent"
@@ -331,7 +371,6 @@
             android:orientation="vertical"
             android:visibility="gone">
 
-            <!-- Playlists Action Bar -->
             <LinearLayout
                 android:id="@+id/headerActionsPlaylists"
                 android:layout_width="match_parent"
@@ -348,7 +387,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:fontFamily="@font/w_cinema"
+                    android:fontFamily="@font/yekan_bakh_bold"
                     android:text="مجموعه‌های شخصی شما"
                     android:textColor="@color/header_gray"
                     android:textSize="13sp" />
@@ -358,7 +397,7 @@
                     style="@style/Widget.Material3.Button.TextButton"
                     android:layout_width="wrap_content"
                     android:layout_height="36dp"
-                    android:fontFamily="@font/w_cinema"
+                    android:fontFamily="@font/yekan_bakh_bold"
                     android:insetTop="0dp"
                     android:insetBottom="0dp"
                     android:paddingStart="6dp"
@@ -376,7 +415,7 @@
                     style="@style/Widget.Material3.Button.TextButton"
                     android:layout_width="wrap_content"
                     android:layout_height="36dp"
-                    android:fontFamily="@font/w_cinema"
+                    android:fontFamily="@font/yekan_bakh_bold"
                     android:insetTop="0dp"
                     android:insetBottom="0dp"
                     android:paddingStart="6dp"
@@ -394,7 +433,7 @@
                     style="@style/Widget.Material3.Button.TextButton"
                     android:layout_width="wrap_content"
                     android:layout_height="36dp"
-                    android:fontFamily="@font/w_cinema"
+                    android:fontFamily="@font/yekan_bakh_bold"
                     android:insetTop="0dp"
                     android:insetBottom="0dp"
                     android:paddingStart="8dp"
@@ -423,7 +462,6 @@
                     android:paddingEnd="16dp"
                     android:paddingBottom="24dp" />
 
-                <!-- Empty Playlists -->
                 <LinearLayout
                     android:id="@+id/emptyPlaylistsContainer"
                     android:layout_width="match_parent"
@@ -454,7 +492,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="16dp"
-                        android:fontFamily="@font/w_cinema"
+                        android:fontFamily="@font/yekan_bakh_bold"
                         android:text="هنوز پلی‌لیستی ایجاد نکرده‌اید!"
                         android:textColor="@color/header_gray"
                         android:textSize="16sp" />
@@ -463,7 +501,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
-                        android:fontFamily="@font/estedad"
+                        android:fontFamily="@font/yekan_bakh_regular"
                         android:gravity="center"
                         android:lineSpacingExtra="4dp"
                         android:text="شما می‌توانید مجموعه‌های دلخواه خود را ساخته و فیلم‌های مدنظرتان را به آن اضافه کنید."
@@ -476,13 +514,116 @@
                         android:layout_height="42dp"
                         android:layout_marginTop="16dp"
                         android:backgroundTint="@color/gold"
-                        android:fontFamily="@font/estedad_bold"
+                        android:fontFamily="@font/yekan_bakh_bold"
                         android:paddingStart="20dp"
                         android:paddingEnd="20dp"
                         android:text="+ ایجاد اولین پلی‌لیست"
                         android:textColor="@color/black"
                         android:textSize="12sp"
                         app:cornerRadius="21dp" />
+                </LinearLayout>
+            </FrameLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/containerHistory"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/black"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:id="@+id/headerActionsHistory"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/black"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="16dp"
+                android:paddingTop="6dp"
+                android:paddingEnd="16dp"
+                android:paddingBottom="4dp">
+
+                <TextView
+                    android:id="@+id/txtHistoryHeaderCount"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:fontFamily="@font/yekan_bakh_regular"
+                    android:text="عناوین مشاهده‌شده (۰ عنوان)"
+                    android:textColor="@color/muted"
+                    android:textSize="12sp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnClearAllHistory"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/yekan_bakh_bold"
+                    android:text="پاکسازی تاریخچه"
+                    android:textColor="#FF4444"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvHistoryHub"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:clipToPadding="false"
+                    android:paddingStart="6dp"
+                    android:paddingTop="6dp"
+                    android:paddingEnd="6dp"
+                    android:paddingBottom="40dp" />
+
+                <LinearLayout
+                    android:id="@+id/emptyHistoryContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:padding="32dp"
+                    android:visibility="gone">
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="90dp"
+                        android:layout_height="90dp"
+                        app:cardBackgroundColor="@color/card"
+                        app:cardCornerRadius="45dp"
+                        app:strokeColor="@color/gold_dim"
+                        app:strokeWidth="1.5dp">
+
+                        <ImageView
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:padding="24dp"
+                            android:src="@drawable/ic_history_vector"
+                            app:tint="@color/gold" />
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:fontFamily="@font/yekan_bakh_bold"
+                        android:text="تاریخچه خالی است!"
+                        android:textColor="@color/header_gray"
+                        android:textSize="16sp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:fontFamily="@font/yekan_bakh_regular"
+                        android:gravity="center"
+                        android:lineSpacingExtra="4dp"
+                        android:text="هر فیلم یا سریالی که باز کنید و تماشا کنید، در تاریخچه شما ثبت خواهد شد."
+                        android:textColor="@color/muted"
+                        android:textSize="12sp" />
                 </LinearLayout>
             </FrameLayout>
         </LinearLayout>

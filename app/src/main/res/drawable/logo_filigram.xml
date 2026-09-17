@@ -5,34 +5,27 @@
     android:viewportWidth="48"
     android:viewportHeight="48">
 
-    <!-- Solid Black Background -->
     <path
         android:fillColor="#000000"
         android:pathData="M6,0h36c3.31,0 6,2.69 6,6v36c0,3.31 -2.69,6 -6,6H6c-3.31,0 -6,-2.69 -6,-6V6c0,-3.31 2.69,-6 6,-6z" />
 
-    <!-- Subtle Charcoal Border -->
     <path
         android:strokeColor="#262626"
         android:strokeWidth="1.2"
         android:pathData="M6,1h36c2.76,0 5,2.24 5,5v36c0,2.76 -2.24,5 -5,5H6c-2.76,0 -5,-2.24 -5,-5V6c0,-2.76 2.24,-5 5,-5z" />
 
-    <!-- Netflix Red Cinema Emblem (Film reel frame + dynamic play symbol) -->
-    <!-- Film reel left sprocket holes -->
     <path
         android:fillColor="#E50914"
         android:pathData="M8,10h3v4h-3zM8,18h3v4h-3zM8,26h3v4h-3zM8,34h3v4h-3z" />
 
-    <!-- Film reel right sprocket holes -->
     <path
         android:fillColor="#E50914"
         android:pathData="M37,10h3v4h-3zM37,18h3v4h-3zM37,26h3v4h-3zM37,34h3v4h-3z" />
 
-    <!-- Center Cinema Play Glyph & Film Tape Outline in Crimson Red -->
     <path
         android:fillColor="#E50914"
         android:pathData="M13,8h22c1.65,0 3,1.35 3,3v26c0,1.65 -1.35,3 -3,3H13c-1.65,0 -3,-1.35 -3,-3V11c0,-1.65 1.35,-3 3,-3zm0,3v26h22V11H13z" />
 
-    <!-- Bold Play Triangle in Center -->
     <path
         android:fillColor="#E50914"
         android:pathData="M21,17l10,7 -10,7V17z" />

@@ -24,7 +24,7 @@
                 android:id="@+id/qualityTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:fontFamily="@font/estedad_bold"
+                android:fontFamily="@font/yekan_bakh_bold"
                 android:textColor="@android:color/white"
                 android:textSize="13sp" />
 
@@ -33,7 +33,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
-                android:fontFamily="@font/estedad"
+                android:fontFamily="@font/yekan_bakh_regular"
                 android:textColor="@color/muted"
                 android:textSize="10sp" />
         </LinearLayout>
@@ -51,7 +51,7 @@
             android:layout_width="wrap_content"
             android:layout_height="38dp"
             android:backgroundTint="@color/gold"
-            android:fontFamily="@font/estedad_bold"
+            android:fontFamily="@font/yekan_bakh_bold"
             android:insetTop="0dp"
             android:insetBottom="0dp"
             android:paddingStart="12dp"
@@ -72,7 +72,7 @@
             android:layout_width="wrap_content"
             android:layout_height="38dp"
             android:layout_marginStart="8dp"
-            android:fontFamily="@font/estedad_bold"
+            android:fontFamily="@font/yekan_bakh_bold"
             android:insetTop="0dp"
             android:insetBottom="0dp"
             android:paddingStart="12dp"
@@ -94,7 +94,7 @@
             android:layout_width="wrap_content"
             android:layout_height="38dp"
             android:layout_marginStart="4dp"
-            android:fontFamily="@font/estedad"
+            android:fontFamily="@font/yekan_bakh_regular"
             android:insetTop="0dp"
             android:insetBottom="0dp"
             android:text="پلیر جانبی"

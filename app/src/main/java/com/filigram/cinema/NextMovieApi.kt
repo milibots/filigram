@@ -10,10 +10,6 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 
-/**
- * Official NextMovie Android API Engine (mihan-cdn.com).
- * Built directly from Android network traffic capture & Postman specifications.
- */
 object NextMovieApi {
 
     private const val TAG = "NextMovieApi"
@@ -22,7 +18,6 @@ object NextMovieApi {
     private const val PLATFORM = "android/6.4"
     private const val USER_AGENT = "okhttp/5.5.0"
 
-    // Cache series episodes by movieId -> (seasonNumber -> List<EpisodeItem>)
     private val seriesCache = mutableMapOf<Int, Map<Int, List<EpisodeItem>>>()
 
     private val client = OkHttpClient.Builder()
@@ -52,11 +47,28 @@ object NextMovieApi {
     }
 
     private fun execute(url: String, method: String = "GET", jsonBody: String? = null): Pair<Int, String> {
+        val isCacheable = method.equals("GET", ignoreCase = true) &&
+                (url.contains("/details") || url.contains("/link") || url.contains("/season"))
+        val cacheKey = "nextmovie_${url.substringAfter("https://mihan-cdn.com/")}"
+
+        if (isCacheable) {
+            val cached = AppCacheManager.get(cacheKey)
+            if (!cached.isNullOrEmpty()) {
+                AppLogger.s(TAG, "⚡ پاسخ سریع از کش هوشمند نکست‌مووی: $url")
+                return Pair(200, cached)
+            }
+        }
+
         return try {
             val req = buildRequest(url, method, jsonBody)
             val res = client.newCall(req).execute()
             val code = res.code
             val body = res.body?.string() ?: ""
+
+            if (isCacheable && code == 200 && body.isNotEmpty()) {
+                AppCacheManager.put(cacheKey, body)
+            }
+
             Pair(code, body)
         } catch (e: Exception) {
             AppLogger.e(TAG, "خطا در درخواست به $url: ${e.message}")
@@ -86,9 +98,6 @@ object NextMovieApi {
         )
     }
 
-    /**
-     * Get recent movies / series for vitrin or pagination.
-     */
     suspend fun getRecent(page: Int = 1): List<MovieItem> = withContext(Dispatchers.IO) {
         val list = mutableListOf<MovieItem>()
         val url = "$BASE_URL/api/v3/search?page=$page"
@@ -115,9 +124,6 @@ object NextMovieApi {
         list
     }
 
-    /**
-     * Search movies by title.
-     */
     suspend fun search(query: String, page: Int = 1): List<MovieItem> = withContext(Dispatchers.IO) {
         val list = mutableListOf<MovieItem>()
         val url = "$BASE_URL/api/v3/search?page=$page"
@@ -144,9 +150,6 @@ object NextMovieApi {
         list
     }
 
-    /**
-     * Fetch movie or series details along with available stream/download links.
-     */
     suspend fun getDetails(movieId: Int): MovieDetail? = withContext(Dispatchers.IO) {
         val detailsUrl = "$BASE_URL/api/movie/$movieId/details"
         val (code, res) = execute(detailsUrl)
@@ -166,7 +169,6 @@ object NextMovieApi {
             val typeStr = d.optString("type", "movie")
             val isSeries = typeStr == "series" || typeStr == "tvshow"
 
-            // Fetch Links & Qualities
             val (qualities, seasonsList) = fetchLinksAndSeasons(movieId)
 
             return@withContext MovieDetail(
@@ -190,9 +192,6 @@ object NextMovieApi {
         }
     }
 
-    /**
-     * Fetch direct download & streaming links.
-     */
     private fun fetchLinksAndSeasons(movieId: Int): Pair<List<QualityItem>, List<SeasonItem>> {
         val linksUrl = "$BASE_URL/api/movie/$movieId/links"
         val (code, res) = execute(linksUrl)
@@ -205,7 +204,6 @@ object NextMovieApi {
             val qualities = mutableListOf<QualityItem>()
             val seasonsList = mutableListOf<SeasonItem>()
 
-            // 1. Movie Links
             val movieLinks = data.optJSONArray("movie_links")
             if (movieLinks != null) {
                 for (i in 0 until movieLinks.length()) {
@@ -229,7 +227,6 @@ object NextMovieApi {
                 }
             }
 
-            // 2. Series Seasons & Episodes
             val seasonsArr = data.optJSONArray("seasons")
             if (seasonsArr != null && seasonsArr.length() > 0) {
                 val epMap = mutableMapOf<Int, List<EpisodeItem>>()
@@ -294,9 +291,6 @@ object NextMovieApi {
         }
     }
 
-    /**
-     * Get episodes for a specific season of a series.
-     */
     suspend fun getEpisodes(movieId: Int, seasonNumber: Int): List<EpisodeItem> = withContext(Dispatchers.IO) {
         val cached = seriesCache[movieId]?.get(seasonNumber)
         if (cached != null && cached.isNotEmpty()) {
@@ -307,17 +301,11 @@ object NextMovieApi {
         seriesCache[movieId]?.get(seasonNumber) ?: emptyList()
     }
 
-    /**
-     * Get direct qualities for a movie.
-     */
     suspend fun getQualities(movieId: Int): List<QualityItem> = withContext(Dispatchers.IO) {
         val (qualities, _) = fetchLinksAndSeasons(movieId)
         qualities
     }
 
-    /**
-     * Get user profile (/api/me)
-     */
     suspend fun getProfile(): JSONObject? = withContext(Dispatchers.IO) {
         val (code, res) = execute("$BASE_URL/api/me")
         if (code == 200) {

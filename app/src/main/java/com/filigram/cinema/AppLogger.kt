@@ -23,6 +23,13 @@ object AppLogger {
     private val timeFormat = SimpleDateFormat("HH:mm:ss.SSS", Locale.US)
 
     fun log(level: LogEntry.Level, tag: String, message: String) {
+        when (level) {
+            LogEntry.Level.INFO -> android.util.Log.i(tag, message)
+            LogEntry.Level.SUCCESS -> android.util.Log.i(tag, "✅ $message")
+            LogEntry.Level.WARN -> android.util.Log.w(tag, "⚠️ $message")
+            LogEntry.Level.ERROR -> android.util.Log.e(tag, "❌ $message")
+            LogEntry.Level.DEBUG -> android.util.Log.d(tag, "🔍 $message")
+        }
         val entry = LogEntry(
             timestamp = timeFormat.format(Date()),
             level = level,
@@ -37,7 +44,7 @@ object AppLogger {
             try {
                 listener(entry)
             } catch (e: Exception) {
-                // ignore listener errors
+
             }
         }
     }

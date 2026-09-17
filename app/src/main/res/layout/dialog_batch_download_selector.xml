@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_sheet_bottom"
+    android:orientation="vertical"
+    android:padding="20dp"
+    android:layoutDirection="rtl">
+
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="16dp"
+        android:background="#333333" />
+
+    <TextView
+        android:id="@+id/tvBatchTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/yekan_bakh_bold"
+        android:text="دانلود دسته‌ای قسمت‌ها (Batch Download)"
+        android:textColor="@android:color/white"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/tvBatchSubtitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:fontFamily="@font/yekan_bakh_regular"
+        android:text="کیفیت مورد نظر را انتخاب کنید تا تمام قسمت‌ها به صف دانلود اضافه شوند"
+        android:textColor="@color/muted"
+        android:textSize="11sp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:fontFamily="@font/yekan_bakh_bold"
+        android:text="انتخاب کیفیت هدف برای تمام قسمت‌ها:"
+        android:textColor="@color/gold"
+        android:textSize="12sp" />
+
+    <RadioGroup
+        android:id="@+id/rgBatchQualities"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:orientation="vertical">
+
+        <RadioButton
+            android:id="@+id/rbQuality1080"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:buttonTint="@color/gold"
+            android:fontFamily="@font/yekan_bakh_bold"
+            android:text="۱۰۸۰p Full HD (بالاترین کیفیت موجود)"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <RadioButton
+            android:id="@+id/rbQuality720"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:buttonTint="@color/gold"
+            android:checked="true"
+            android:fontFamily="@font/yekan_bakh_bold"
+            android:text="۷۲۰p HD (کیفیت استاندارد و متعادل)"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <RadioButton
+            android:id="@+id/rbQuality480"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:buttonTint="@color/gold"
+            android:fontFamily="@font/yekan_bakh_bold"
+            android:text="۴۸۰p SD (کم‌حجم و سریع)"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+    </RadioGroup>
+
+    <ProgressBar
+        android:id="@+id/batchLoading"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="16dp"
+        android:indeterminateTint="@color/gold"
+        android:visibility="gone" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnStartBatchDownload"
+        style="@style/Widget.Material3.Button"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_marginTop="20dp"
+        android:backgroundTint="@color/gold"
+        android:fontFamily="@font/yekan_bakh_bold"
+        android:text="افزودن همه به صف دانلود توربو"
+        android:textColor="@color/black"
+        android:textSize="13sp"
+        app:cornerRadius="14dp"
+        app:icon="@drawable/ic_download_vector"
+        app:iconGravity="textStart"
+        app:iconPadding="8dp"
+        app:iconTint="@color/black" />
+
+</LinearLayout>

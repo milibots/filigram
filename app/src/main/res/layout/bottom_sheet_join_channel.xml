@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_sheet_bottom"
+    android:orientation="vertical"
+    android:paddingStart="22dp"
+    android:paddingTop="14dp"
+    android:paddingEnd="22dp"
+    android:paddingBottom="24dp"
+    android:layoutDirection="rtl">
+
+    <!-- Drag Handle -->
+    <View
+        android:layout_width="44dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="20dp"
+        android:background="#333333" />
+
+    <!-- Header / Icon + Title -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:layout_marginBottom="14dp">
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="54dp"
+            android:layout_height="54dp"
+            app:cardBackgroundColor="@color/card"
+            app:cardCornerRadius="27dp"
+            app:strokeColor="@color/gold"
+            app:strokeWidth="1.5dp">
+
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/bg_badge_gold"
+                android:padding="13dp"
+                android:src="@drawable/ic_telegram_plane"
+                app:tint="@color/black"
+                android:contentDescription="Telegram Logo" />
+        </com.google.android.material.card.MaterialCardView>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="14dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tvJoinChannelTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/yekan_bakh_bold"
+                android:textColor="@android:color/white"
+                android:textSize="17sp"
+                android:text="عضویت در کانال فیلیگرام" />
+
+            <TextView
+                android:id="@+id/tvJoinChannelHandle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:fontFamily="monospace"
+                android:textColor="@color/gold"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:text="t.me/filigramapp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Description Message -->
+    <TextView
+        android:id="@+id/tvJoinChannelMessage"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/yekan_bakh_regular"
+        android:textColor="@color/muted"
+        android:textSize="13.5sp"
+        android:lineSpacingExtra="5dp"
+        android:layout_marginBottom="22dp"
+        android:text="برای باخبر شدن از جدیدترین آپدیت‌ها، تغییرات آدرس سرورها، اضافه شدن قسمت‌های جدید سریال‌ها و فیلم‌های روز به کانال رسمی تلگرام ما بپیوندید!" />
+
+    <!-- Actions: Later vs Join -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="horizontal">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnJoinChannelLater"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="8dp"
+            android:fontFamily="@font/yekan_bakh_regular"
+            android:text="شاید بعداً"
+            android:textColor="@android:color/white"
+            app:cornerRadius="16dp"
+            app:strokeColor="#333333"
+            app:strokeWidth="1dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnJoinChannelConfirm"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1.4"
+            android:layout_marginStart="8dp"
+            android:backgroundTint="@color/gold"
+            android:fontFamily="@font/yekan_bakh_bold"
+            android:text="عضویت در کانال 🚀"
+            android:textColor="@color/black"
+            app:cornerRadius="16dp" />
+    </LinearLayout>
+
+</LinearLayout>

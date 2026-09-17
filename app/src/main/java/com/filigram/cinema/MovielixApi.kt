@@ -92,7 +92,6 @@ class MovielixApi(private val context: Context) {
                 token = versionRes.getString("token")
                 AppLogger.s(TAG, "توکن جدید با موفقیت فعال شد: $token (شناسه دستگاه: ${versionRes.optString("device_id")})")
 
-                // Handshakes
                 makeDirectRequest("/account/guest", mapOf(
                     "token" to (token ?: ""),
                     "timezone" to "europe/paris",
@@ -198,6 +197,24 @@ class MovielixApi(private val context: Context) {
     }
 
     private fun makeRequest(endpoint: String, data: MutableMap<String, String>, retryCount: Int = 0): JSONObject {
+        val isCacheable = endpoint.contains("detail-info") ||
+                endpoint.contains("episode-request") ||
+                endpoint.contains("link-info-request")
+
+        val sortedData = data.entries.sortedBy { it.key }.joinToString("&") { "${it.key}=${it.value}" }
+        val cacheKey = "movielix_${endpoint.trim('/')}_$sortedData"
+
+        if (isCacheable && retryCount == 0) {
+            val cachedJsonStr = AppCacheManager.get(cacheKey)
+            if (!cachedJsonStr.isNullOrEmpty()) {
+                try {
+                    val cachedObj = JSONObject(cachedJsonStr)
+                    AppLogger.s(TAG, "⚡ پاسخ سریع از کش هوشمند: $endpoint ($sortedData)")
+                    return cachedObj
+                } catch (_: Exception) {}
+            }
+        }
+
         if (token.isNullOrEmpty()) {
             loadOrRefreshToken()
         }
@@ -240,6 +257,11 @@ class MovielixApi(private val context: Context) {
                 return makeRequest(endpoint, data, retryCount + 1)
             }
             AppLogger.s(TAG, "<- پاسخ دریافت شد از $endpoint [HTTP ${response.code}]")
+
+            if (isCacheable && response.isSuccessful) {
+                AppCacheManager.put(cacheKey, bodyString)
+            }
+
             result
         } catch (e: Exception) {
             AppLogger.e(TAG, "خطای اتصال به $endpoint: ${e.message}")
@@ -514,12 +536,18 @@ class MovielixApi(private val context: Context) {
             "movie_id" to id.toString(),
             "movie_link_id" to movieLinkId.toString(),
             "movie_quality_id" to (movieQualityId ?: 2).toString(),
-            "is_clone" to isClone.toString(),
+            "is_clone" to "1",
             "type" to if (isSeries) "1" else "0"
         ))
 
         val l = linkInfo.optJSONObject("link")
-        val finalUrl = l?.optString("url", l.optString("url_clone"))
+        val cloneUrl = l?.optString("url_clone")?.takeIf { it.isNotBlank() }
+        val stdUrl = l?.optString("url")?.takeIf { it.isNotBlank() }
+        var finalUrl = cloneUrl ?: stdUrl
+
+        if (finalUrl != null && finalUrl.contains("expertappmedia.org")) {
+            finalUrl = finalUrl.replace(Regex("pro([0-9]+)\\.expertappmedia\\.org"), "pro$1sub.expertapp.org")
+        }
         AppLogger.s(TAG, "لینک پخش/دانلود استخراج شد: $finalUrl")
         finalUrl
     }

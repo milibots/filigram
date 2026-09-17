@@ -7,13 +7,12 @@
     android:orientation="vertical"
     android:layoutDirection="rtl">
 
-    <!-- Top Bar with Safe Cutout Inset -->
     <LinearLayout
         android:id="@+id/topBarPlaylistDetail"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:minHeight="56dp"
-        android:background="#0A0A0A"
+        android:background="@drawable/bg_glass_header"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingStart="16dp"
@@ -26,7 +25,7 @@
             style="@style/Widget.Material3.Button.TextButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:fontFamily="@font/estedad_bold"
+            android:fontFamily="@font/yekan_bakh_bold"
             android:text="بازگشت"
             android:textColor="@color/gold"
             android:textSize="13sp"
@@ -42,7 +41,7 @@
             android:layout_marginStart="8dp"
             android:layout_weight="1"
             android:ellipsize="end"
-            android:fontFamily="@font/w_cinema"
+            android:fontFamily="@font/yekan_bakh_bold"
             android:maxLines="1"
             android:textColor="@android:color/white"
             android:textSize="16sp" />
@@ -59,7 +58,6 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- Playlist Hero Banner Card -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="190dp"
@@ -95,7 +93,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:background="@drawable/bg_badge_gold"
-                            android:fontFamily="@font/estedad_bold"
+                            android:fontFamily="@font/yekan_bakh_bold"
                             android:paddingStart="8dp"
                             android:paddingTop="2dp"
                             android:paddingEnd="8dp"
@@ -109,7 +107,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="6dp"
-                            android:fontFamily="@font/w_cinema"
+                            android:fontFamily="@font/yekan_bakh_bold"
                             android:textColor="@android:color/white"
                             android:textSize="18sp"
                             android:textStyle="bold" />
@@ -118,32 +116,30 @@
                             android:id="@+id/txtPlaylistEnTitle"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:fontFamily="@font/estedad"
+                            android:fontFamily="@font/yekan_bakh_regular"
                             android:textColor="@color/gold"
                             android:textSize="11sp" />
                     </LinearLayout>
                 </FrameLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Description -->
             <TextView
                 android:id="@+id/txtPlaylistDesc"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                android:fontFamily="@font/estedad"
+                android:fontFamily="@font/yekan_bakh_regular"
                 android:lineSpacingExtra="4dp"
                 android:textColor="@color/muted"
                 android:textSize="12sp" />
 
-            <!-- Sequential Playback Button -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnPlaySequential"
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
                 android:layout_marginTop="14dp"
                 android:backgroundTint="@color/gold"
-                android:fontFamily="@font/estedad_bold"
+                android:fontFamily="@font/yekan_bakh_bold"
                 android:text="پخش آنلاین ترتیبی پلی‌لیست"
                 android:textColor="@color/black"
                 android:textSize="13sp"
@@ -159,12 +155,11 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="18dp"
                 android:layout_marginBottom="8dp"
-                android:fontFamily="@font/w_cinema"
+                android:fontFamily="@font/yekan_bakh_bold"
                 android:text="عناوین این مجموعه:"
                 android:textColor="@color/header_gray"
                 android:textSize="13sp" />
 
-            <!-- Movies Grid in Playlist -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvPlaylistMovies"
                 android:layout_width="match_parent"

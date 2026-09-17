@@ -6,7 +6,7 @@
     android:background="#000000"
     android:keepScreenOn="true">
 
-    <!-- Media3 ExoPlayer View -->
+    <!-- Full screen video -->
     <androidx.media3.ui.PlayerView
         android:id="@+id/playerView"
         android:layout_width="match_parent"
@@ -19,7 +19,7 @@
         app:surface_type="surface_view"
         app:use_controller="true" />
 
-    <!-- Top Overlay Bar -->
+    <!-- Top bar with gradient -->
     <LinearLayout
         android:id="@+id/playerTopBar"
         android:layout_width="match_parent"
@@ -28,23 +28,27 @@
         android:background="@drawable/bg_banner_gradient"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:paddingStart="16dp"
+        android:paddingStart="8dp"
         android:paddingTop="16dp"
-        android:paddingEnd="16dp"
+        android:paddingEnd="8dp"
         android:paddingBottom="24dp">
 
+        <!-- Close -->
         <ImageButton
             android:id="@+id/btnClosePlayer"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="بستن پلیر"
-            android:src="@drawable/ic_close_vector" />
+            android:padding="10dp"
+            android:src="@drawable/ic_close_vector"
+            app:tint="@android:color/white" />
 
+        <!-- Title + quality -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
+            android:layout_marginStart="4dp"
             android:layout_weight="1"
             android:orientation="vertical">
 
@@ -53,42 +57,118 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
-                android:fontFamily="@font/w_cinema"
+                android:fontFamily="@font/yekan_bakh_bold"
                 android:maxLines="1"
                 android:textColor="@android:color/white"
-                android:textSize="16sp" />
+                android:textSize="15sp" />
 
-            <TextView
-                android:id="@+id/txtPlayerQuality"
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:fontFamily="@font/estedad"
-                android:textColor="@color/muted"
-                android:textSize="11sp" />
+                android:layout_marginTop="2dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/txtPlayerBadge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_badge_gold"
+                    android:fontFamily="@font/yekan_bakh_bold"
+                    android:paddingStart="7dp"
+                    android:paddingTop="1dp"
+                    android:paddingEnd="7dp"
+                    android:paddingBottom="1dp"
+                    android:text="پخش ویدیو"
+                    android:textColor="@color/black"
+                    android:textSize="9sp" />
+
+                <TextView
+                    android:id="@+id/txtPlayerQuality"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:fontFamily="@font/yekan_bakh_regular"
+                    android:textColor="@color/muted"
+                    android:textSize="11sp" />
+            </LinearLayout>
         </LinearLayout>
 
-        <!-- Live Streaming Badge -->
+        <!-- Speed button -->
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/bg_badge_gold"
-            android:fontFamily="@font/estedad_bold"
-            android:paddingStart="8dp"
-            android:paddingTop="2dp"
-            android:paddingEnd="8dp"
-            android:paddingBottom="2dp"
-            android:text="استریم آنلاین"
-            android:textColor="@color/black"
-            android:textSize="10sp" />
+            android:id="@+id/btnPlayerSpeed"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:fontFamily="@font/yekan_bakh_bold"
+            android:gravity="center"
+            android:text="1×"
+            android:textColor="@android:color/white"
+            android:textSize="13sp" />
+
+        <!-- Rotate -->
+        <ImageButton
+            android:id="@+id/btnPlayerRotate"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="چرخش صفحه"
+            android:padding="10dp"
+            android:src="@drawable/ic_rotate_vector"
+            app:tint="@android:color/white" />
+
+        <!-- Subtitles -->
+        <ImageButton
+            android:id="@+id/btnPlayerSubtitles"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="زیرنویس"
+            android:padding="10dp"
+            android:src="@drawable/ic_subtitles_vector"
+            app:tint="@android:color/white" />
+
+        <!-- PiP -->
+        <ImageButton
+            android:id="@+id/btnPlayerPip"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="تصویر در تصویر"
+            android:padding="10dp"
+            android:src="@drawable/ic_pip_vector"
+            app:tint="@android:color/white" />
+
     </LinearLayout>
 
-    <!-- Initial Buffering Spinner -->
+    <!-- Center buffering indicator (larger, custom) -->
     <ProgressBar
         android:id="@+id/playerLoading"
-        android:layout_width="54dp"
-        android:layout_height="54dp"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
         android:layout_gravity="center"
         android:indeterminateTint="@color/gold"
         android:visibility="gone" />
+
+    <!-- Lock overlay (shown when controls are locked) -->
+    <FrameLayout
+        android:id="@+id/playerLockOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone">
+
+        <ImageButton
+            android:id="@+id/btnPlayerUnlock"
+            android:layout_width="52dp"
+            android:layout_height="52dp"
+            android:layout_gravity="start|center_vertical"
+            android:layout_marginStart="20dp"
+            android:alpha="0.7"
+            android:background="@drawable/bg_dialog_glass"
+            android:contentDescription="باز کردن قفل"
+            android:padding="13dp"
+            android:src="@drawable/ic_close_vector"
+            app:tint="@android:color/white" />
+    </FrameLayout>
 
 </FrameLayout>

@@ -1,65 +1,291 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/cardContainer"
-    android:layout_width="120dp"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/cardRoot"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="5dp"
-    android:clickable="true"
-    android:focusable="true"
-    android:foreground="?attr/selectableItemBackground"
-    app:cardBackgroundColor="@color/card"
-    app:cardCornerRadius="12dp"
-    app:strokeColor="#222222"
-    app:strokeWidth="1dp">
+    android:clipChildren="false"
+    android:clipToPadding="false"
+    android:paddingStart="4dp"
+    android:paddingEnd="4dp"
+    android:paddingTop="4dp"
+    android:paddingBottom="10dp">
 
-    <LinearLayout
+    <!-- Card Deck Container: forced LTR so stacked cards always fan out to the right -->
+    <FrameLayout
+        android:id="@+id/deckContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:layout_marginTop="10dp"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:layoutDirection="ltr">
 
-        <FrameLayout
+        <!-- Layer 3: Backmost Card (Serials Only) -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardStackBack2"
             android:layout_width="match_parent"
-            android:layout_height="170dp">
+            android:layout_height="@dimen/movie_card_poster_height"
+            android:layout_marginStart="14dp"
+            android:layout_marginEnd="0dp"
+            android:layout_marginTop="0dp"
+            android:layout_marginBottom="6dp"
+            android:visibility="gone"
+            app:cardBackgroundColor="#101214"
+            app:cardCornerRadius="14dp"
+            app:cardElevation="0dp"
+            app:strokeColor="#24282D"
+            app:strokeWidth="0.8dp"
+            tools:visibility="visible">
 
-            <ImageView
-                android:id="@+id/cardPoster"
+            <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:background="#151515"
-                android:scaleType="centerCrop"
-                android:src="@drawable/placeholder_poster" />
+                android:layout_height="match_parent">
 
-            <TextView
-                android:id="@+id/cardBadge"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="top|end"
-                android:layout_margin="6dp"
-                android:background="@drawable/bg_badge_gold"
-                android:fontFamily="@font/estedad_bold"
-                android:paddingStart="5dp"
-                android:paddingTop="1dp"
-                android:paddingEnd="5dp"
-                android:paddingBottom="1dp"
-                android:text="دوبله"
-                android:textColor="@color/black"
-                android:textSize="9sp"
-                android:visibility="gone" />
-        </FrameLayout>
+                <ImageView
+                    android:id="@+id/cardPosterBack2"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:alpha="0.70"
+                    android:background="#101214"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/placeholder_poster" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="#4D000000" />
+            </FrameLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Layer 2: Middle Card (Serials Only) -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardStackBack1"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/movie_card_poster_height"
+            android:layout_marginStart="7dp"
+            android:layout_marginEnd="7dp"
+            android:layout_marginTop="3dp"
+            android:layout_marginBottom="3dp"
+            android:visibility="gone"
+            app:cardBackgroundColor="#14171A"
+            app:cardCornerRadius="14dp"
+            app:cardElevation="1dp"
+            app:strokeColor="#2D3238"
+            app:strokeWidth="0.8dp"
+            tools:visibility="visible">
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <ImageView
+                    android:id="@+id/cardPosterBack1"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:alpha="0.85"
+                    android:background="#14171A"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/placeholder_poster" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="#2E000000" />
+            </FrameLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Layer 1: Foreground Main Poster Card -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardContainer"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/movie_card_poster_height"
+            android:layout_marginStart="0dp"
+            android:layout_marginEnd="14dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground"
+            app:cardBackgroundColor="#181A1D"
+            app:cardCornerRadius="14dp"
+            app:cardElevation="3dp"
+            app:strokeColor="#26FFFFFF"
+            app:strokeWidth="0.6dp">
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <ImageView
+                    android:id="@+id/cardPoster"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="#181A1D"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/placeholder_poster" />
+
+                <!-- Bottom Scrim for high contrast -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="80dp"
+                    android:layout_gravity="bottom"
+                    android:background="@drawable/bg_bottom_card_scrim" />
+
+                <!-- Optional subtle dub/sub chip -->
+                <LinearLayout
+                    android:id="@+id/ribbonContainer"
+                    android:layout_width="wrap_content"
+                    android:layout_height="20dp"
+                    android:layout_gravity="top|start"
+                    android:layout_margin="8dp"
+                    android:background="@drawable/bg_card_top_pill"
+                    android:gravity="center"
+                    android:paddingStart="6dp"
+                    android:paddingEnd="6dp"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:id="@+id/cardBadge"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/yekan_bakh_bold"
+                        android:textColor="#FFFFFF"
+                        android:textSize="8.5sp"
+                        tools:text="دوبله" />
+                </LinearLayout>
+
+                <!-- Floating Bottom Bar (Ratings + Play) -->
+                <LinearLayout
+                    android:id="@+id/bottomPill"
+                    android:layout_width="match_parent"
+                    android:layout_height="33dp"
+                    android:layout_gravity="bottom"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginEnd="8dp"
+                    android:layout_marginBottom="8dp"
+                    android:background="@drawable/bg_card_bottom_pill"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp">
+
+                    <!-- 3D Box Score (shown if available) -->
+                    <LinearLayout
+                        android:id="@+id/layout3dScore"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:visibility="gone"
+                        tools:visibility="visible">
+
+                        <ImageView
+                            android:layout_width="14dp"
+                            android:layout_height="14dp"
+                            android:src="@drawable/ic_box_3d" />
+
+                        <TextView
+                            android:id="@+id/cardScore3D"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="4dp"
+                            android:fontFamily="@font/yekan_bakh_bold"
+                            android:textColor="#FFFFFF"
+                            android:textSize="10.5sp"
+                            tools:text="9.1" />
+
+                        <View
+                            android:id="@+id/dividerRatings"
+                            android:layout_width="1dp"
+                            android:layout_height="10dp"
+                            android:layout_marginStart="6dp"
+                            android:layout_marginEnd="6dp"
+                            android:background="#33FFFFFF" />
+                    </LinearLayout>
+
+                    <!-- IMDb Badge & Rating -->
+                    <LinearLayout
+                        android:id="@+id/cardImdbContainer"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/badgeImdbText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_imdb_badge"
+                            android:fontFamily="@font/yekan_bakh_bold"
+                            android:paddingStart="4dp"
+                            android:paddingTop="1dp"
+                            android:paddingEnd="4dp"
+                            android:paddingBottom="1dp"
+                            android:text="IMDb"
+                            android:textColor="#000000"
+                            android:textSize="8sp" />
+
+                        <TextView
+                            android:id="@+id/cardImdbRate"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="4dp"
+                            android:fontFamily="@font/yekan_bakh_bold"
+                            android:textColor="#FFFFFF"
+                            android:textSize="10.5sp"
+                            tools:text="8.5" />
+                    </LinearLayout>
+
+                    <!-- Flexible Space -->
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="1dp"
+                        android:layout_weight="1" />
+
+                    <!-- Red Play Button -->
+                    <ImageView
+                        android:id="@+id/btnPlayCard"
+                        android:layout_width="15dp"
+                        android:layout_height="15dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:clickable="true"
+                        android:contentDescription="پخش"
+                        android:focusable="true"
+                        android:src="@drawable/ic_play_vector"
+                        app:tint="@color/primary_red" />
+                </LinearLayout>
+
+            </FrameLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+    </FrameLayout>
+
+    <!-- Floating Top Title Pill -->
+    <LinearLayout
+        android:id="@+id/topPillContainer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|center_horizontal"
+        android:background="@drawable/bg_card_top_pill"
+        android:elevation="6dp"
+        android:gravity="center"
+        android:maxWidth="160dp"
+        android:paddingStart="12dp"
+        android:paddingTop="3.5dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="3.5dp">
 
         <TextView
-            android:id="@+id/cardTitle"
-            android:layout_width="match_parent"
+            android:id="@+id/cardTopTitle"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:ellipsize="end"
-            android:fontFamily="@font/w_cinema"
-            android:maxLines="2"
-            android:minLines="2"
-            android:padding="8dp"
-            android:textColor="@color/text"
-            android:textSize="12sp"
-            android:textStyle="bold" />
-
+            android:fontFamily="@font/yekan_bakh_bold"
+            android:gravity="center"
+            android:singleLine="true"
+            android:textColor="#FFFFFF"
+            android:textSize="11.5sp"
+            tools:text="Bleach 2004" />
     </LinearLayout>
-</com.google.android.material.card.MaterialCardView>
+
+</FrameLayout>

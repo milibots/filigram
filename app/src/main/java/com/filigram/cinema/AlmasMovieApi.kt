@@ -13,16 +13,11 @@ import org.json.JSONObject
 import java.net.URLEncoder
 import java.util.concurrent.TimeUnit
 
-/**
- * Official AlmasMovie Android REST API client.
- * Built directly from Android session capture & Postman specifications.
- */
 object AlmasMovieApi {
 
     private const val TAG = "AlmasMovieApi"
     private const val BASE_URL = "https://almasandroid.com/api/almas/v1"
 
-    // Tokens & Device Identifiers
     private var accessToken = "6X96p0fIP2Zzt2_9evF4lnKzaXtFsy_Axm4yLH5yHHRgHc9QEOV3fwErdb8uey_R"
     private var refreshToken = "mIkn5vbe34uI3B5-XH3Yiql7MZ0hJrxmmsiibUN961qI0fPdar-jcc1V68OGp8zG"
     private const val DEVICE_ID = "00d04fe2-dd3b-4d14-b2ba-88469cb8a01f"
@@ -34,7 +29,6 @@ object AlmasMovieApi {
 
     private val refreshMutex = Mutex()
 
-    // In-memory cache for series downloads by post ID -> (season order -> List<EpisodeItem>)
     private val seriesCache = mutableMapOf<Int, Map<Int, List<EpisodeItem>>>()
 
     private val client = OkHttpClient.Builder()
@@ -42,10 +36,6 @@ object AlmasMovieApi {
         .readTimeout(20, TimeUnit.SECONDS)
         .followRedirects(true)
         .build()
-
-    // ==========================================
-    // Network & Header Utilities
-    // ==========================================
 
     private fun buildHeaders(includeAuth: Boolean = true): Map<String, String> {
         val headers = mutableMapOf(
@@ -90,6 +80,18 @@ object AlmasMovieApi {
             "DELETE" -> reqBuilder.delete(body)
         }
 
+        val isCacheable = method.equals("GET", ignoreCase = true) &&
+                (url.contains("/posts/") || url.contains("/downloads/"))
+        val cacheKey = "almas_${url.substringAfter("/api/almas/v1/")}"
+
+        if (isCacheable) {
+            val cached = AppCacheManager.get(cacheKey)
+            if (!cached.isNullOrEmpty()) {
+                AppLogger.s(TAG, "⚡ پاسخ سریع از کش هوشمند الماس‌مووی: $url")
+                return Pair(200, cached)
+            }
+        }
+
         val response = client.newCall(reqBuilder.build()).execute()
         val code = response.code
         val responseText = response.body?.string() ?: ""
@@ -102,16 +104,13 @@ object AlmasMovieApi {
             }
         }
 
+        if (isCacheable && code == 200 && responseText.isNotEmpty()) {
+            AppCacheManager.put(cacheKey, responseText)
+        }
+
         return Pair(code, responseText)
     }
 
-    // ==========================================
-    // 1. Authentication & Config
-    // ==========================================
-
-    /**
-     * Refresh bearer access token using current refresh_token.
-     */
     fun refreshAccessTokenSync(): Boolean {
         try {
             val url = "$BASE_URL/auth/refresh/"
@@ -157,9 +156,6 @@ object AlmasMovieApi {
         }
     }
 
-    /**
-     * Fetch App Configuration from /config/
-     */
     suspend fun getConfig(): JSONObject? = withContext(Dispatchers.IO) {
         try {
             val url = "$BASE_URL/config/"
@@ -173,9 +169,6 @@ object AlmasMovieApi {
         null
     }
 
-    /**
-     * Login with phone and password.
-     */
     suspend fun login(phone: String, pass: String): Boolean = withContext(Dispatchers.IO) {
         try {
             val url = "$BASE_URL/auth/login/"
@@ -210,9 +203,6 @@ object AlmasMovieApi {
         false
     }
 
-    /**
-     * Get Current Profile (/me/)
-     */
     suspend fun getProfile(): JSONObject? = withContext(Dispatchers.IO) {
         try {
             val url = "$BASE_URL/me/"
@@ -228,10 +218,6 @@ object AlmasMovieApi {
         }
         null
     }
-
-    // ==========================================
-    // 2. Discovery & Feeds
-    // ==========================================
 
     private fun parseMovieItem(it: JSONObject): MovieItem {
         val id = it.optInt("id")
@@ -279,9 +265,6 @@ object AlmasMovieApi {
         )
     }
 
-    /**
-     * Fetch complete Home sections from /home/
-     */
     suspend fun getHomeSections(): List<VitrinSection> = withContext(Dispatchers.IO) {
         val result = mutableListOf<VitrinSection>()
         try {
@@ -297,7 +280,6 @@ object AlmasMovieApi {
                         val secTitle = secObj.optString("title").trim()
                         val itemsArr = secObj.optJSONArray("items")
 
-                        // Filter relevant media sections with items
                         if (itemsArr != null && itemsArr.length() > 0 && secTitle.isNotBlank()) {
                             val itemsList = mutableListOf<MovieItem>()
                             for (j in 0 until itemsArr.length()) {
@@ -318,16 +300,10 @@ object AlmasMovieApi {
         result
     }
 
-    /**
-     * Fetch recent movies / series for paginated lists.
-     */
     suspend fun getRecent(page: Int = 1): List<MovieItem> = withContext(Dispatchers.IO) {
         getSectionPosts(sectionId = "new_movie", page = page, perPage = 24)
     }
 
-    /**
-     * Fetch posts by section ID (e.g. "new_movie", "new_series", "month_most_viewed").
-     */
     suspend fun getSectionPosts(
         sectionId: String = "new_movie",
         page: Int = 1,
@@ -353,9 +329,6 @@ object AlmasMovieApi {
         list
     }
 
-    /**
-     * Search posts across all types.
-     */
     suspend fun search(
         query: String,
         page: Int = 1,
@@ -384,13 +357,6 @@ object AlmasMovieApi {
         list
     }
 
-    // ==========================================
-    // 3. Posts & Media
-    // ==========================================
-
-    /**
-     * Get complete details for a movie or TV show.
-     */
     suspend fun getDetails(postId: Int, mediaType: String = "movie"): MovieDetail? = withContext(Dispatchers.IO) {
         try {
             val url = "$BASE_URL/posts/$postId/"
@@ -412,7 +378,6 @@ object AlmasMovieApi {
                 ?: titleObj?.optString("display")
                 ?: data.optString("wordpress_title", "عنوان نامشخص")
 
-            // Poster & Backdrop
             val posterObj = data.optJSONObject("poster") ?: data.optJSONObject("media")?.optJSONObject("poster")
             val image = posterObj?.optString("full")?.takeIf { it.isNotBlank() }
                 ?: posterObj?.optString("thumb220330")?.takeIf { it.isNotBlank() }
@@ -423,17 +388,14 @@ object AlmasMovieApi {
                 ?: backdropObj?.optString("full")?.takeIf { it.isNotBlank() }
                 ?: image
 
-            // Ratings
             val ratingsObj = data.optJSONObject("ratings")
             val imdbRate = ratingsObj?.optString("imdb")?.takeIf { it.isNotBlank() }
 
-            // Summaries
             val sumObj = data.optJSONObject("summaries")
             val description = sumObj?.optString("display")?.takeIf { it.isNotBlank() }
                 ?: sumObj?.optString("farsi")?.takeIf { it.isNotBlank() }
                 ?: sumObj?.optString("english")?.takeIf { it.isNotBlank() }
 
-            // Facts (Duration, Year)
             var yearStr: String? = null
             var durationStr: String? = null
             val factsArr = data.optJSONArray("facts")
@@ -446,7 +408,6 @@ object AlmasMovieApi {
                 }
             }
 
-            // Fetch Downloads and streaming qualities
             val downloads = fetchDownloads(postId)
 
             var seasonsList = emptyList<SeasonItem>()
@@ -486,9 +447,6 @@ object AlmasMovieApi {
         val episodesBySeason: Map<Int, List<EpisodeItem>> = emptyMap()
     )
 
-    /**
-     * Download items parser for both Movies and Series.
-     */
     private fun fetchDownloads(postId: Int): ParsedDownloads {
         try {
             val url = "$BASE_URL/posts/$postId/downloads/?include_locked=1"
@@ -498,7 +456,6 @@ object AlmasMovieApi {
             val root = JSONObject(res)
             val dData = root.optJSONObject("data")?.optJSONObject("downloads") ?: return ParsedDownloads()
 
-            // 1. Movie Direct Items
             if (dData.has("items")) {
                 val itemsArr = dData.optJSONArray("items")
                 val qList = mutableListOf<QualityItem>()
@@ -524,7 +481,6 @@ object AlmasMovieApi {
                 return ParsedDownloads(directQualities = qList)
             }
 
-            // 2. TV Show Seasons & Episodes
             if (dData.has("seasons")) {
                 val seasonsArr = dData.optJSONArray("seasons")
                 val seasonItems = mutableListOf<SeasonItem>()
@@ -538,7 +494,7 @@ object AlmasMovieApi {
                         seasonItems.add(SeasonItem(season = sOrder, title = "فصل $sName"))
 
                         val qualitiesArr = sObj.optJSONArray("qualities")
-                        // Invert qualities to episodes: Episode Order -> List<QualityItem>
+
                         val episodeQualitiesMap = mutableMapOf<Int, MutableList<QualityItem>>()
 
                         if (qualitiesArr != null) {
@@ -587,9 +543,6 @@ object AlmasMovieApi {
         return ParsedDownloads()
     }
 
-    /**
-     * Get episodes for a specific season of a series.
-     */
     suspend fun getEpisodes(postId: Int, seasonNumber: Int): List<EpisodeItem> = withContext(Dispatchers.IO) {
         val cached = seriesCache[postId]?.get(seasonNumber)
         if (cached != null && cached.isNotEmpty()) {
@@ -601,17 +554,11 @@ object AlmasMovieApi {
         downloads.episodesBySeason[seasonNumber] ?: emptyList()
     }
 
-    /**
-     * Get direct qualities for a movie (convenience method).
-     */
     suspend fun getQualities(postId: Int): List<QualityItem> = withContext(Dispatchers.IO) {
         val downloads = fetchDownloads(postId)
         downloads.directQualities
     }
 
-    /**
-     * Get Comments for post.
-     */
     suspend fun getComments(postId: Int, page: Int = 1, perPage: Int = 8): JSONArray? = withContext(Dispatchers.IO) {
         try {
             val url = "$BASE_URL/posts/$postId/comments/?page=$page&per_page=$perPage"
@@ -626,9 +573,6 @@ object AlmasMovieApi {
         null
     }
 
-    /**
-     * Submit a new comment.
-     */
     suspend fun submitComment(
         postId: Int,
         body: String,
@@ -654,13 +598,6 @@ object AlmasMovieApi {
         false
     }
 
-    // ==========================================
-    // 4. Taxonomies
-    // ==========================================
-
-    /**
-     * Fetch list of genres.
-     */
     suspend fun getGenres(page: Int = 1, perPage: Int = 50): JSONArray? = withContext(Dispatchers.IO) {
         try {
             val url = "$BASE_URL/taxonomies/genre/terms/?page=$page&per_page=$perPage&hide_empty=1"
@@ -675,9 +612,6 @@ object AlmasMovieApi {
         null
     }
 
-    /**
-     * Fetch posts by taxonomy term (e.g. genre "action", "drama").
-     */
     suspend fun getPostsByTaxonomy(
         taxonomy: String = "genre",
         termSlug: String,
@@ -704,13 +638,6 @@ object AlmasMovieApi {
         list
     }
 
-    // ==========================================
-    // 5. User Actions (Like, Bookmark, Progress)
-    // ==========================================
-
-    /**
-     * Like a post.
-     */
     suspend fun likePost(postId: Int): Boolean = withContext(Dispatchers.IO) {
         try {
             val url = "$BASE_URL/me/liked/$postId"
@@ -722,9 +649,6 @@ object AlmasMovieApi {
         }
     }
 
-    /**
-     * Unlike a post.
-     */
     suspend fun unlikePost(postId: Int): Boolean = withContext(Dispatchers.IO) {
         try {
             val url = "$BASE_URL/me/liked/$postId"
@@ -736,9 +660,6 @@ object AlmasMovieApi {
         }
     }
 
-    /**
-     * Bookmark / Save a post.
-     */
     suspend fun savePost(postId: Int): Boolean = withContext(Dispatchers.IO) {
         try {
             val url = "$BASE_URL/me/saved/$postId"
@@ -750,9 +671,6 @@ object AlmasMovieApi {
         }
     }
 
-    /**
-     * Remove bookmark / Unsave a post.
-     */
     suspend fun unsavePost(postId: Int): Boolean = withContext(Dispatchers.IO) {
         try {
             val url = "$BASE_URL/me/saved/$postId"
@@ -764,9 +682,6 @@ object AlmasMovieApi {
         }
     }
 
-    /**
-     * Upsert playback progress for user.
-     */
     suspend fun updatePlaybackProgress(
         postId: Int,
         episodeKey: String = "",

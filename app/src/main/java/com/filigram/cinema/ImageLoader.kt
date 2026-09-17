@@ -58,7 +58,6 @@ object ImageLoader {
             else -> "https://content.expertapp.org" + if (url.startsWith("/")) url else "/$url"
         }
 
-        // 1. Instant Memory Cache (0 ms)
         val cached = memoryCache.get(resolvedUrl)
         if (cached != null) {
             imageView.setImageBitmap(cached)
@@ -72,7 +71,6 @@ object ImageLoader {
             try {
                 val diskFile = diskCacheDir?.let { File(it, hashKey(resolvedUrl)) }
 
-                // 2. Persistent Disk Cache (Loads locally without consuming internet)
                 if (diskFile != null && diskFile.exists() && diskFile.length() > 0) {
                     val diskBitmap = BitmapFactory.decodeFile(diskFile.absolutePath)
                     if (diskBitmap != null) {
@@ -86,7 +84,6 @@ object ImageLoader {
                     }
                 }
 
-                // 3. Network Fetch & Save to Local Disk Cache
                 val connection = URL(resolvedUrl).openConnection()
                 connection.connectTimeout = 10000
                 connection.readTimeout = 15000

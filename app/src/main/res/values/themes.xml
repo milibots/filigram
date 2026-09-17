@@ -1,20 +1,53 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Theme.Filigram" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+
+    <style name="Theme.Filigram" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">@color/gold</item>
-        <item name="colorPrimaryVariant">@color/gold_dim</item>
         <item name="colorOnPrimary">@color/black</item>
+        <item name="colorSurface">@color/black</item>
+        <item name="colorOnSurface">#FFFFFF</item>
+        <item name="colorSurfaceVariant">#1C1E22</item>
+        <item name="colorOnSurfaceVariant">#B0B3B8</item>
+        <item name="colorOutline">#2E3238</item>
+        <item name="colorOutlineVariant">#1E2226</item>
         <item name="android:statusBarColor">@color/black</item>
         <item name="android:navigationBarColor">@color/black</item>
         <item name="android:windowBackground">@color/black</item>
         <item name="android:windowLightStatusBar">false</item>
-        <item name="fontFamily">@font/estedad</item>
-        <item name="android:fontFamily">@font/estedad</item>
-        <!-- Smooth activity/dialog transitions -->
+        <item name="fontFamily">@font/yekan_bakh_regular</item>
+        <item name="android:fontFamily">@font/yekan_bakh_regular</item>
+
         <item name="android:windowAnimationStyle">@style/Anim.Filigram.Window</item>
+        <item name="bottomSheetDialogTheme">@style/Theme.Filigram.BottomSheetDialog</item>
     </style>
 
-    <!-- Window animation style for Activity transitions -->
+    <style name="Theme.Filigram.Dialog.Fullscreen" parent="Theme.Filigram">
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowIsFloating">false</item>
+        <item name="android:windowBackground">@color/black</item>
+        <item name="android:windowAnimationStyle">@style/Anim.Filigram.Dialog.Fullscreen</item>
+    </style>
+
+    <style name="Theme.Filigram.BottomSheetDialog" parent="Theme.Design.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/Widget.Filigram.BottomSheet.Modal</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:colorBackground">@android:color/transparent</item>
+        <item name="android:windowIsFloating">false</item>
+        <item name="android:windowAnimationStyle">@style/Anim.Filigram.BottomSheet</item>
+    </style>
+
+    <style name="Widget.Filigram.BottomSheet.Modal" parent="Widget.Design.BottomSheet.Modal">
+        <item name="android:background">@android:color/transparent</item>
+        <item name="backgroundTint">@android:color/transparent</item>
+        <item name="android:elevation">0dp</item>
+        <item name="elevation">0dp</item>
+    </style>
+
+    <style name="Anim.Filigram.BottomSheet" parent="@android:style/Animation">
+        <item name="android:windowEnterAnimation">@anim/dialog_slide_up</item>
+        <item name="android:windowExitAnimation">@anim/dialog_slide_down</item>
+    </style>
+
     <style name="Anim.Filigram.Window" parent="@android:style/Animation.Activity">
         <item name="android:activityOpenEnterAnimation">@anim/fullscreen_enter</item>
         <item name="android:activityOpenExitAnimation">@anim/dialog_slide_down</item>
@@ -24,39 +57,37 @@
         <item name="android:windowExitAnimation">@anim/fullscreen_exit</item>
     </style>
 
-    <!-- Full-screen Dialog animation style -->
     <style name="Anim.Filigram.Dialog.Fullscreen" parent="@android:style/Animation">
         <item name="android:windowEnterAnimation">@anim/fullscreen_enter</item>
         <item name="android:windowExitAnimation">@anim/fullscreen_exit</item>
     </style>
 
-    <!-- Compact Dialog animation style (for modal dialogs) -->
     <style name="Anim.Filigram.Dialog.Compact" parent="@android:style/Animation">
         <item name="android:windowEnterAnimation">@anim/dialog_slide_up</item>
         <item name="android:windowExitAnimation">@anim/dialog_slide_down</item>
     </style>
 
-    <!-- Floating Pill Bottom Navigation Style -->
     <style name="Widget.Filigram.BottomNav" parent="Widget.MaterialComponents.BottomNavigationView">
-        <item name="fontFamily">@font/estedad_bold</item>
-        <item name="android:fontFamily">@font/estedad_bold</item>
+        <item name="fontFamily">@font/yekan_bakh_bold</item>
+        <item name="android:fontFamily">@font/yekan_bakh_bold</item>
         <item name="itemTextAppearanceActive">@style/TextAppearance.Filigram.NavActive</item>
         <item name="itemTextAppearanceInactive">@style/TextAppearance.Filigram.NavInactive</item>
-        <item name="itemBackground">@drawable/bg_nav_item_button</item>
+        <item name="itemBackground">@android:color/transparent</item>
         <item name="itemIconSize">22dp</item>
-        <item name="itemRippleColor">@color/gold_glow</item>
+        <item name="itemRippleColor">@android:color/transparent</item>
+        <item name="itemActiveIndicatorStyle">@null</item>
     </style>
 
     <style name="TextAppearance.Filigram.NavActive" parent="TextAppearance.MaterialComponents.Caption">
-        <item name="fontFamily">@font/estedad_bold</item>
-        <item name="android:fontFamily">@font/estedad_bold</item>
+        <item name="fontFamily">@font/yekan_bakh_bold</item>
+        <item name="android:fontFamily">@font/yekan_bakh_bold</item>
         <item name="android:textSize">11sp</item>
         <item name="android:textColor">@color/gold</item>
     </style>
 
     <style name="TextAppearance.Filigram.NavInactive" parent="TextAppearance.MaterialComponents.Caption">
-        <item name="fontFamily">@font/estedad</item>
-        <item name="android:fontFamily">@font/estedad</item>
+        <item name="fontFamily">@font/yekan_bakh_regular</item>
+        <item name="android:fontFamily">@font/yekan_bakh_regular</item>
         <item name="android:textSize">10sp</item>
         <item name="android:textColor">@color/muted</item>
     </style>

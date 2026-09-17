@@ -8,7 +8,8 @@ import com.filigram.cinema.databinding.ItemVitrinSectionBinding
 
 class VitrinSectionAdapter(
     private val sections: MutableList<VitrinSection> = mutableListOf(),
-    private val onItemClick: (MovieItem) -> Unit
+    private val onItemClick: (MovieItem) -> Unit,
+    private val onItemLongClick: ((MovieItem) -> Unit)? = null
 ) : RecyclerView.Adapter<VitrinSectionAdapter.SectionViewHolder>() {
 
     fun updateData(newSections: List<VitrinSection>) {
@@ -34,7 +35,7 @@ class VitrinSectionAdapter(
         val section = sections[position]
         holder.binding.sectionTitle.text = section.title
 
-        val adapter = MovieCardAdapter(section.items.toMutableList(), onItemClick)
+        val adapter = MovieCardAdapter(section.items.toMutableList(), onItemClick, onItemLongClick)
         holder.binding.rvSectionMovies.layoutManager = LinearLayoutManager(
             holder.itemView.context,
             LinearLayoutManager.HORIZONTAL,

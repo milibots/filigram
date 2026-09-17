@@ -4,11 +4,13 @@ data class MovieItem(
     val id: Int,
     val title: String,
     val image: String,
-    val type: Int, // 0 = movie, 1 = series
+    val type: Int,
     val year: String? = null,
     val hasSub: Boolean = false,
     val hasDub: Boolean = false,
-    val slug: String? = null
+    val slug: String? = null,
+    val rating: String? = null,
+    val genre: String? = null
 )
 
 data class VitrinSection(
@@ -41,7 +43,7 @@ data class MovieDetail(
     val title: String,
     val image: String,
     val banner: String,
-    val type: Int, // 0 = movie, 1 = series
+    val type: Int,
     val imdbRate: String?,
     val duration: String?,
     val year: String?,

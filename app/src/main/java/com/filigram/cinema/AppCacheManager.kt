@@ -10,9 +10,12 @@ object AppCacheManager {
     private var prefs: SharedPreferences? = null
     private var cacheDir: File? = null
 
+    const val TTL_DETAILS = 7 * 24 * 3600 * 1000L // 7 days for movie details & links
+    const val TTL_DISCOVERY = 4 * 3600 * 1000L // 4 hours for home/feed
+
     fun init(context: Context) {
         prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        val dir = File(context.cacheDir, "api_responses")
+        val dir = File(context.filesDir, "smart_api_cache")
         if (!dir.exists()) dir.mkdirs()
         cacheDir = dir
     }
@@ -26,18 +29,24 @@ object AppCacheManager {
         } catch (_: Exception) {}
     }
 
-    fun get(key: String, maxAgeMillis: Long = 12 * 3600 * 1000L): String? {
+    fun get(key: String, maxAgeMillis: Long = TTL_DETAILS): String? {
         val sanitized = key.replace("[^a-zA-Z0-9_-]".toRegex(), "_")
         val savedTime = prefs?.getLong("time_$sanitized", 0L) ?: 0L
-        if (System.currentTimeMillis() - savedTime > maxAgeMillis) return null
+        if (savedTime == 0L) return null
+        if (maxAgeMillis > 0 && System.currentTimeMillis() - savedTime > maxAgeMillis) return null
         val file = File(cacheDir ?: return null, sanitized)
         return if (file.exists()) file.readText() else null
+    }
+
+    fun hasValid(key: String, maxAgeMillis: Long = TTL_DETAILS): Boolean {
+        return get(key, maxAgeMillis) != null
     }
 
     fun clear() {
         try {
             cacheDir?.deleteRecursively()
             prefs?.edit()?.clear()?.apply()
+            cacheDir?.mkdirs()
         } catch (_: Exception) {}
     }
 

@@ -44,11 +44,11 @@ class LogsAdapter(
         holder.binding.logMessage.text = entry.message
 
         val color = when (entry.level) {
-            AppLogger.LogEntry.Level.SUCCESS -> Color.parseColor("#4CAF50") // Green
-            AppLogger.LogEntry.Level.WARN -> Color.parseColor("#FFB300")    // Amber
-            AppLogger.LogEntry.Level.ERROR -> Color.parseColor("#FF5252")   // Red
-            AppLogger.LogEntry.Level.DEBUG -> Color.parseColor("#64B5F6")   // Light Blue
-            AppLogger.LogEntry.Level.INFO -> Color.parseColor("#E0E0E0")    // White/Gray
+            AppLogger.LogEntry.Level.SUCCESS -> Color.parseColor("#4CAF50")
+            AppLogger.LogEntry.Level.WARN -> Color.parseColor("#FFB300")
+            AppLogger.LogEntry.Level.ERROR -> Color.parseColor("#FF5252")
+            AppLogger.LogEntry.Level.DEBUG -> Color.parseColor("#64B5F6")
+            AppLogger.LogEntry.Level.INFO -> Color.parseColor("#E0E0E0")
         }
         holder.binding.logMessage.setTextColor(color)
     }

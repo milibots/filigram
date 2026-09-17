@@ -85,6 +85,18 @@ class SeriesUpdateWorker(
                                 }
                             }
                         }
+                        "bj" -> {
+                            val detail = BjApi.getDetails(sub.id)
+                            if (detail != null && detail.seasons.isNotEmpty()) {
+                                latestSeason = detail.seasons.maxOfOrNull { it.season } ?: 1
+                                val episodes = BjApi.getEpisodes(sub.id, latestSeason)
+                                val maxEp = episodes.maxByOrNull { it.episode }
+                                if (maxEp != null) {
+                                    latestEpisode = maxEp.episode
+                                    latestEpTitle = maxEp.title
+                                }
+                            }
+                        }
                         "rezflix" -> {
                             val detail = RezFlixApi.getDetails(sub.id)
                             if (detail != null && detail.seasons.isNotEmpty()) {
@@ -92,7 +104,7 @@ class SeriesUpdateWorker(
                             }
                         }
                         else -> {
-                            // Default: Movielix
+
                             val detail = movielixApi.getMovieDetails(sub.id)
                             if (detail != null && detail.seasons.isNotEmpty()) {
                                 latestSeason = detail.seasons.maxOfOrNull { it.season } ?: 1
@@ -106,7 +118,6 @@ class SeriesUpdateWorker(
                         }
                     }
 
-                    // Check if new episode or season is found
                     val isNew = (latestSeason > sub.lastKnownSeason) ||
                             (latestSeason == sub.lastKnownSeason && latestEpisode > sub.lastKnownEpisode)
 

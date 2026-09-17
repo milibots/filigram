@@ -26,7 +26,6 @@ object SystemRadar {
     suspend fun checkAllEngines(): List<ServiceHealth> = withContext(Dispatchers.IO) {
         val list = mutableListOf<ServiceHealth>()
 
-        // 1. Movielix Core Proxy
         list.add(pingService(
             id = "movielix",
             name = "موتور اصلی موویلیکس (Movielix Core)",
@@ -35,7 +34,6 @@ object SystemRadar {
             isCore = true
         ))
 
-        // 2. RezFlix Engine
         list.add(pingService(
             id = "rezflix",
             name = "موتور رزفلیکس (RezFlix Engine)",
@@ -44,7 +42,6 @@ object SystemRadar {
             isCore = false
         ))
 
-        // 3. FilmJoo / Delfan
         list.add(pingService(
             id = "filmjoo",
             name = "موتور فیلم‌جو / دلفان (FilmJoo Engine)",
@@ -53,7 +50,6 @@ object SystemRadar {
             isCore = false
         ))
 
-        // 4. AlmasMovie
         list.add(pingService(
             id = "almasmovie",
             name = "موتور الماس‌مووی (AlmasMovie Engine)",
@@ -62,13 +58,19 @@ object SystemRadar {
             isCore = false
         ))
 
-
-        // 6. NextMovie
         list.add(pingService(
             id = "nextmovie",
             name = "موتور نکست‌مووی (NextMovie Engine)",
             description = "سرور استریم و دانلود مستقیم فیلم و سریال",
             url = "https://mihan-cdn.com",
+            isCore = false
+        ))
+
+        list.add(pingService(
+            id = "bj",
+            name = "موتور BJ — کینگ‌مووی / بلبل (MAPI)",
+            description = "پایگاه داده فیلم و سریال با لینک مستقیم و استریم آنلاین",
+            url = "https://forooshonline20.ir/wp-json/mapi/v1/post/movies?page=1&per_page=1",
             isCore = false
         ))
 

@@ -7,13 +7,12 @@
     android:orientation="vertical"
     android:layoutDirection="rtl">
 
-    <!-- Top Bar with Safe Cutout Inset -->
     <LinearLayout
         android:id="@+id/topBarFavorites"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:minHeight="56dp"
-        android:background="#0A0A0A"
+        android:background="@drawable/bg_glass_header"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingStart="16dp"
@@ -26,7 +25,7 @@
             style="@style/Widget.Material3.Button.TextButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:fontFamily="@font/estedad_bold"
+            android:fontFamily="@font/yekan_bakh_bold"
             android:text="بازگشت"
             android:textColor="@color/gold"
             android:textSize="13sp"
@@ -40,7 +39,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:layout_weight="1"
-            android:fontFamily="@font/w_cinema"
+            android:fontFamily="@font/yekan_bakh_bold"
             android:text="علاقه‌مندی‌ها و نشان‌شده‌ها (Watchlist)"
             android:textColor="@android:color/white"
             android:textSize="16sp"
@@ -51,7 +50,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:background="@drawable/bg_badge_gold"
-            android:fontFamily="@font/estedad_bold"
+            android:fontFamily="@font/yekan_bakh_bold"
             android:paddingStart="8dp"
             android:paddingTop="2dp"
             android:paddingEnd="8dp"
@@ -66,7 +65,7 @@
             android:layout_width="wrap_content"
             android:layout_height="36dp"
             android:layout_marginStart="6dp"
-            android:fontFamily="@font/w_cinema"
+            android:fontFamily="@font/yekan_bakh_bold"
             android:insetTop="0dp"
             android:insetBottom="0dp"
             android:paddingStart="8dp"
@@ -84,7 +83,6 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <!-- Grid of Saved Movies -->
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvFavorites"
             android:layout_width="match_parent"
@@ -95,7 +93,6 @@
             android:paddingEnd="10dp"
             android:paddingBottom="24dp" />
 
-        <!-- Empty State -->
         <LinearLayout
             android:id="@+id/emptyFavoritesContainer"
             android:layout_width="match_parent"
@@ -125,7 +122,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
-                android:fontFamily="@font/w_cinema"
+                android:fontFamily="@font/yekan_bakh_bold"
                 android:text="هنوز فیلمی را نشان نکرده‌اید!"
                 android:textColor="@color/header_gray"
                 android:textSize="17sp" />
@@ -134,7 +131,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:fontFamily="@font/estedad"
+                android:fontFamily="@font/yekan_bakh_regular"
                 android:gravity="center"
                 android:lineSpacingExtra="4dp"
                 android:text="با لمس آیکون قلب در صفحه جزییات هر فیلم، آن را در حافظه گوشی برای دسترسی سریع ذخیره کنید."

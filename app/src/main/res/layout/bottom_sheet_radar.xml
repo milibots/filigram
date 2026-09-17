@@ -15,7 +15,6 @@
         android:layout_marginBottom="16dp"
         android:background="#333333" />
 
-    <!-- Radar Header -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -26,7 +25,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:fontFamily="@font/w_cinema"
+            android:fontFamily="@font/yekan_bakh_bold"
             android:text="رادار مانیتورینگ سلامت موتورها"
             android:textColor="@color/header_gray"
             android:textSize="18sp"
@@ -37,13 +36,12 @@
             style="@style/Widget.Material3.Button.TextButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:fontFamily="@font/estedad"
+            android:fontFamily="@font/yekan_bakh_regular"
             android:text="بروزرسانی"
             android:textColor="@color/gold"
             android:textSize="12sp" />
     </LinearLayout>
 
-    <!-- Overall System Status Box -->
     <LinearLayout
         android:id="@+id/overallStatusBox"
         android:layout_width="match_parent"
@@ -66,7 +64,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="12dp"
             android:layout_weight="1"
-            android:fontFamily="@font/estedad_bold"
+            android:fontFamily="@font/yekan_bakh_bold"
             android:text="در حال ارزیابی پینگ و وضعیت زیرساخت‌ها..."
             android:textColor="@android:color/white"
             android:textSize="13sp" />
@@ -80,7 +78,6 @@
         android:layout_marginTop="20dp"
         android:indeterminateTint="@color/gold" />
 
-    <!-- Services List Container -->
     <LinearLayout
         android:id="@+id/radarServicesContainer"
         android:layout_width="match_parent"

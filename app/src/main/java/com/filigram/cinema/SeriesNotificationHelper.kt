@@ -48,7 +48,6 @@ object SeriesNotificationHelper {
     ) {
         createNotificationChannel(context)
 
-        // Intent to open MainActivity and deep-link directly to series details
         val intent = Intent(context, MainActivity::class.java).apply {
             action = ACTION_OPEN_SERIES
             flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
@@ -57,7 +56,7 @@ object SeriesNotificationHelper {
             putExtra(EXTRA_OPEN_SERIES_IMAGE, series.image)
             putExtra(EXTRA_OPEN_SERIES_ENGINE, series.engine)
             putExtra(EXTRA_OPEN_SERIES_SLUG, series.slug)
-            putExtra(EXTRA_OPEN_SERIES_TYPE, 1) // 1 = series
+            putExtra(EXTRA_OPEN_SERIES_TYPE, 1)
         }
 
         val pendingIntent = PendingIntent.getActivity(
@@ -79,7 +78,7 @@ object SeriesNotificationHelper {
             .setContentTitle(title)
             .setContentText(content)
             .setStyle(NotificationCompat.BigTextStyle().bigText(content))
-            .setColor(Color.parseColor("#D4AF37")) // Filigram Gold
+            .setColor(Color.parseColor("#D4AF37"))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setDefaults(NotificationCompat.DEFAULT_ALL)
             .setAutoCancel(true)
@@ -93,6 +92,44 @@ object SeriesNotificationHelper {
             AppLogger.e("SeriesNotificationHelper", "عدم دسترسی به ارسال اعلان: ${e.message}")
         } catch (e: Exception) {
             AppLogger.e("SeriesNotificationHelper", "خطا در ارسال اعلان: ${e.message}")
+        }
+    }
+
+    fun sendWelcomeNotification(context: Context) {
+        createNotificationChannel(context)
+
+        val intent = Intent(context, MainActivity::class.java).apply {
+            action = "com.filigram.cinema.ACTION_OPEN_ANNOUNCEMENTS"
+            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            99991,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val title = "خوش‌آمدید به فیلیگرام (نسخه آزمایشی Beta) 🎬"
+        val content = "نسخه بتا فیلیگرام با موفقیت نصب شد. برای ارسال نظرات به @kiorcode پیام دهید و به کانال @filigramapp بپیوندید."
+
+        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_bell_gold)
+            .setContentTitle(title)
+            .setContentText(content)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(content))
+            .setColor(Color.parseColor("#D4AF37"))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setDefaults(NotificationCompat.DEFAULT_ALL)
+            .setAutoCancel(true)
+            .setContentIntent(pendingIntent)
+
+        try {
+            val manager = NotificationManagerCompat.from(context)
+            manager.notify(99991, builder.build())
+            AppLogger.i("SeriesNotificationHelper", "اعلان خوش‌آمدگویی نسخه بتا ارسال شد.")
+        } catch (e: Exception) {
+            AppLogger.e("SeriesNotificationHelper", "خطا در ارسال اعلان خوش‌آمدگویی: ${e.message}")
         }
     }
 }

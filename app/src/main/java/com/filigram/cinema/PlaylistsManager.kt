@@ -33,7 +33,7 @@ object PlaylistsManager {
         loadCustomPlaylists(context)
         val target = userCustomPlaylists.find { it.id == playlistId } ?: return false
         if (target.items.any { it.id == item.id }) {
-            return false // Already exists
+            return false
         }
         target.items.add(0, item)
         saveCustomPlaylists(context)
