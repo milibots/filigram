@@ -9,6 +9,18 @@
 
 ---
 
+## 📸 تصاویر محیط برنامه (Screenshots & Previews)
+
+<p align="center">
+  <img src="art/screenshots/preview_home.png" width="19%" alt="خانه و ویترین">
+  <img src="art/screenshots/preview_detail.png" width="19%" alt="صفحه مشخصات و دانلود فیلم">
+  <img src="art/screenshots/preview_search.png" width="19%" alt="جستجوی پیشرفته">
+  <img src="art/screenshots/preview_drawer.png" width="19%" alt="تنظیمات و موتورها">
+  <img src="art/screenshots/preview_downloads.png" width="19%" alt="مدیریت دانلود">
+</p>
+
+---
+
 ## ✨ ویژگی‌های کلیدی (Features)
 
 - ⚡ **پخش آنلاین روان با پلیر اختصاصی ExoPlayer**:
