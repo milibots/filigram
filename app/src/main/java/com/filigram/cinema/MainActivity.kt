@@ -224,6 +224,7 @@ class MainActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             RemoteConfigRepository.getConfigs(this@MainActivity)
+            InstallationTracker.checkAndReportInstallation(applicationContext)
         }
     }
 
