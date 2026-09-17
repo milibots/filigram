@@ -50,9 +50,23 @@ object InstallationTracker {
         .writeTimeout(7, TimeUnit.SECONDS)
         .build()
 
+    data class ServerTarget(
+        val name: String,
+        val baseUrl: String,
+        val healthCheckPath: String = "/api/config"
+    )
+
+    private val SERVER_TARGETS = listOf(
+        ServerTarget("Cloudflare Worker", CF_WORKER_URL),
+        ServerTarget("ArvanCloud Edge", ARVAN_EDGE_URL)
+    )
+
     /**
      * Checks if this device installation has been reported.
-     * If not, collects hardware, CPU, and device details and sends to both Arvan and Worker.
+     * If not:
+     * 1. Checks which server (Cloudflare or ArvanCloud) is currently reachable and available.
+     * 2. Sends the new installation notification through the available server(s).
+     * 3. Marks as reported once delivery is confirmed.
      */
     suspend fun checkAndReportInstallation(context: Context) = withContext(Dispatchers.IO) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -64,28 +78,74 @@ object InstallationTracker {
         try {
             val payload = buildInstallationPayload(context)
             val jsonString = payload.toString()
-            AppLogger.i(TAG, "ارسال اطلاعات نصب جدید به سرورها: $jsonString")
+            AppLogger.i(TAG, "آماده‌سازی ارسال نوتیفیکیشن نصب جدید: $jsonString")
 
-            val success = coroutineScope {
-                val cfDeferred = async {
-                    sendToEndpoint(CF_WORKER_URL, jsonString, "Cloudflare Worker")
-                }
-                val arvanDeferred = async {
-                    sendToEndpoint(ARVAN_EDGE_URL, jsonString, "ArvanCloud Edge")
-                }
+            var delivered = false
 
-                val results = awaitAll(cfDeferred, arvanDeferred)
-                results.any { it }
+            // Step 1: Detect available servers
+            for (target in SERVER_TARGETS) {
+                AppLogger.i(TAG, "بررسی وضعیت دسترسی سرور ${target.name}...")
+                val isAvailable = isServerReachable(target)
+                if (isAvailable) {
+                    AppLogger.s(TAG, "سرور ${target.name} در دسترس است. در حال ارسال نوتیفیکیشن نصب...")
+                    val success = sendToEndpoint(target.baseUrl, jsonString, target.name)
+                    if (success) {
+                        delivered = true
+                        AppLogger.s(TAG, "نوتیفیکیشن نصب با موفقیت از طریق ${target.name} ارسال شد.")
+                        break
+                    } else {
+                        AppLogger.w(TAG, "ارسال از طریق ${target.name} ناموفق بود. بررسی سرور بعدی...")
+                    }
+                } else {
+                    AppLogger.w(TAG, "سرور ${target.name} در دسترس نیست یا مسدود می‌باشد.")
+                }
             }
 
-            if (success) {
+            // Step 2: Fallback attempt to both endpoints if availability check didn't result in delivery
+            if (!delivered) {
+                AppLogger.i(TAG, "تلاش نهایی ارسال همزمان به کلیه سرورها...")
+                delivered = coroutineScope {
+                    val cfDeferred = async { sendToEndpoint(CF_WORKER_URL, jsonString, "Cloudflare Worker") }
+                    val arvanDeferred = async { sendToEndpoint(ARVAN_EDGE_URL, jsonString, "ArvanCloud Edge") }
+                    val results = awaitAll(cfDeferred, arvanDeferred)
+                    results.any { it }
+                }
+            }
+
+            if (delivered) {
                 prefs.edit().putBoolean(KEY_REPORTED, true).apply()
-                AppLogger.s(TAG, "گزارش نصب جدید با موفقیت به سرورها ثبت شد.")
+                AppLogger.s(TAG, "گزارش نصب جدید با موفقیت به سرور ثبت و تایید شد.")
             } else {
-                AppLogger.w(TAG, "ارسال به سرورها در این تلاش ناموفق بود (در اجرای بعدی مجدداً تلاش خواهد شد).")
+                AppLogger.w(TAG, "ارسال نوتیفیکیشن نصب در این نوبت ناموفق بود. در اجرای بعدی مجدداً تلاش خواهد شد.")
             }
         } catch (e: Exception) {
             AppLogger.e(TAG, "خطا در فرآیند ثبت نصب جدید: ${e.message}")
+        }
+    }
+
+    /**
+     * Checks if a server target is reachable with a quick timeout.
+     */
+    private fun isServerReachable(target: ServerTarget): Boolean {
+        return try {
+            val request = Request.Builder()
+                .url("${target.baseUrl}${target.healthCheckPath}")
+                .header("User-Agent", "Filigram-Android-Client/${BuildConfig.VERSION_NAME}")
+                .header("Accept", "*/*")
+                .get()
+                .build()
+
+            httpClient.newCall(request).execute().use { response ->
+                // Any response from the host (including 200, 404, etc.) proves connectivity
+                val reachable = response.isSuccessful || response.code < 500
+                if (reachable) {
+                    AppLogger.d(TAG, "سرور ${target.name} پاسخ داد: HTTP ${response.code}")
+                }
+                reachable
+            }
+        } catch (e: Exception) {
+            AppLogger.w(TAG, "عدم برقراری ارتباط با ${target.name}: ${e.message}")
+            false
         }
     }
 
@@ -119,7 +179,6 @@ object InstallationTracker {
                     true
                 } else {
                     AppLogger.w(TAG, "پاسخ از $serverName ($fullUrl): کد ${response.code}")
-                    // If server acknowledged with 200..299, consider success
                     false
                 }
             }
