@@ -10,8 +10,10 @@ object AppCacheManager {
     private var prefs: SharedPreferences? = null
     private var cacheDir: File? = null
 
-    const val TTL_DETAILS = 7 * 24 * 3600 * 1000L // 7 days for movie details & links
-    const val TTL_DISCOVERY = 4 * 3600 * 1000L // 4 hours for home/feed
+    const val TTL_DETAILS = 7 * 24 * 3600 * 1000L // 7 days for movie details (title, poster, description)
+    const val TTL_DISCOVERY = 4 * 3600 * 1000L    // 4 hours for home/feed listings
+    // Download & streaming links are NEVER cached — always fetched fresh to avoid stale/broken links.
+    // Do NOT add /link, /downloads/, or link-info-request endpoints to any isCacheable condition.
 
     fun init(context: Context) {
         prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)

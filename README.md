@@ -1,3 +1,7 @@
+<div align="center">
+
+<img src="https://raw.githubusercontent.com/milibots/filigram/master/art/ic_filigram_logo.png" alt="Filigram Logo" width="100"/>
+
 # 🎬 فیلیگرام سینما (Filigram Cinema)
 
 > **برنامه اختصاصی تماشای آنلاین و دانلود پرسرعت فیلم‌ها و سریال‌های روز دنیا با زبان فارسی**
@@ -7,17 +11,23 @@
 [![Version](https://img.shields.io/badge/Version-1.0.0-gold.svg)](https://github.com/milibots/filigram/releases)
 [![Telegram](https://img.shields.io/badge/Telegram-Channel-blue?logo=telegram)](https://t.me/filigramapp)
 
+</div>
+
 ---
 
-## 📸 تصاویر محیط برنامه (Screenshots & Previews)
+## 📸 تصاویر محیط برنامه (Screenshots)
 
-<p align="center">
-  <img src="art/screenshots/preview_home.png" width="19%" alt="خانه و ویترین">
-  <img src="art/screenshots/preview_detail.png" width="19%" alt="صفحه مشخصات و دانلود فیلم">
-  <img src="art/screenshots/preview_search.png" width="19%" alt="جستجوی پیشرفته">
-  <img src="art/screenshots/preview_drawer.png" width="19%" alt="تنظیمات و موتورها">
-  <img src="art/screenshots/preview_downloads.png" width="19%" alt="مدیریت دانلود">
-</p>
+<div align="center">
+
+| خانه و ویترین | جستجوی پیشرفته | تنظیمات و موتورها |
+|:---:|:---:|:---:|
+| <img src="https://raw.githubusercontent.com/milibots/filigram/master/art/screenshots/preview_home.png" width="220"/> | <img src="https://raw.githubusercontent.com/milibots/filigram/master/art/screenshots/preview_search.png" width="220"/> | <img src="https://raw.githubusercontent.com/milibots/filigram/master/art/screenshots/preview_drawer.png" width="220"/> |
+
+| صفحه مشخصات و دانلود فیلم | مدیریت دانلود | کتابخانه |
+|:---:|:---:|:---:|
+| <img src="https://raw.githubusercontent.com/milibots/filigram/master/art/screenshots/preview_detail.png" width="220"/> | <img src="https://raw.githubusercontent.com/milibots/filigram/master/art/screenshots/preview_downloads.png" width="220"/> | <img src="https://raw.githubusercontent.com/milibots/filigram/master/art/screenshots/preview_library.png" width="220"/> |
+
+</div>
 
 ---
 
@@ -70,3 +80,15 @@
 
 - **کانال تلگرام:** [t.me/filigramapp](https://t.me/filigramapp)
 - **گیت‌هاب:** [github.com/milibots/filigram](https://github.com/milibots/filigram)
+
+---
+
+## ❤️ حمایت مالی (Support / Donate)
+
+اگر از این برنامه لذت می‌برید و می‌خواهید به توسعه آن کمک کنید، می‌توانید از طریق شبکه **TRON (TRC-20)** حمایت کنید:
+
+```
+TZBA9oggSuLveqs98s85yiSGaUVKZmpuBp
+```
+
+> هر مبلغی، هر چقدر کم، انگیزه‌ای بزرگ برای ادامه توسعه فیلیگرام است. ممنون 🙏

@@ -63,6 +63,7 @@ import com.filigram.cinema.databinding.BottomSheetJoinChannelBinding
 import com.filigram.cinema.databinding.BottomSheetMovieQuickActionsBinding
 import com.filigram.cinema.databinding.BottomSheetRadarBinding
 import com.filigram.cinema.databinding.BottomSheetSearchDrawerBinding
+import com.filigram.cinema.databinding.BottomSheetShareAppBinding
 import com.filigram.cinema.databinding.DialogAnnouncementsBinding
 import com.filigram.cinema.databinding.DialogBatchDownloadSelectorBinding
 import com.filigram.cinema.databinding.DialogDownloadSettingsBinding
@@ -546,7 +547,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun showHomeScreen() {
         currentTab = R.id.nav_home
-        binding.topTitle.text = if (activeEngine == "movielix") "فیلیگرام" else "فیلیگرام (${getEngineName(activeEngine)})"
+        binding.topTitle.text = "فیلیگرام"
         animateTitleChange()
         if (!binding.swipeRefresh.isVisible) {
             binding.gridScreenContainer.animate().alpha(0f).setDuration(180).withEndAction {
@@ -1891,6 +1892,11 @@ class MainActivity : AppCompatActivity() {
         drawerBinding.boxDonationAddress.setOnClickListener { copyDonationAction() }
         drawerBinding.tvDonationAddress.setOnClickListener { copyDonationAction() }
 
+        drawerBinding.btnShareApp.setOnClickListener {
+            dialog.dismiss()
+            showShareAppSheet()
+        }
+
         dialog.show()
     }
 
@@ -2293,6 +2299,53 @@ class MainActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 showAppToast("کانال تلگرام: t.me/filigramapp", autoDismissMs = 4000L)
             }
+        }
+
+        dialog.show()
+    }
+
+    private fun showShareAppSheet() {
+        val dialog = createStyledBottomSheetDialog()
+        val shareBinding = BottomSheetShareAppBinding.inflate(layoutInflater)
+        dialog.setContentView(shareBinding.root)
+
+        val telegramLink = "https://t.me/filigramapp"
+        val apkLink = "https://github.com/milibots/filigram/releases/latest"
+
+        shareBinding.cardShareTelegram.setOnClickListener {
+            val sendIntent = Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT,
+                    "📽 فیلیگرام — اپ رایگان فیلم و سریال بدون محدودیت\n" +
+                    "همین الان عضو کانال تلگرام ما شو و از جدیدترین آپدیت‌ها باخبر بمان!\n\n" +
+                    "🔗 $telegramLink")
+            }
+            try {
+                startActivity(Intent.createChooser(sendIntent, "اشتراک‌گذاری فیلیگرام"))
+            } catch (e: Exception) {
+                showAppToast("کانال تلگرام: $telegramLink", autoDismissMs = 4000L)
+            }
+            dialog.dismiss()
+        }
+
+        shareBinding.cardShareApk.setOnClickListener {
+            val sendIntent = Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT,
+                    "📽 فیلیگرام — دانلود رایگان\n" +
+                    "اپ فیلم و سریال بدون محدودیت برای اندروید!\n\n" +
+                    "⬇️ دانلود آخرین نسخه:\n$apkLink")
+            }
+            try {
+                startActivity(Intent.createChooser(sendIntent, "اشتراک‌گذاری فیلیگرام"))
+            } catch (e: Exception) {
+                showAppToast("لینک دانلود: $apkLink", autoDismissMs = 4000L)
+            }
+            dialog.dismiss()
+        }
+
+        shareBinding.btnShareDismiss.setOnClickListener {
+            dialog.dismiss()
         }
 
         dialog.show()

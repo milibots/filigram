@@ -388,7 +388,7 @@
                         android:buttonTint="@color/gold"
                         android:fontFamily="@font/yekan_bakh_bold"
                         android:paddingStart="8dp"
-                        android:text="موتور هوشمند BJ — کینگ‌مووی / بلبل (MAPI)"
+                        android:text="موتور هوشمند BJ (اختصاصی فیلیگرام)"
                         android:textColor="@android:color/white"
                         android:textSize="13sp" />
 
@@ -736,6 +736,28 @@
 
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
+
+            <!-- ═══════════════════════════════════════════════ -->
+            <!-- Share App Button (sticky at bottom of scroll)  -->
+            <!-- ═══════════════════════════════════════════════ -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnShareApp"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="18dp"
+                android:layout_marginBottom="8dp"
+                android:backgroundTint="#0E2A1A"
+                android:fontFamily="@font/yekan_bakh_bold"
+                android:text="معرفی فیلیگرام به دوستان 💚"
+                android:textColor="#2ECC71"
+                android:textSize="14sp"
+                app:cornerRadius="16dp"
+                app:icon="@drawable/ic_telegram_plane"
+                app:iconGravity="textStart"
+                app:iconPadding="10dp"
+                app:iconTint="#2ECC71"
+                app:strokeColor="#2ECC71"
+                app:strokeWidth="1.5dp" />
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>

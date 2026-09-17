@@ -197,9 +197,9 @@ class MovielixApi(private val context: Context) {
     }
 
     private fun makeRequest(endpoint: String, data: MutableMap<String, String>, retryCount: Int = 0): JSONObject {
+        // Download/streaming links must ALWAYS be fetched fresh — never cache link-info-request
         val isCacheable = endpoint.contains("detail-info") ||
-                endpoint.contains("episode-request") ||
-                endpoint.contains("link-info-request")
+                endpoint.contains("episode-request")
 
         val sortedData = data.entries.sortedBy { it.key }.joinToString("&") { "${it.key}=${it.value}" }
         val cacheKey = "movielix_${endpoint.trim('/')}_$sortedData"

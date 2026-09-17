@@ -25,7 +25,12 @@ object BjApi {
 
     private fun execute(url: String): Pair<Int, String> {
         val cacheKey = "bj_${url.substringAfter("wp-json/mapi/v1/")}"
-        val isCacheable = url.contains("/post/") && !url.contains("/search")
+        // Download/streaming links must ALWAYS be fetched fresh —
+        // Only cache collection/listing endpoints (movies, series, cartoons, suggestions).
+        // Single post detail pages (/post/{id}) embed download_links, so they must never be cached.
+        val isCacheable = url.contains("/post/") &&
+                !url.contains("/search") &&
+                Regex("/post/\\d+").containsMatchIn(url).not()
 
         if (isCacheable) {
             val cached = AppCacheManager.get(cacheKey)
@@ -192,7 +197,7 @@ object BjApi {
 
         val suggestions = getSuggestions()
         if (suggestions.isNotEmpty()) {
-            sections.add(VitrinSection(sectionId++, "پیشنهادات ویژه کینگ‌مووی (موتور BJ)", suggestions))
+            sections.add(VitrinSection(sectionId++, "پیشنهادات ویژه (موتور BJ)", suggestions))
         }
 
         val movies = getMovies(1)

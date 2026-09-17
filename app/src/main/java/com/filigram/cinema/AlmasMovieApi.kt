@@ -80,8 +80,9 @@ object AlmasMovieApi {
             "DELETE" -> reqBuilder.delete(body)
         }
 
+        // Download/streaming links must ALWAYS be fetched fresh — never cache /downloads/ endpoints
         val isCacheable = method.equals("GET", ignoreCase = true) &&
-                (url.contains("/posts/") || url.contains("/downloads/"))
+                url.contains("/posts/") && !url.contains("/downloads/")
         val cacheKey = "almas_${url.substringAfter("/api/almas/v1/")}"
 
         if (isCacheable) {

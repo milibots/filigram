@@ -68,7 +68,7 @@ object SystemRadar {
 
         list.add(pingService(
             id = "bj",
-            name = "موتور BJ — کینگ‌مووی / بلبل (MAPI)",
+            name = "موتور هوشمند BJ (پایگاه MAPI)",
             description = "پایگاه داده فیلم و سریال با لینک مستقیم و استریم آنلاین",
             url = "https://forooshonline20.ir/wp-json/mapi/v1/post/movies?page=1&per_page=1",
             isCore = false

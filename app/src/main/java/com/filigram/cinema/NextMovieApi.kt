@@ -47,8 +47,10 @@ object NextMovieApi {
     }
 
     private fun execute(url: String, method: String = "GET", jsonBody: String? = null): Pair<Int, String> {
+        // Download/streaming links must ALWAYS be fetched fresh — never cache /link endpoints
         val isCacheable = method.equals("GET", ignoreCase = true) &&
-                (url.contains("/details") || url.contains("/link") || url.contains("/season"))
+                (url.contains("/details") || url.contains("/season")) &&
+                !url.contains("/link")
         val cacheKey = "nextmovie_${url.substringAfter("https://mihan-cdn.com/")}"
 
         if (isCacheable) {
