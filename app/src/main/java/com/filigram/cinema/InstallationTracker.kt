@@ -2,7 +2,6 @@ package com.filigram.cinema
 
 import android.content.Context
 import android.os.Build
-import android.provider.Settings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -214,12 +213,6 @@ object InstallationTracker {
         }
         val installDateIso = isoFormat.format(Date(nowMs))
 
-        // Hardware ID & Android ID
-        val androidId = Settings.Secure.getString(
-            context.contentResolver,
-            Settings.Secure.ANDROID_ID
-        ) ?: "unknown"
-
         // Device Brand & Model formatting
         val manufacturer = Build.MANUFACTURER.orEmpty()
         val model = Build.MODEL.orEmpty()
@@ -255,14 +248,13 @@ object InstallationTracker {
             put("timestamp_ms", nowMs)
             put("timezone", TimeZone.getDefault().id)
 
-            // Hardware details
+            // Hardware details. ANDROID_ID and the build fingerprint are deliberately absent:
+            // a per-install random uuid identifies the install without carrying a device
+            // identifier that follows the user across apps.
             put("hardware", JSONObject().apply {
-                put("hardware_id", androidId)
-                put("android_id", androidId)
                 put("device_uuid", deviceUuid)
                 put("board", Build.BOARD.orEmpty())
                 put("hardware", Build.HARDWARE.orEmpty())
-                put("fingerprint", Build.FINGERPRINT.orEmpty())
             })
 
             // Mobile name & branding

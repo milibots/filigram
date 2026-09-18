@@ -27,6 +27,25 @@ android {
         }
     }
 
+    // Every machine has its own debug.keystore, so debug-signed releases collide with each
+    // other on install. Release builds use the real key whenever its environment is present.
+    val releaseKeystorePath = System.getenv("FILIGRAM_KEYSTORE_FILE")
+    val hasReleaseKeystore = !releaseKeystorePath.isNullOrBlank() && file(releaseKeystorePath).exists()
+
+    signingConfigs {
+        create("release") {
+            if (hasReleaseKeystore) {
+                storeFile = file(releaseKeystorePath!!)
+                storePassword = System.getenv("FILIGRAM_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("FILIGRAM_KEY_ALIAS")
+                keyPassword = System.getenv("FILIGRAM_KEY_PASSWORD")
+                enableV1Signing = true
+                enableV2Signing = true
+                enableV3Signing = true
+            }
+        }
+    }
+
     buildTypes {
         debug {
             applicationIdSuffix = ".debug"
@@ -34,7 +53,11 @@ android {
         }
         release {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = if (hasReleaseKeystore) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
