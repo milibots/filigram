@@ -129,6 +129,45 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private var pendingDownloadAction: (() -> Unit)? = null
+
+    private val storagePermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        val action = pendingDownloadAction
+        pendingDownloadAction = null
+        if (isGranted) {
+            action?.invoke()
+        } else {
+            showAppToast(
+                "بدون اجازه دسترسی به حافظه، دانلود انجام نمی‌شود",
+                "از تنظیمات برنامه می‌توانید این اجازه را فعال کنید",
+                autoDismissMs = 4000L
+            )
+        }
+    }
+
+    /** Asks for whatever the running Android version actually needs before a download starts. */
+    private fun withDownloadPermission(onReady: () -> Unit) {
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            pendingDownloadAction = onReady
+            showAppToast(
+                "اجازه ذخیره‌سازی لازم است",
+                "برای ذخیره فایل در حافظه دستگاه، درخواست بعدی را تایید کنید"
+            )
+            storagePermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            return
+        }
+
+        // Progress is shown by a foreground-service notification, which Android 13+ drops silently
+        // when the notification permission was never granted.
+        checkNotificationPermission()
+        onReady()
+    }
+
     private fun checkNotificationPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
@@ -3274,19 +3313,21 @@ class MainActivity : AppCompatActivity() {
         season: Int,
         episode: Int
     ) {
-        DownloadManager.enqueue(
-            context = this,
-            mediaId = movieId,
-            title = mediaTitle,
-            seriesTitle = if (isSeries) mediaTitle.substringBefore(" - ") else null,
-            season = season,
-            episode = episode,
-            qualityLabel = qualityLabel,
-            url = url
-        )
-        DownloadForegroundService.startService(this)
-        showAppToast("«$mediaTitle» با سرعت توربو به صف دانلود اضافه شد ⚡")
-        showDownloadsHubDialog()
+        withDownloadPermission {
+            DownloadManager.enqueue(
+                context = this,
+                mediaId = movieId,
+                title = mediaTitle,
+                seriesTitle = if (isSeries) mediaTitle.substringBefore(" - ") else null,
+                season = season,
+                episode = episode,
+                qualityLabel = qualityLabel,
+                url = url
+            )
+            DownloadForegroundService.startService(this)
+            showAppToast("«$mediaTitle» با سرعت توربو به صف دانلود اضافه شد ⚡")
+            showDownloadsHubDialog()
+        }
     }
 
     private fun showDownloadsHubDialog() {

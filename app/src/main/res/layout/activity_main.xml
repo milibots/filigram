@@ -12,7 +12,10 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/black"
-        app:elevation="0dp">
+        android:outlineProvider="none"
+        android:stateListAnimator="@null"
+        app:elevation="0dp"
+        app:liftOnScroll="false">
 
         <RelativeLayout
             android:layout_width="match_parent"
@@ -319,13 +322,15 @@
 
             </LinearLayout>
 
-            <ProgressBar
+            <FrameLayout
                 android:id="@+id/gridProgressBar"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:indeterminateTint="@color/gold"
-                android:visibility="gone" />
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@color/black"
+                android:visibility="gone">
+
+                <include layout="@layout/view_skeleton_grid" />
+            </FrameLayout>
         </FrameLayout>
 
         <LinearLayout
@@ -380,12 +385,14 @@
                 android:paddingBottom="90dp" />
         </LinearLayout>
 
-        <ProgressBar
+        <FrameLayout
             android:id="@+id/mainProgressBar"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:indeterminateTint="@color/gold" />
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/black">
+
+            <include layout="@layout/view_skeleton_home" />
+        </FrameLayout>
 
     </FrameLayout>
 
