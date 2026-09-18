@@ -15,6 +15,7 @@ import com.filigram.cinema.MovielixApi
 import com.filigram.cinema.NextMovieApi
 import com.filigram.cinema.R
 import com.filigram.cinema.RezFlixApi
+import com.filigram.cinema.SourceConfig
 import kotlinx.coroutines.runBlocking
 import java.net.HttpURLConnection
 import java.net.URL
@@ -83,6 +84,8 @@ private class FiligramWidgetFactory(
     }
 
     private fun loadTitles() = runBlocking {
+        // The widget runs without MainActivity, so it loads the source config itself.
+        SourceConfig.load(context)
         val engine = activeEngine()
         val wantSeries = mode == FiligramWidgetProvider.MODE_SERIES
 

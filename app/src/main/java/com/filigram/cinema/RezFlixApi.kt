@@ -9,8 +9,20 @@ import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 
 object RezFlixApi {
+    private const val KEY = "rezflix"
     private const val BASE_URL = "http://server-win-iran.info"
     private const val TOKEN = "4F5A9C3D9A86FA54EACEDDD635185"
+    private val FALLBACK_HEADERS = mapOf("User-Agent" to "okhttp/4.12.0")
+
+    private fun base(): String = SourceConfig.baseUrl(KEY, BASE_URL)
+
+    private fun token(): String = SourceConfig.auth(KEY)["token"] ?: TOKEN
+
+    private fun newRequest(url: String): Request {
+        val builder = Request.Builder().url(url)
+        for ((k, v) in SourceConfig.headers(KEY, FALLBACK_HEADERS)) builder.header(k, v)
+        return builder.build()
+    }
 
     private val client = OkHttpClient.Builder()
         .connectTimeout(12, TimeUnit.SECONDS)
@@ -18,8 +30,8 @@ object RezFlixApi {
         .build()
 
     suspend fun getMovies(page: Int = 1): List<MovieItem> = withContext(Dispatchers.IO) {
-        val url = "$BASE_URL/api/movie/by/filtres/0/created/0/$TOKEN/?page=$page"
-        val req = Request.Builder().url(url).header("User-Agent", "okhttp/4.12.0").build()
+        val url = "${base()}/api/movie/by/filtres/0/created/0/${token()}/?page=$page"
+        val req = newRequest(url)
         val items = mutableListOf<MovieItem>()
         try {
             val res = client.newCall(req).execute()
@@ -44,8 +56,8 @@ object RezFlixApi {
     }
 
     suspend fun search(q: String, page: Int = 1): List<MovieItem> = withContext(Dispatchers.IO) {
-        val url = "$BASE_URL/api-user/newapi/like.php?action=search-movie&q=$q&pageno=$page"
-        val req = Request.Builder().url(url).header("User-Agent", "okhttp/4.12.0").build()
+        val url = "${base()}/api-user/newapi/like.php?action=search-movie&q=$q&pageno=$page"
+        val req = newRequest(url)
         val items = mutableListOf<MovieItem>()
         try {
             val res = client.newCall(req).execute()
@@ -92,8 +104,8 @@ object RezFlixApi {
             } catch (_: Exception) {}
         }
 
-        val url = "$BASE_URL/api/movie/by/$id/$TOKEN/"
-        val req = Request.Builder().url(url).header("User-Agent", "okhttp/4.12.0").build()
+        val url = "${base()}/api/movie/by/$id/${token()}/"
+        val req = newRequest(url)
         try {
             val res = client.newCall(req).execute()
             val text = res.body?.string() ?: "{}"

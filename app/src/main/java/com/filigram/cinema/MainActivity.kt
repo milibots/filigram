@@ -220,7 +220,12 @@ class MainActivity : AppCompatActivity() {
         binding.root.alpha = 0f
         binding.root.animate().alpha(1f).setDuration(400).setInterpolator(DecelerateInterpolator()).start()
 
-        loadHomeData()
+        // Source config carries base urls, headers and tokens, so give it a short head
+        // start before the first requests go out; built-in values cover a timeout.
+        lifecycleScope.launch {
+            kotlinx.coroutines.withTimeoutOrNull(3500L) { SourceConfig.load(applicationContext) }
+            loadHomeData()
+        }
 
         refreshAnnouncementsBadge()
         checkNotificationPermission()
@@ -2032,12 +2037,15 @@ class MainActivity : AppCompatActivity() {
         dialog.show()
     }
 
-    private fun getEngineName(key: String): String = when (key) {
-        "rezflix" -> "سیاره نپتون"
-        "almasmovie" -> "سیاره اورانوس"
-        "nextmovie" -> "سیاره زحل"
-        "bj" -> "سیاره مشتری"
-        else -> "سیاره زهره"
+    private fun getEngineName(key: String): String {
+        val fallback = when (key) {
+            "rezflix" -> "نپتون"
+            "almasmovie" -> "اورانوس"
+            "nextmovie" -> "زحل"
+            "bj" -> "مشتری"
+            else -> "زهره"
+        }
+        return "سیاره ${SourceConfig.label(key, fallback)}"
     }
 
     private fun showPlaylistsHubDialog(initialTab: Int = 0) {

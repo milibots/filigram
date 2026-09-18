@@ -8,6 +8,7 @@ async function invoke(channel, ...args) {
 
 contextBridge.exposeInMainWorld('filigram', {
   engines: () => invoke('engines'),
+  reloadSources: () => invoke('reloadSources'),
   home: (source) => invoke('home', source),
   listing: (source, kind, page) => invoke('listing', source, kind, page),
   search: (source, query, page) => invoke('search', source, query, page),

@@ -12,7 +12,13 @@ import java.util.concurrent.TimeUnit
 
 object BjApi {
     private const val TAG = "BjApi"
+    private const val KEY = "bj"
     private const val BASE_URL = "https://forooshonline20.ir/wp-json/mapi/v1"
+    private val FALLBACK_HEADERS = mapOf(
+        "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+    )
+
+    private fun base(): String = SourceConfig.baseUrl(KEY, BASE_URL)
 
     private val client = OkHttpClient.Builder()
         .connectTimeout(15, TimeUnit.SECONDS)
@@ -40,10 +46,9 @@ object BjApi {
         }
 
         return try {
-            val req = Request.Builder()
-                .url(url)
-                .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
-                .build()
+            val builder = Request.Builder().url(url)
+            for ((k, v) in SourceConfig.headers(KEY, FALLBACK_HEADERS)) builder.header(k, v)
+            val req = builder.build()
             val res = client.newCall(req).execute()
             val code = res.code
             val body = res.body?.string() ?: ""
@@ -60,8 +65,11 @@ object BjApi {
     }
 
     // The API host answers 403 for its own uploads; the CDN mirror serves the same paths.
-    private fun imageUrl(raw: String): String =
-        raw.replace("https://forooshonline20.ir/wp-content/", "https://seo2024.ir/wp-content/")
+    private fun imageUrl(raw: String): String {
+        val rewritten = SourceConfig.rewriteImage(KEY, raw)
+        if (rewritten != raw) return rewritten
+        return raw.replace("https://forooshonline20.ir/wp-content/", "https://seo2024.ir/wp-content/")
+    }
 
     private fun parseMovieItem(it: JSONObject): MovieItem {
         val id = it.optInt("id")
@@ -93,7 +101,7 @@ object BjApi {
 
     suspend fun getMovies(page: Int = 1): List<MovieItem> = withContext(Dispatchers.IO) {
         val list = mutableListOf<MovieItem>()
-        val url = "$BASE_URL/post/movies?page=$page&per_page=20"
+        val url = "${base()}/post/movies?page=$page&per_page=20"
         val (code, res) = execute(url)
         if (code == 200) {
             try {
@@ -114,7 +122,7 @@ object BjApi {
 
     suspend fun getSeries(page: Int = 1): List<MovieItem> = withContext(Dispatchers.IO) {
         val list = mutableListOf<MovieItem>()
-        val url = "$BASE_URL/post/series?page=$page&per_page=20"
+        val url = "${base()}/post/series?page=$page&per_page=20"
         val (code, res) = execute(url)
         if (code == 200) {
             try {
@@ -135,7 +143,7 @@ object BjApi {
 
     suspend fun getCartoons(page: Int = 1): List<MovieItem> = withContext(Dispatchers.IO) {
         val list = mutableListOf<MovieItem>()
-        val url = "$BASE_URL/post/cartoons?page=$page&per_page=20"
+        val url = "${base()}/post/cartoons?page=$page&per_page=20"
         val (code, res) = execute(url)
         if (code == 200) {
             try {
@@ -155,7 +163,7 @@ object BjApi {
 
     suspend fun getSuggestions(): List<MovieItem> = withContext(Dispatchers.IO) {
         val list = mutableListOf<MovieItem>()
-        val url = "$BASE_URL/post/suggestions"
+        val url = "${base()}/post/suggestions"
         val (code, res) = execute(url)
         if (code == 200) {
             try {
@@ -176,7 +184,7 @@ object BjApi {
     suspend fun search(query: String, page: Int = 1): List<MovieItem> = withContext(Dispatchers.IO) {
         val list = mutableListOf<MovieItem>()
         val encoded = URLEncoder.encode(query.trim(), "UTF-8")
-        val url = "$BASE_URL/post/search?search=$encoded&page=$page&per_page=20"
+        val url = "${base()}/post/search?search=$encoded&page=$page&per_page=20"
         val (code, res) = execute(url)
         if (code == 200) {
             try {
@@ -223,7 +231,7 @@ object BjApi {
     }
 
     suspend fun getDetails(id: Int): MovieDetail? = withContext(Dispatchers.IO) {
-        val url = "$BASE_URL/post/$id"
+        val url = "${base()}/post/$id"
         val (code, res) = execute(url)
         if (code != 200) return@withContext null
 
@@ -379,7 +387,7 @@ object BjApi {
         }
 
         // Try dedicated season endpoint: /post/{id}/season/{season}
-        val seasonUrl = "$BASE_URL/post/$movieId/season/$seasonNumber"
+        val seasonUrl = "${base()}/post/$movieId/season/$seasonNumber"
         val (code, res) = execute(seasonUrl)
         if (code == 200) {
             try {

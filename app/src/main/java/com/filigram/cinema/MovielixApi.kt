@@ -19,7 +19,7 @@ import java.util.zip.GZIPInputStream
 class MovielixApi(private val context: Context) {
 
     private val TAG = "MovielixApi"
-    private var baseUrl = "https://expertappmedia.org/api-v1"
+    private var baseUrl = SourceConfig.baseUrl("movielix", "https://expertappmedia.org/api-v1")
     private var token: String? = null
     private val tokenFile = File(context.filesDir, "movielix_token_cache.json")
 
@@ -114,7 +114,7 @@ class MovielixApi(private val context: Context) {
         } catch (e: Exception) {
             AppLogger.e(TAG, "خطا در فرآیند فعال‌سازی توکن: ${e.message}")
         }
-        token = "178865496596627099"
+        token = SourceConfig.auth("movielix")["token"] ?: "178865496596627099"
         return false
     }
 

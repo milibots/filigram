@@ -3,6 +3,7 @@ const bj = require('./bj');
 const nextmovie = require('./nextmovie');
 const rezflix = require('./rezflix');
 const remoteconfig = require('./remoteconfig');
+const sourceconfig = require('./sourceconfig');
 
 const engines = { almasmovie: almas, bj, nextmovie, rezflix };
 
@@ -12,16 +13,17 @@ function engine(key) {
   return engines[key] || bj;
 }
 
-// Engines are presented to users as planets; the keys stay tied to the source APIs.
-const PLANETS = {
-  bj: 'مشتری',
-  nextmovie: 'زحل',
-  almasmovie: 'اورانوس',
-  rezflix: 'نپتون'
-};
-
+// Engines are presented to users as planets. Labels, order and the kill switch
+// come from the remote config; the keys stay tied to the source APIs.
 function engineList() {
-  return ENGINE_ORDER.map((key) => ({ key, label: PLANETS[key] || engines[key].label }));
+  const configured = sourceconfig
+    .enabledList()
+    .filter((s) => engines[s.key])
+    .map((s) => ({ key: s.key, label: s.label || engines[s.key].label, planet: s.planet || s.key }));
+
+  return configured.length
+    ? configured
+    : ENGINE_ORDER.map((key) => ({ key, label: engines[key].label, planet: key }));
 }
 
 async function homeSections(sourceKey) {
@@ -80,6 +82,7 @@ function comments(sourceKey, id, page) {
 }
 
 module.exports = {
+  loadSources: () => sourceconfig.load(),
   engineList,
   homeSections,
   listing,

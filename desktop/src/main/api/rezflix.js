@@ -1,8 +1,22 @@
 const { getJson, nonEmpty } = require('./http');
+const sourceconfig = require('./sourceconfig');
 
+const KEY = 'rezflix';
 const BASE_URL = 'http://server-win-iran.info';
 const TOKEN = '4F5A9C3D9A86FA54EACEDDD635185';
 const HEADERS = { 'User-Agent': 'okhttp/4.12.0' };
+
+function base() {
+  return sourceconfig.baseUrl(KEY, BASE_URL);
+}
+
+function token() {
+  return sourceconfig.auth(KEY).token || TOKEN;
+}
+
+function headers() {
+  return sourceconfig.headers(KEY, HEADERS);
+}
 
 function parseMovieItem(raw) {
   const isSeries = nonEmpty(raw.type).toLowerCase() === 'serie';
@@ -20,8 +34,8 @@ function parseMovieItem(raw) {
 }
 
 async function getMovies(page = 1) {
-  const { json } = await getJson(`${BASE_URL}/api/movie/by/filtres/0/created/0/${TOKEN}/?page=${page}`, {
-    headers: HEADERS,
+  const { json } = await getJson(`${base()}/api/movie/by/filtres/0/created/0/${token()}/?page=${page}`, {
+    headers: headers(),
     timeoutMs: 12000,
     cacheTtlMs: 3 * 60 * 1000
   });
@@ -30,15 +44,15 @@ async function getMovies(page = 1) {
 
 async function search(query, page = 1) {
   const { json } = await getJson(
-    `${BASE_URL}/api-user/newapi/like.php?action=search-movie&q=${encodeURIComponent(query)}&pageno=${page}`,
-    { headers: HEADERS, timeoutMs: 12000 }
+    `${base()}/api-user/newapi/like.php?action=search-movie&q=${encodeURIComponent(query)}&pageno=${page}`,
+    { headers: headers(), timeoutMs: 12000 }
   );
   return Array.isArray(json) ? json.map(parseMovieItem) : [];
 }
 
 async function getDetails(id) {
-  const { json } = await getJson(`${BASE_URL}/api/movie/by/${id}/${TOKEN}/`, {
-    headers: HEADERS,
+  const { json } = await getJson(`${base()}/api/movie/by/${id}/${token()}/`, {
+    headers: headers(),
     timeoutMs: 12000,
     cacheTtlMs: 10 * 60 * 1000
   });

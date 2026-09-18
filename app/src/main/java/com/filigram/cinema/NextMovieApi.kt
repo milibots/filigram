@@ -13,6 +13,7 @@ import java.util.concurrent.TimeUnit
 object NextMovieApi {
 
     private const val TAG = "NextMovieApi"
+    private const val KEY = "nextmovie"
     private const val BASE_URL = "https://mihan-cdn.com"
     private const val AUTH_TOKEN = "j1LG8eYNnk0EBzTCRcXyo6kebJrnX6EQx6zsmFKv7e5077d7"
     private const val PLATFORM = "android/6.4"
@@ -26,14 +27,18 @@ object NextMovieApi {
         .followRedirects(true)
         .build()
 
+    private fun base(): String = SourceConfig.baseUrl(KEY, BASE_URL)
+
     private fun buildRequest(url: String, method: String = "GET", jsonBody: String? = null): Request {
-        val builder = Request.Builder()
-            .url(url)
-            .header("Authorization", "Bearer $AUTH_TOKEN")
-            .header("Platform", PLATFORM)
-            .header("User-Agent", USER_AGENT)
-            .header("Content-Type", "application/json; charset=UTF-8")
-            .header("Accept", "application/json")
+        val fallbackHeaders = mapOf(
+            "Authorization" to "Bearer $AUTH_TOKEN",
+            "Platform" to PLATFORM,
+            "User-Agent" to USER_AGENT,
+            "Content-Type" to "application/json; charset=UTF-8",
+            "Accept" to "application/json"
+        )
+        val builder = Request.Builder().url(url)
+        for ((k, v) in SourceConfig.headers(KEY, fallbackHeaders)) builder.header(k, v)
 
         val mediaType = "application/json; charset=UTF-8".toMediaType()
         when (method.uppercase()) {
@@ -102,7 +107,7 @@ object NextMovieApi {
 
     suspend fun getRecent(page: Int = 1): List<MovieItem> = withContext(Dispatchers.IO) {
         val list = mutableListOf<MovieItem>()
-        val url = "$BASE_URL/api/v3/search?page=$page"
+        val url = "${base()}/api/v3/search?page=$page"
         val payload = JSONObject().apply {
             put("type", "all")
         }.toString()
@@ -128,7 +133,7 @@ object NextMovieApi {
 
     suspend fun search(query: String, page: Int = 1): List<MovieItem> = withContext(Dispatchers.IO) {
         val list = mutableListOf<MovieItem>()
-        val url = "$BASE_URL/api/v3/search?page=$page"
+        val url = "${base()}/api/v3/search?page=$page"
         val payload = JSONObject().apply {
             put("title", query)
         }.toString()
@@ -153,7 +158,7 @@ object NextMovieApi {
     }
 
     suspend fun getDetails(movieId: Int): MovieDetail? = withContext(Dispatchers.IO) {
-        val detailsUrl = "$BASE_URL/api/movie/$movieId/details"
+        val detailsUrl = "${base()}/api/movie/$movieId/details"
         val (code, res) = execute(detailsUrl)
         if (code != 200) return@withContext null
 
@@ -195,7 +200,7 @@ object NextMovieApi {
     }
 
     private fun fetchLinksAndSeasons(movieId: Int): Pair<List<QualityItem>, List<SeasonItem>> {
-        val linksUrl = "$BASE_URL/api/movie/$movieId/links"
+        val linksUrl = "${base()}/api/movie/$movieId/links"
         val (code, res) = execute(linksUrl)
         if (code != 200) return Pair(emptyList(), emptyList())
 
@@ -309,7 +314,7 @@ object NextMovieApi {
     }
 
     suspend fun getProfile(): JSONObject? = withContext(Dispatchers.IO) {
-        val (code, res) = execute("$BASE_URL/api/me")
+        val (code, res) = execute("${base()}/api/me")
         if (code == 200) {
             try {
                 return@withContext JSONObject(res).optJSONObject("data")

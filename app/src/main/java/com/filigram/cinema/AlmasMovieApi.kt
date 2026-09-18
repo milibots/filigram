@@ -16,7 +16,21 @@ import java.util.concurrent.TimeUnit
 object AlmasMovieApi {
 
     private const val TAG = "AlmasMovieApi"
+    private const val KEY = "almasmovie"
     private const val BASE_URL = "https://almasandroid.com/api/almas/v1"
+
+    private fun base(): String = SourceConfig.baseUrl(KEY, BASE_URL)
+
+    private var adoptedRemoteTokens = false
+
+    // Remote tokens win until a refresh call replaces them in this process.
+    private fun adoptRemoteTokens() {
+        if (adoptedRemoteTokens) return
+        val remote = SourceConfig.auth(KEY)
+        remote["access_token"]?.takeIf { it.isNotBlank() }?.let { accessToken = it }
+        remote["refresh_token"]?.takeIf { it.isNotBlank() }?.let { refreshToken = it }
+        adoptedRemoteTokens = true
+    }
 
     private var accessToken = "6X96p0fIP2Zzt2_9evF4lnKzaXtFsy_Axm4yLH5yHHRgHc9QEOV3fwErdb8uey_R"
     private var refreshToken = "mIkn5vbe34uI3B5-XH3Yiql7MZ0hJrxmmsiibUN961qI0fPdar-jcc1V68OGp8zG"
@@ -38,6 +52,7 @@ object AlmasMovieApi {
         .build()
 
     private fun buildHeaders(includeAuth: Boolean = true): Map<String, String> {
+        adoptRemoteTokens()
         val headers = mutableMapOf(
             "Accept" to "application/json",
             "Content-Type" to "application/json; charset=utf-8",
@@ -53,10 +68,14 @@ object AlmasMovieApi {
             "X-Almas-OS-Version" to "9",
             "X-Almas-Platform" to "android_mobile"
         )
+        val merged = headers.toMutableMap()
+        merged.putAll(SourceConfig.headers(KEY))
         if (includeAuth && accessToken.isNotBlank()) {
-            headers["Authorization"] = "Bearer $accessToken"
+            merged["Authorization"] = "Bearer $accessToken"
+        } else {
+            merged.remove("Authorization")
         }
-        return headers
+        return merged
     }
 
     private fun executeRequest(
@@ -114,7 +133,7 @@ object AlmasMovieApi {
 
     fun refreshAccessTokenSync(): Boolean {
         try {
-            val url = "$BASE_URL/auth/refresh/"
+            val url = "${base()}/auth/refresh/"
             val jsonPayload = JSONObject().apply {
                 put("refresh_token", refreshToken)
             }.toString()
@@ -159,7 +178,7 @@ object AlmasMovieApi {
 
     suspend fun getConfig(): JSONObject? = withContext(Dispatchers.IO) {
         try {
-            val url = "$BASE_URL/config/"
+            val url = "${base()}/config/"
             val (code, res) = executeRequest(url, includeAuth = false)
             if (code == 200) {
                 return@withContext JSONObject(res)
@@ -172,7 +191,7 @@ object AlmasMovieApi {
 
     suspend fun login(phone: String, pass: String): Boolean = withContext(Dispatchers.IO) {
         try {
-            val url = "$BASE_URL/auth/login/"
+            val url = "${base()}/auth/login/"
             val deviceObj = JSONObject().apply {
                 put("device_id", DEVICE_ID)
                 put("id", DEVICE_ID)
@@ -206,7 +225,7 @@ object AlmasMovieApi {
 
     suspend fun getProfile(): JSONObject? = withContext(Dispatchers.IO) {
         try {
-            val url = "$BASE_URL/me/"
+            val url = "${base()}/me/"
             val (code, res) = executeRequest(url)
             if (code == 200) {
                 val root = JSONObject(res)
@@ -269,7 +288,7 @@ object AlmasMovieApi {
     suspend fun getHomeSections(): List<VitrinSection> = withContext(Dispatchers.IO) {
         val result = mutableListOf<VitrinSection>()
         try {
-            val url = "$BASE_URL/home/"
+            val url = "${base()}/home/"
             val (code, res) = executeRequest(url)
             if (code == 200) {
                 val root = JSONObject(res)
@@ -312,7 +331,7 @@ object AlmasMovieApi {
     ): List<MovieItem> = withContext(Dispatchers.IO) {
         val list = mutableListOf<MovieItem>()
         try {
-            val url = "$BASE_URL/post-list/?section_id=$sectionId&source=section_query&sort=default&page=$page&per_page=$perPage"
+            val url = "${base()}/post-list/?section_id=$sectionId&source=section_query&sort=default&page=$page&per_page=$perPage"
             val (code, res) = executeRequest(url)
             if (code == 200) {
                 val root = JSONObject(res)
@@ -340,7 +359,7 @@ object AlmasMovieApi {
         val list = mutableListOf<MovieItem>()
         try {
             val encodedQuery = URLEncoder.encode(query, "UTF-8")
-            val url = "$BASE_URL/search/?q=$encodedQuery&type=$type&sort=$sort&page=$page&per_page=$perPage"
+            val url = "${base()}/search/?q=$encodedQuery&type=$type&sort=$sort&page=$page&per_page=$perPage"
             val (code, res) = executeRequest(url)
             if (code == 200) {
                 val root = JSONObject(res)
@@ -360,7 +379,7 @@ object AlmasMovieApi {
 
     suspend fun getDetails(postId: Int, mediaType: String = "movie"): MovieDetail? = withContext(Dispatchers.IO) {
         try {
-            val url = "$BASE_URL/posts/$postId/"
+            val url = "${base()}/posts/$postId/"
             val (code, res) = executeRequest(url)
             if (code != 200) {
                 AppLogger.w(TAG, "خطا در دریافت جزییات کد: $code")
@@ -450,7 +469,7 @@ object AlmasMovieApi {
 
     private fun fetchDownloads(postId: Int): ParsedDownloads {
         try {
-            val url = "$BASE_URL/posts/$postId/downloads/?include_locked=1"
+            val url = "${base()}/posts/$postId/downloads/?include_locked=1"
             val (code, res) = executeRequest(url)
             if (code != 200) return ParsedDownloads()
 
@@ -562,7 +581,7 @@ object AlmasMovieApi {
 
     suspend fun getComments(postId: Int, page: Int = 1, perPage: Int = 8): JSONArray? = withContext(Dispatchers.IO) {
         try {
-            val url = "$BASE_URL/posts/$postId/comments/?page=$page&per_page=$perPage"
+            val url = "${base()}/posts/$postId/comments/?page=$page&per_page=$perPage"
             val (code, res) = executeRequest(url)
             if (code == 200) {
                 val root = JSONObject(res)
@@ -581,7 +600,7 @@ object AlmasMovieApi {
         spoiler: Boolean = false
     ): Boolean = withContext(Dispatchers.IO) {
         try {
-            val url = "$BASE_URL/posts/$postId/comments"
+            val url = "${base()}/posts/$postId/comments"
             val payload = JSONObject().apply {
                 put("body", body)
                 put("parent_id", parentId)
@@ -601,7 +620,7 @@ object AlmasMovieApi {
 
     suspend fun getGenres(page: Int = 1, perPage: Int = 50): JSONArray? = withContext(Dispatchers.IO) {
         try {
-            val url = "$BASE_URL/taxonomies/genre/terms/?page=$page&per_page=$perPage&hide_empty=1"
+            val url = "${base()}/taxonomies/genre/terms/?page=$page&per_page=$perPage&hide_empty=1"
             val (code, res) = executeRequest(url, includeAuth = false)
             if (code == 200) {
                 val root = JSONObject(res)
@@ -622,7 +641,7 @@ object AlmasMovieApi {
     ): List<MovieItem> = withContext(Dispatchers.IO) {
         val list = mutableListOf<MovieItem>()
         try {
-            val url = "$BASE_URL/taxonomies/$taxonomy/terms/$termSlug/posts/?page=$page&per_page=$perPage&sort=$sort"
+            val url = "${base()}/taxonomies/$taxonomy/terms/$termSlug/posts/?page=$page&per_page=$perPage&sort=$sort"
             val (code, res) = executeRequest(url)
             if (code == 200) {
                 val root = JSONObject(res)
@@ -641,7 +660,7 @@ object AlmasMovieApi {
 
     suspend fun likePost(postId: Int): Boolean = withContext(Dispatchers.IO) {
         try {
-            val url = "$BASE_URL/me/liked/$postId"
+            val url = "${base()}/me/liked/$postId"
             val (code, _) = executeRequest(url, method = "PUT")
             return@withContext code in 200..204
         } catch (e: Exception) {
@@ -652,7 +671,7 @@ object AlmasMovieApi {
 
     suspend fun unlikePost(postId: Int): Boolean = withContext(Dispatchers.IO) {
         try {
-            val url = "$BASE_URL/me/liked/$postId"
+            val url = "${base()}/me/liked/$postId"
             val (code, _) = executeRequest(url, method = "DELETE")
             return@withContext code in 200..204
         } catch (e: Exception) {
@@ -663,7 +682,7 @@ object AlmasMovieApi {
 
     suspend fun savePost(postId: Int): Boolean = withContext(Dispatchers.IO) {
         try {
-            val url = "$BASE_URL/me/saved/$postId"
+            val url = "${base()}/me/saved/$postId"
             val (code, _) = executeRequest(url, method = "PUT")
             return@withContext code in 200..204
         } catch (e: Exception) {
@@ -674,7 +693,7 @@ object AlmasMovieApi {
 
     suspend fun unsavePost(postId: Int): Boolean = withContext(Dispatchers.IO) {
         try {
-            val url = "$BASE_URL/me/saved/$postId"
+            val url = "${base()}/me/saved/$postId"
             val (code, _) = executeRequest(url, method = "DELETE")
             return@withContext code in 200..204
         } catch (e: Exception) {
@@ -689,7 +708,7 @@ object AlmasMovieApi {
         progressSeconds: Long = 0
     ): Boolean = withContext(Dispatchers.IO) {
         try {
-            val url = "$BASE_URL/me/playback-progress/$postId"
+            val url = "${base()}/me/playback-progress/$postId"
             val payload = JSONObject().apply {
                 if (episodeKey.isNotBlank()) put("episode_key", episodeKey)
                 put("progress_seconds", progressSeconds)

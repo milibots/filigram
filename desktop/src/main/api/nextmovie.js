@@ -1,4 +1,7 @@
 const { getJson, nonEmpty } = require('./http');
+const sourceconfig = require('./sourceconfig');
+
+const KEY = 'nextmovie';
 
 const BASE_URL = 'https://mihan-cdn.com';
 const AUTH_TOKEN = 'j1LG8eYNnk0EBzTCRcXyo6kebJrnX6EQx6zsmFKv7e5077d7';
@@ -14,7 +17,11 @@ const HEADERS = {
 const seriesCache = new Map();
 
 function call(path, options = {}) {
-  return getJson(`${BASE_URL}${path}`, { headers: HEADERS, timeoutMs: 20000, ...options });
+  return getJson(`${sourceconfig.baseUrl(KEY, BASE_URL)}${path}`, {
+    headers: sourceconfig.headers(KEY, HEADERS),
+    timeoutMs: 20000,
+    ...options
+  });
 }
 
 function parseMovieItem(raw) {

@@ -1,0 +1,119 @@
+{
+  "config_version": 2,
+  "configs": {
+    "app_version": "1.2.0",
+    "force_update": "false",
+    "update_url": "https://github.com/milibots/filigram/releases/latest",
+    "maintenance_mode": "false",
+    "support_telegram": "@filigramapp",
+    "desktop_min_version": "1.2.0",
+    "android_min_version_code": "6"
+  },
+  "banners": [],
+  "announcements": [
+    {
+      "id": "announce-desktop-1",
+      "title": "نسخه ویندوز فیلیگرام منتشر شد",
+      "text": "حالا می‌توانید فیلم‌ها و سریال‌ها را روی ویندوز هم تماشا کنید. نسخه پرتابل و نصبی از بخش ریلیزهای گیت‌هاب در دسترس است.",
+      "views": 0,
+      "createdAt": "2026-09-18T00:00:00.000Z"
+    }
+  ],
+  "sources": [
+    {
+      "key": "bj",
+      "label": "مشتری",
+      "planet": "jupiter",
+      "enabled": true,
+      "order": 1,
+      "base_url": "https://forooshonline20.ir/wp-json/mapi/v1",
+      "headers": {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+      },
+      "cookies": "",
+      "auth": {},
+      "image_rewrite": [
+        ["https://forooshonline20.ir/wp-content/", "https://seo2024.ir/wp-content/"]
+      ],
+      "notes": "Answers only from Iranian IPs. Its own upload host returns 403, so posters come from the CDN mirror."
+    },
+    {
+      "key": "nextmovie",
+      "label": "زحل",
+      "planet": "saturn",
+      "enabled": true,
+      "order": 2,
+      "base_url": "https://mihan-cdn.com",
+      "headers": {
+        "Authorization": "Bearer __SET_IN_DASHBOARD__",
+        "Platform": "android/6.4",
+        "User-Agent": "okhttp/5.5.0"
+      },
+      "cookies": "",
+      "auth": {},
+      "image_rewrite": [],
+      "notes": "Search rejects type=all and rejects title combined with type."
+    },
+    {
+      "key": "almasmovie",
+      "label": "اورانوس",
+      "planet": "uranus",
+      "enabled": true,
+      "order": 3,
+      "base_url": "https://almasandroid.com/api/almas/v1",
+      "headers": {
+        "User-Agent": "Dalvik/2.1.0 (Linux; U; Android 9; G576D Build/PQ3B.190801.04221524)",
+        "X-Almas-App-Version-Code": "8",
+        "X-Almas-App-Version-Name": "3.0.0",
+        "X-Almas-Client": "android",
+        "X-Almas-Device-Fingerprint-Hash": "06073e34483010815f52e0b9cc1bb0378a2592cb8d4163759f51f513ab74f972",
+        "X-Almas-Device-Id": "00d04fe2-dd3b-4d14-b2ba-88469cb8a01f",
+        "X-Almas-Device-Manufacturer": "Google Phone",
+        "X-Almas-Device-Model": "G576D",
+        "X-Almas-Device-Name": "Google Phone G576D",
+        "X-Almas-OS-Version": "9",
+        "X-Almas-Platform": "android_mobile"
+      },
+      "cookies": "",
+      "auth": {
+        "access_token": "__SET_IN_DASHBOARD__",
+        "refresh_token": "__SET_IN_DASHBOARD__"
+      },
+      "image_rewrite": [],
+      "notes": "Browsing works without auth; play links need a live member token. Replace both tokens here when they expire."
+    },
+    {
+      "key": "rezflix",
+      "label": "نپتون",
+      "planet": "neptune",
+      "enabled": true,
+      "order": 4,
+      "base_url": "http://server-win-iran.info",
+      "headers": {
+        "User-Agent": "okhttp/4.12.0"
+      },
+      "cookies": "",
+      "auth": {
+        "token": "__SET_IN_DASHBOARD__"
+      },
+      "image_rewrite": [],
+      "notes": "Browse only. Its detail payload carries no playable links."
+    },
+    {
+      "key": "movielix",
+      "label": "زهره",
+      "planet": "venus",
+      "enabled": true,
+      "order": 5,
+      "base_url": "https://expertappmedia.org/api-v1",
+      "headers": {},
+      "cookies": "",
+      "auth": {
+        "token": "__SET_IN_DASHBOARD__",
+        "register_url": "https://global-api2.expertmedias.org/apiMovielix.php"
+      },
+      "image_rewrite": [],
+      "notes": "Android only. Registers its own device token at runtime and falls back to the token above."
+    }
+  ]
+}

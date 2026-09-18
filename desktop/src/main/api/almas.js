@@ -1,5 +1,7 @@
 const { request, getJson, nonEmpty, str } = require('./http');
+const sourceconfig = require('./sourceconfig');
 
+const KEY = 'almasmovie';
 const BASE_URL = 'https://almasandroid.com/api/almas/v1';
 const DEVICE_ID = '00d04fe2-dd3b-4d14-b2ba-88469cb8a01f';
 const DEVICE_FINGERPRINT = '06073e34483010815f52e0b9cc1bb0378a2592cb8d4163759f51f513ab74f972';
@@ -7,10 +9,21 @@ const USER_AGENT = 'Dalvik/2.1.0 (Linux; U; Android 9; G576D Build/PQ3B.190801.0
 
 let accessToken = '6X96p0fIP2Zzt2_9evF4lnKzaXtFsy_Axm4yLH5yHHRgHc9QEOV3fwErdb8uey_R';
 let refreshToken = 'mIkn5vbe34uI3B5-XH3Yiql7MZ0hJrxmmsiibUN961qI0fPdar-jcc1V68OGp8zG';
+let adoptedRemoteTokens = false;
 
 const seriesCache = new Map();
 
+// Remote tokens win until a refresh call replaces them in this process.
+function adoptRemoteTokens() {
+  if (adoptedRemoteTokens) return;
+  const remote = sourceconfig.auth(KEY);
+  if (remote.access_token) accessToken = remote.access_token;
+  if (remote.refresh_token) refreshToken = remote.refresh_token;
+  adoptedRemoteTokens = true;
+}
+
 function buildHeaders(includeAuth = true) {
+  adoptRemoteTokens();
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json; charset=utf-8',
@@ -26,12 +39,14 @@ function buildHeaders(includeAuth = true) {
     'X-Almas-OS-Version': '9',
     'X-Almas-Platform': 'android_mobile'
   };
-  if (includeAuth && accessToken) headers.Authorization = `Bearer ${accessToken}`;
-  return headers;
+  const merged = sourceconfig.headers(KEY, headers);
+  if (includeAuth && accessToken) merged.Authorization = `Bearer ${accessToken}`;
+  else delete merged.Authorization;
+  return merged;
 }
 
 async function refreshAccessToken() {
-  const { status, text } = await request(`${BASE_URL}/auth/refresh/`, {
+  const { status, text } = await request(`${sourceconfig.baseUrl(KEY, BASE_URL)}/auth/refresh/`, {
     method: 'POST',
     headers: buildHeaders(false),
     body: JSON.stringify({ refresh_token: refreshToken })
@@ -51,7 +66,7 @@ async function refreshAccessToken() {
 
 async function call(path, options = {}) {
   const { method = 'GET', body = null, includeAuth = true, retryOn401 = true, cacheTtlMs = 0 } = options;
-  const url = `${BASE_URL}${path}`;
+  const url = `${sourceconfig.baseUrl(KEY, BASE_URL)}${path}`;
   const res = await getJson(url, {
     method,
     headers: buildHeaders(includeAuth),

@@ -57,7 +57,7 @@ function handle(channel, fn) {
   });
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   // Some CDNs reject requests without a referer or with an Electron user agent.
   session.defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
     const headers = { ...details.requestHeaders };
@@ -68,6 +68,7 @@ app.whenReady().then(() => {
   });
 
   handle('engines', () => api.engineList());
+  handle('reloadSources', () => api.loadSources());
   handle('home', (source) => api.homeSections(source));
   handle('listing', (source, kind, page) => api.listing(source, kind, page));
   handle('search', (source, query, page) => api.search(source, query, page));
@@ -92,6 +93,13 @@ app.whenReady().then(() => {
     spawn(player, [url], { detached: true, stdio: 'ignore' }).unref();
     return true;
   });
+
+  // Source config decides base urls, headers and which planets are shown, so give it a
+  // short head start; the bundled fallbacks take over if the servers are slow.
+  await Promise.race([
+    api.loadSources().catch(() => null),
+    new Promise((resolve) => setTimeout(resolve, 3500))
+  ]);
 
   createWindow();
 

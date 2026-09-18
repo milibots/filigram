@@ -1,17 +1,27 @@
 const { getJson, nonEmpty } = require('./http');
+const sourceconfig = require('./sourceconfig');
 
+const KEY = 'bj';
 const BASE_URL = 'https://forooshonline20.ir/wp-json/mapi/v1';
 const HEADERS = { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' };
+// The API host answers 403 for its own uploads; the CDN mirror serves the same paths.
+const IMAGE_REWRITE = ['https://forooshonline20.ir/wp-content/', 'https://seo2024.ir/wp-content/'];
 
 const seriesCache = new Map();
 
-// The API host answers 403 for its own uploads; the CDN mirror serves the same paths.
 function imageUrl(raw) {
-  return nonEmpty(raw).replace('https://forooshonline20.ir/wp-content/', 'https://seo2024.ir/wp-content/');
+  const url = nonEmpty(raw);
+  const rewritten = sourceconfig.rewriteImage(KEY, url);
+  if (rewritten !== url) return rewritten;
+  return url.replace(IMAGE_REWRITE[0], IMAGE_REWRITE[1]);
 }
 
 async function call(path, cacheTtlMs = 0) {
-  return getJson(`${BASE_URL}${path}`, { headers: HEADERS, timeoutMs: 15000, cacheTtlMs });
+  return getJson(`${sourceconfig.baseUrl(KEY, BASE_URL)}${path}`, {
+    headers: sourceconfig.headers(KEY, HEADERS),
+    timeoutMs: 15000,
+    cacheTtlMs
+  });
 }
 
 function parseMovieItem(raw) {
