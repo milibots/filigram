@@ -55,7 +55,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/yekan_bakh_regular"
-                android:text="موتور فعال: موتور MX (پیش‌فرض)"
+                android:text="سیاره فعال: زهره (پیش‌فرض)"
                 android:textColor="@color/muted"
                 android:textSize="11sp" />
         </LinearLayout>
@@ -278,7 +278,7 @@
                 android:layout_marginTop="22dp"
                 android:layout_marginBottom="12dp"
                 android:fontFamily="@font/yekan_bakh_bold"
-                android:text="انتخاب منبع و موتور استخراج (Engines):"
+                android:text="انتخاب سیاره منبع محتوا (Planets):"
                 android:textColor="@color/header_gray"
                 android:textSize="15sp" />
 
@@ -299,12 +299,14 @@
 
                     <RadioButton
                         android:id="@+id/rbMovielix"
+                        android:drawableStart="@drawable/ic_planet_venus"
+                        android:drawablePadding="10dp"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:buttonTint="@color/gold"
                         android:fontFamily="@font/yekan_bakh_bold"
                         android:paddingStart="8dp"
-                        android:text="موتور هوشمند MX — سرور اختصاصی و پایدار"
+                        android:text="سیاره زهره — سرور اختصاصی و پایدار"
                         android:textColor="@android:color/white"
                         android:textSize="13sp" />
 
@@ -320,12 +322,14 @@
 
                     <RadioButton
                         android:id="@+id/rbRezFlix"
+                        android:drawableStart="@drawable/ic_planet_neptune"
+                        android:drawablePadding="10dp"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:buttonTint="@color/gold"
                         android:fontFamily="@font/yekan_bakh_bold"
                         android:paddingStart="8dp"
-                        android:text="موتور هوشمند RF — سرور کمکی"
+                        android:text="سیاره نپتون — سرور کمکی"
                         android:textColor="@android:color/white"
                         android:textSize="13sp" />
 
@@ -341,12 +345,14 @@
 
                     <RadioButton
                         android:id="@+id/rbAlmasMovie"
+                        android:drawableStart="@drawable/ic_planet_uranus"
+                        android:drawablePadding="10dp"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:buttonTint="@color/gold"
                         android:fontFamily="@font/yekan_bakh_bold"
                         android:paddingStart="8dp"
-                        android:text="موتور هوشمند AM — پایگاه چندکیفیتی"
+                        android:text="سیاره اورانوس — پایگاه چندکیفیتی"
                         android:textColor="@android:color/white"
                         android:textSize="13sp" />
 
@@ -362,12 +368,14 @@
 
                     <RadioButton
                         android:id="@+id/rbNextMovie"
+                        android:drawableStart="@drawable/ic_planet_saturn"
+                        android:drawablePadding="10dp"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:buttonTint="@color/gold"
                         android:fontFamily="@font/yekan_bakh_bold"
                         android:paddingStart="8dp"
-                        android:text="موتور هوشمند NM — پایگاه پرسرعت"
+                        android:text="سیاره زحل — پایگاه پرسرعت"
                         android:textColor="@android:color/white"
                         android:textSize="13sp" />
 
@@ -382,13 +390,15 @@
 
                     <RadioButton
                         android:id="@+id/rbBjEngine"
+                        android:drawableStart="@drawable/ic_planet_jupiter"
+                        android:drawablePadding="10dp"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="10dp"
                         android:buttonTint="@color/gold"
                         android:fontFamily="@font/yekan_bakh_bold"
                         android:paddingStart="8dp"
-                        android:text="موتور هوشمند BJ (اختصاصی فیلیگرام)"
+                        android:text="سیاره مشتری (اختصاصی فیلیگرام)"
                         android:textColor="@android:color/white"
                         android:textSize="13sp" />
 

@@ -53,3 +53,9 @@ newfonttouse/
 *.php
 .agents/
 telegram.md
+
+# Electron desktop app
+desktop/node_modules/
+desktop/dist/
+desktop/release/
+!desktop/assets/icon.png

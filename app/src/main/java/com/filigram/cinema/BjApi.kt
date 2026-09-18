@@ -59,12 +59,16 @@ object BjApi {
         }
     }
 
+    // The API host answers 403 for its own uploads; the CDN mirror serves the same paths.
+    private fun imageUrl(raw: String): String =
+        raw.replace("https://forooshonline20.ir/wp-content/", "https://seo2024.ir/wp-content/")
+
     private fun parseMovieItem(it: JSONObject): MovieItem {
         val id = it.optInt("id")
         val faTitle = it.optString("fa_title").trim()
         val enTitle = it.optString("title", "بدون عنوان").trim()
         val displayTitle = if (faTitle.isNotBlank()) faTitle else enTitle
-        val thumbnail = it.optString("thumbnail").ifEmpty { it.optString("image", "") }
+        val thumbnail = imageUrl(it.optString("thumbnail").ifEmpty { it.optString("image", "") })
         val typeStr = it.optString("type", "movie")
         val isSeries = typeStr == "serie" || typeStr == "series" || typeStr == "tvshow"
         val release = it.opt("release")?.toString()?.takeIf { it.isNotBlank() && it != "null" }
@@ -231,8 +235,8 @@ object BjApi {
             val faTitle = d.optString("fa_title").trim()
             val enTitle = d.optString("title", "بدون عنوان").trim()
             val title = if (faTitle.isNotBlank()) faTitle else enTitle
-            val thumbnail = d.optString("thumbnail").ifEmpty { d.optString("image", "") }
-            val banner = d.optString("background_image").ifEmpty { d.optString("background", thumbnail) }
+            val thumbnail = imageUrl(d.optString("thumbnail").ifEmpty { d.optString("image", "") })
+            val banner = imageUrl(d.optString("background_image").ifEmpty { d.optString("background", thumbnail) })
             val typeStr = d.optString("type", "movie")
             val isSeries = typeStr == "serie" || typeStr == "series" || typeStr == "tvshow"
 

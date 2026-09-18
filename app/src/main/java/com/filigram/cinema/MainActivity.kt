@@ -50,6 +50,9 @@ import androidx.media3.common.C
 import androidx.media3.common.Player
 import androidx.media3.common.PlaybackException
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.datasource.DefaultDataSource
+import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import android.app.PictureInPictureParams
 import android.util.Rational
 import com.google.android.material.button.MaterialButton
@@ -115,6 +118,7 @@ class MainActivity : AppCompatActivity() {
     ) { isGranted ->
         if (isGranted) {
             showAppToast("مجوز اعلان فعال شد 🔔")
+            checkAndSendWelcomeNotification()
         } else {
             showAppToast("برای دریافت اعلان قسمت‌های جدید به مجوز نوتیفیکیشن نیاز است", autoDismissMs = 4000L)
         }
@@ -219,6 +223,7 @@ class MainActivity : AppCompatActivity() {
         loadHomeData()
 
         refreshAnnouncementsBadge()
+        checkNotificationPermission()
         checkAndSendWelcomeNotification()
         checkAppOpenCountAndPromptChannel()
 
@@ -285,6 +290,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun checkAndSendWelcomeNotification() {
+        // Marking the welcome as sent before the user grants POST_NOTIFICATIONS would drop it forever.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
+            return
+        }
+
         val prefs = getSharedPreferences("filigram_prefs", Context.MODE_PRIVATE)
         val hasSentWelcome = prefs.getBoolean("has_sent_welcome_notification", false)
         if (!hasSentWelcome) {
@@ -297,6 +309,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun handleSeriesNotificationIntent(intent: Intent?) {
         if (intent == null) return
+        if (handleWidgetIntent(intent)) return
         if (intent.action == "com.filigram.cinema.ACTION_OPEN_ANNOUNCEMENTS") {
             binding.root.postDelayed({
                 showAnnouncementsDialog()
@@ -323,6 +336,33 @@ class MainActivity : AppCompatActivity() {
                 showMovieDetail(movieItem)
             }, 350)
         }
+    }
+
+    private fun handleWidgetIntent(intent: Intent): Boolean {
+        if (intent.action != com.filigram.cinema.widget.FiligramWidgetProvider.ACTION_OPEN_ITEM) return false
+
+        val mode = intent.getStringExtra(com.filigram.cinema.widget.FiligramWidgetProvider.EXTRA_MODE)
+        if (mode == com.filigram.cinema.widget.FiligramWidgetProvider.MODE_NEWS) {
+            binding.root.postDelayed({ showAnnouncementsDialog() }, 300)
+            return true
+        }
+
+        val itemId = intent.getIntExtra(com.filigram.cinema.widget.FiligramWidgetProvider.EXTRA_ITEM_ID, -1)
+        if (itemId == -1) return false
+
+        val engine = intent.getStringExtra(com.filigram.cinema.widget.FiligramWidgetProvider.EXTRA_ITEM_ENGINE)
+        if (!engine.isNullOrEmpty() && engine != activeEngine) {
+            activeEngine = engine
+        }
+
+        val movieItem = MovieItem(
+            id = itemId,
+            title = intent.getStringExtra(com.filigram.cinema.widget.FiligramWidgetProvider.EXTRA_ITEM_TITLE) ?: "",
+            image = intent.getStringExtra(com.filigram.cinema.widget.FiligramWidgetProvider.EXTRA_ITEM_IMAGE) ?: "",
+            type = intent.getIntExtra(com.filigram.cinema.widget.FiligramWidgetProvider.EXTRA_ITEM_TYPE, 0)
+        )
+        binding.root.postDelayed({ showMovieDetail(movieItem) }, 350)
+        return true
     }
 
     private fun Dialog.applyFullscreenAnimation() {
@@ -1554,13 +1594,15 @@ class MainActivity : AppCompatActivity() {
             dialog.setContentView(playerBinding.root)
             dialog.window?.setBackgroundDrawableResource(android.R.color.black)
 
+            activePlayerDialog?.takeIf { it.isShowing }?.dismiss()
+            activeExoPlayer?.release()
+            activeExoPlayer = null
+
             activePlayerDialog = dialog
             playerBinding.txtPlayerTitle.text = title
             playerBinding.txtPlayerQuality.text = quality
             playerBinding.txtPlayerBadge.text = if (isOffline) "فایل دانلودشده" else "استریم آنلاین"
             playerBinding.playerLoading.visibility = View.VISIBLE
-
-            activeExoPlayer?.release()
 
             var activeSubtitleUri: Uri? = null
             if (!subtitlePath.isNullOrEmpty()) {
@@ -1578,8 +1620,14 @@ class MainActivity : AppCompatActivity() {
             fun buildMediaItem(subUri: Uri?): MediaItem {
                 val builder = MediaItem.Builder().setUri(streamUrl)
                 if (subUri != null) {
+                    val subMime = when {
+                        subUri.toString().endsWith(".vtt", true) -> MimeTypes.TEXT_VTT
+                        subUri.toString().endsWith(".ass", true) ||
+                            subUri.toString().endsWith(".ssa", true) -> MimeTypes.TEXT_SSA
+                        else -> MimeTypes.APPLICATION_SUBRIP
+                    }
                     val subConfig = MediaItem.SubtitleConfiguration.Builder(subUri)
-                        .setMimeType(MimeTypes.APPLICATION_SUBRIP)
+                        .setMimeType(subMime)
                         .setLanguage("fa")
                         .setSelectionFlags(C.SELECTION_FLAG_DEFAULT)
                         .build()
@@ -1588,7 +1636,20 @@ class MainActivity : AppCompatActivity() {
                 return builder.build()
             }
 
-            val player = ExoPlayer.Builder(this).build()
+            // Streaming hosts redirect between http and https and reject non-browser agents,
+            // which the media3 defaults refuse and surface as a generic playback error.
+            val httpDataSourceFactory = DefaultHttpDataSource.Factory()
+                .setUserAgent("Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36")
+                .setAllowCrossProtocolRedirects(true)
+                .setConnectTimeoutMs(30000)
+                .setReadTimeoutMs(30000)
+                .setKeepPostFor302Redirects(true)
+
+            val dataSourceFactory = DefaultDataSource.Factory(this, httpDataSourceFactory)
+
+            val player = ExoPlayer.Builder(this)
+                .setMediaSourceFactory(DefaultMediaSourceFactory(dataSourceFactory))
+                .build()
             activeExoPlayer = player
             playerBinding.playerView.player = player
 
@@ -1972,11 +2033,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun getEngineName(key: String): String = when (key) {
-        "rezflix" -> "موتور RF"
-        "almasmovie" -> "موتور AM"
-        "nextmovie" -> "موتور NM"
-        "bj" -> "موتور BJ"
-        else -> "موتور MX"
+        "rezflix" -> "سیاره نپتون"
+        "almasmovie" -> "سیاره اورانوس"
+        "nextmovie" -> "سیاره زحل"
+        "bj" -> "سیاره مشتری"
+        else -> "سیاره زهره"
     }
 
     private fun showPlaylistsHubDialog(initialTab: Int = 0) {
@@ -2758,11 +2819,8 @@ class MainActivity : AppCompatActivity() {
             showAppToast("تمامی اعلانات به عنوان خوانده شده علامت‌گذاری شدند")
         }
 
-        if (initialList.isEmpty()) {
-            loadData()
-        } else {
-            updateHeaderBadge()
-        }
+        updateHeaderBadge()
+        loadData()
 
         dialog.show()
     }

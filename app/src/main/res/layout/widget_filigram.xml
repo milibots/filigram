@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/widget_bg"
+    android:layoutDirection="rtl"
+    android:padding="12dp">
+
+    <LinearLayout
+        android:id="@+id/widgetHeader"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@mipmap/ic_launcher"
+            android:contentDescription="@string/app_name" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginStart="8dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="فیلیگرام"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/widgetSubtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="جدیدترین فیلم‌ها"
+                android:textColor="#999999"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/widgetRefresh"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/widget_chip_bg"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp"
+            android:text="بروزرسانی"
+            android:textColor="#E50914"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="10dp">
+
+        <TextView
+            android:id="@+id/widgetTabMovies"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@drawable/widget_chip_bg"
+            android:gravity="center"
+            android:paddingTop="7dp"
+            android:paddingBottom="7dp"
+            android:text="فیلم‌ها"
+            android:textColor="#DDDDDD"
+            android:textSize="11sp" />
+
+        <TextView
+            android:id="@+id/widgetTabSeries"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="6dp"
+            android:background="@drawable/widget_chip_bg"
+            android:gravity="center"
+            android:paddingTop="7dp"
+            android:paddingBottom="7dp"
+            android:text="سریال‌ها"
+            android:textColor="#DDDDDD"
+            android:textSize="11sp" />
+
+        <TextView
+            android:id="@+id/widgetTabNews"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="6dp"
+            android:background="@drawable/widget_chip_bg"
+            android:gravity="center"
+            android:paddingTop="7dp"
+            android:paddingBottom="7dp"
+            android:text="اعلان‌ها"
+            android:textColor="#DDDDDD"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+    <ListView
+        android:id="@+id/widgetList"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="10dp"
+        android:divider="@null"
+        android:dividerHeight="6dp"
+        android:scrollbars="none" />
+
+    <TextView
+        android:id="@+id/widgetEmpty"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:text="در حال دریافت اطلاعات..."
+        android:textColor="#777777"
+        android:textSize="12sp" />
+</LinearLayout>

@@ -11,8 +11,8 @@ android {
         applicationId = "com.filigram.cinema"
         minSdk = 26
         targetSdk = 35
-        versionCode = 3
-        versionName = "1.0.2"
+        versionCode = 4
+        versionName = "1.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -74,6 +74,7 @@ dependencies {
     implementation("androidx.media3:media3-exoplayer:1.4.1")
     implementation("androidx.media3:media3-ui:1.4.1")
     implementation("androidx.media3:media3-common:1.4.1")
+    implementation("androidx.media3:media3-datasource:1.4.1")
 
     // Jsoup for HTML parsing (BeautifulSoup equivalent in Java/Kotlin)
     implementation("org.jsoup:jsoup:1.18.1")

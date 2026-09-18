@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https: http: data:; media-src 'self' https: http: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'" />
+    <title>Filigram Cinema</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark">FILIGRAM</span>
+        <span class="brand-sub">CINEMA</span>
+      </div>
+
+      <nav class="nav" id="nav">
+        <button class="nav-item active" data-tab="home">خانه</button>
+        <button class="nav-item" data-tab="movies">فیلم‌ها</button>
+        <button class="nav-item" data-tab="series">سریال‌ها</button>
+        <button class="nav-item" data-tab="library">کتابخانه</button>
+        <button class="nav-item" data-tab="news">اعلان‌ها<span class="badge-dot" id="newsDot"></span></button>
+      </nav>
+
+      <div class="topbar-actions">
+        <div class="search-box">
+          <input id="searchInput" type="search" placeholder="جستجوی فیلم یا سریال..." autocomplete="off" />
+        </div>
+        <div id="engineBar" class="engine-bar" title="انتخاب سیاره (منبع محتوا)"></div>
+      </div>
+    </header>
+
+    <main id="view" class="view"></main>
+
+    <div id="playerOverlay" class="overlay player-overlay hidden">
+      <div class="player-shell">
+        <video id="video" playsinline></video>
+        <div class="player-top">
+          <span id="playerTitle" class="player-title"></span>
+          <div class="player-top-actions">
+            <button id="btnExternal" class="ghost-btn" title="پخش در پلیر خارجی">VLC</button>
+            <button id="btnCopyLink" class="ghost-btn" title="کپی لینک">کپی لینک</button>
+            <button id="btnClosePlayer" class="ghost-btn danger" title="بستن">بستن</button>
+          </div>
+        </div>
+        <div class="player-center" id="playerCenter">
+          <button id="btnBack10" class="round-btn">۱۰-</button>
+          <button id="btnPlayPause" class="round-btn big">▶</button>
+          <button id="btnFwd10" class="round-btn">۱۰+</button>
+        </div>
+        <div class="player-bottom">
+          <input id="seek" class="seek" type="range" min="0" max="1000" value="0" step="1" />
+          <div class="player-bottom-row">
+            <span id="timeLabel" class="time">۰۰:۰۰ / ۰۰:۰۰</span>
+            <div class="player-bottom-actions">
+              <label class="sub-btn">
+                زیرنویس
+                <input id="subInput" type="file" accept=".vtt,.srt" hidden />
+              </label>
+              <select id="rateSelect" class="mini-select">
+                <option value="0.75">۰.۷۵x</option>
+                <option value="1" selected>۱x</option>
+                <option value="1.25">۱.۲۵x</option>
+                <option value="1.5">۱.۵x</option>
+                <option value="2">۲x</option>
+              </select>
+              <input id="volume" class="volume" type="range" min="0" max="1" step="0.05" value="1" />
+              <button id="btnFullscreen" class="ghost-btn">تمام‌صفحه</button>
+            </div>
+          </div>
+        </div>
+        <div id="playerLoader" class="player-loader hidden">در حال بافر کردن...</div>
+      </div>
+    </div>
+
+    <div id="toast" class="toast hidden"></div>
+
+    <script src="app.js"></script>
+  </body>
+</html>

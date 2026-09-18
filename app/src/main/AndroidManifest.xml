@@ -36,6 +36,24 @@
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="dataSync" />
+
+        <receiver
+            android:name=".widget.FiligramWidgetProvider"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.filigram.cinema.widget.ACTION_REFRESH" />
+                <action android:name="com.filigram.cinema.widget.ACTION_SET_MODE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_filigram_info" />
+        </receiver>
+
+        <service
+            android:name=".widget.FiligramWidgetService"
+            android:exported="false"
+            android:permission="android.permission.BIND_REMOTEVIEWS" />
     </application>
 
 </manifest>

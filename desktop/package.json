@@ -1,0 +1,60 @@
+{
+  "name": "filigram-cinema-desktop",
+  "productName": "Filigram Cinema",
+  "version": "1.1.0",
+  "description": "Filigram Cinema desktop client for Windows",
+  "author": "Filigram",
+  "license": "MIT",
+  "main": "src/main/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win",
+    "dist:portable": "electron-builder --win portable"
+  },
+  "devDependencies": {
+    "electron": "^33.3.1",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.filigram.cinema.desktop",
+    "productName": "Filigram Cinema",
+    "directories": {
+      "output": "release",
+      "buildResources": "assets"
+    },
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "win": {
+      "icon": "assets/icon.png",
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "portable": {
+      "artifactName": "Filigram-Cinema-${version}-Windows-Portable.exe"
+    },
+    "nsis": {
+      "artifactName": "Filigram-Cinema-${version}-Windows-Setup.exe",
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "Filigram Cinema"
+    }
+  },
+  "allowScripts": {
+    "electron@33.4.11": true
+  }
+}
