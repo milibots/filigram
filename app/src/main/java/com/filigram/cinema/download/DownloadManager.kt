@@ -2,6 +2,7 @@ package com.filigram.cinema.download
 
 import android.content.Context
 import android.media.MediaScannerConnection
+import android.os.Build
 import android.os.Environment
 import com.filigram.cinema.AppLogger
 import kotlinx.coroutines.*
@@ -767,15 +768,37 @@ object DownloadManager {
     fun getDownloadFolder(context: Context): File {
         if (!settings.customStoragePath.isNullOrEmpty()) {
             val custom = File(settings.customStoragePath!!)
-            if (custom.exists() && custom.canWrite()) {
-                return custom
-            }
+            if (isUsable(custom)) return custom
         }
-        val dir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "Filigram")
-        if (!dir.exists()) {
-            dir.mkdirs()
+
+        // Scoped storage: from Android 10 the public Downloads folder is off limits without
+        // a permission that no longer exists for us, and some ROMs still report canWrite()
+        // as true there, so writes fail later with EACCES instead of falling back here.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            val publicDir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "Filigram")
+            publicDir.mkdirs()
+            if (isUsable(publicDir)) return publicDir
         }
-        return if (dir.exists() && dir.canWrite()) dir else File(context.getExternalFilesDir(null), "Downloads").apply { mkdirs() }
+
+        val appDir = File(context.getExternalFilesDir(Environment.DIRECTORY_MOVIES), "Filigram")
+        appDir.mkdirs()
+        if (isUsable(appDir)) return appDir
+
+        return File(context.filesDir, "Downloads").apply { mkdirs() }
+    }
+
+    /** canWrite() lies on scoped-storage paths, so prove it by creating a real file. */
+    private fun isUsable(dir: File): Boolean {
+        if (!dir.exists() && !dir.mkdirs()) return false
+        return try {
+            val probe = File(dir, ".filigram_write_test")
+            probe.outputStream().use { it.write(0) }
+            probe.delete()
+            true
+        } catch (e: Exception) {
+            AppLogger.w(TAG, "پوشه ${dir.absolutePath} قابل نوشتن نیست: ${e.message}")
+            false
+        }
     }
 
     private fun sanitizeFilename(name: String): String {

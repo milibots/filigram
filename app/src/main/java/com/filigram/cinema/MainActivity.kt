@@ -33,6 +33,8 @@ import android.content.res.ColorStateList
 import android.graphics.drawable.ColorDrawable
 import android.view.Gravity
 import android.view.View
+import android.view.ViewGroup
+import android.widget.FrameLayout
 import android.view.Window
 import android.view.WindowManager
 import android.view.animation.DecelerateInterpolator
@@ -53,6 +55,9 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.common.TrackSelectionOverride
+import androidx.media3.common.Tracks
+import androidx.media3.ui.PlayerView
 import android.app.PictureInPictureParams
 import android.util.Rational
 import com.google.android.material.button.MaterialButton
@@ -372,6 +377,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun Dialog.applyFullscreenAnimation() {
         window?.setWindowAnimations(R.style.Anim_Filigram_Dialog_Fullscreen)
+        trackedDialogs.add(java.lang.ref.WeakReference(this))
     }
 
     private fun Dialog.applyCompactAnimation() {
@@ -554,7 +560,27 @@ class MainActivity : AppCompatActivity() {
     }
 
     // ─── In-app notification (replaces all Toast.makeText) ───────────────────
-    private var activeNotifSheet: BottomSheetDialog? = null
+
+    /** Handle returned by [showAppToast] so callers can close a loading banner early. */
+    class AppToast(private val onDismiss: () -> Unit) {
+        fun dismiss() = onDismiss()
+    }
+
+    private var activeBanner: View? = null
+
+    // Fullscreen dialogs own their own window, so a banner added to the activity would be
+    // hidden behind them. Every fullscreen dialog passes through applyFullscreenAnimation,
+    // which makes it the one place to remember them without touching each call site.
+    private val trackedDialogs = mutableListOf<java.lang.ref.WeakReference<Dialog>>()
+
+    private fun topMostDecorView(): ViewGroup? {
+        trackedDialogs.removeAll { it.get() == null }
+        val dialogDecor = trackedDialogs
+            .mapNotNull { it.get() }
+            .lastOrNull { it.isShowing }
+            ?.window?.decorView as? ViewGroup
+        return dialogDecor ?: (window?.decorView as? ViewGroup)
+    }
 
     private fun showAppToast(
         title: String,
@@ -562,33 +588,78 @@ class MainActivity : AppCompatActivity() {
         iconRes: Int = R.drawable.ic_star_gold,
         isLoading: Boolean = false,
         autoDismissMs: Long = 2500L
-    ): BottomSheetDialog {
-        activeNotifSheet?.dismiss()
-        val sheet = BottomSheetDialog(this)
-        val view = layoutInflater.inflate(R.layout.bottom_sheet_notification, null)
-        sheet.setContentView(view)
-        sheet.behavior.peekHeight = view.measuredHeight
-        sheet.behavior.isDraggable = true
+    ): AppToast {
+        dismissActiveBanner()
 
-        view.findViewById<android.widget.ImageView>(R.id.notifIcon).setImageResource(iconRes)
-        view.findViewById<android.widget.TextView>(R.id.notifTitle).text = title
+        val host = topMostDecorView() ?: return AppToast {}
+        val banner = layoutInflater.inflate(R.layout.view_app_banner, host, false)
 
-        val subtitleView = view.findViewById<android.widget.TextView>(R.id.notifSubtitle)
+        banner.findViewById<android.widget.ImageView>(R.id.notifIcon).setImageResource(iconRes)
+        banner.findViewById<android.widget.TextView>(R.id.notifTitle).text = title
+
+        val subtitleView = banner.findViewById<android.widget.TextView>(R.id.notifSubtitle)
         if (!subtitle.isNullOrEmpty()) {
             subtitleView.text = subtitle
-            subtitleView.visibility = android.view.View.VISIBLE
+            subtitleView.isVisible = true
         }
 
-        val progressView = view.findViewById<android.widget.ProgressBar>(R.id.notifProgress)
-        if (isLoading) progressView.visibility = android.view.View.VISIBLE
+        if (isLoading) banner.findViewById<android.widget.ProgressBar>(R.id.notifProgress).isVisible = true
 
-        sheet.show()
-        activeNotifSheet = sheet
-
-        if (!isLoading) {
-            view.postDelayed({ if (sheet.isShowing) sheet.dismiss() }, autoDismissMs)
+        val density = resources.displayMetrics.density
+        val params = FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.WRAP_CONTENT,
+            android.view.Gravity.TOP
+        ).apply {
+            val side = (12 * density).toInt()
+            val resId = resources.getIdentifier("status_bar_height", "dimen", "android")
+            val statusBar = if (resId > 0) resources.getDimensionPixelSize(resId) else (28 * density).toInt()
+            setMargins(side, statusBar + (8 * density).toInt(), side, 0)
         }
-        return sheet
+
+        host.addView(banner, params)
+        activeBanner = banner
+
+        val travel = -(120 * density)
+        banner.translationY = travel
+        banner.alpha = 0f
+        banner.animate().translationY(0f).alpha(1f).setDuration(260)
+            .setInterpolator(DecelerateInterpolator()).start()
+
+        val dismiss = { removeBanner(banner) }
+        banner.setOnClickListener { dismiss() }
+
+        var downY = 0f
+        banner.setOnTouchListener { view, event ->
+            when (event.action) {
+                android.view.MotionEvent.ACTION_DOWN -> downY = event.rawY
+                android.view.MotionEvent.ACTION_MOVE -> {
+                    val delta = (event.rawY - downY).coerceAtMost(0f)
+                    view.translationY = delta
+                }
+                android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> {
+                    if (view.translationY < -40 * density) dismiss() else view.animate().translationY(0f).setDuration(140).start()
+                }
+            }
+            false
+        }
+
+        if (!isLoading) banner.postDelayed(dismiss, autoDismissMs)
+
+        return AppToast { dismiss() }
+    }
+
+    private fun removeBanner(banner: View) {
+        if (banner.parent == null) return
+        banner.animate().translationY(-(120 * resources.displayMetrics.density)).alpha(0f)
+            .setDuration(200).withEndAction {
+                (banner.parent as? ViewGroup)?.removeView(banner)
+                if (activeBanner === banner) activeBanner = null
+            }.start()
+    }
+
+    private fun dismissActiveBanner() {
+        activeBanner?.let { removeBanner(it) }
     }
 
     private fun showHomeScreen() {
@@ -1447,7 +1518,8 @@ class MainActivity : AppCompatActivity() {
                         qualityLabel = q.title,
                         isSeries = isSeries,
                         season = season,
-                        episode = episode
+                        episode = episode,
+                        allQualities = qualities
                     )
                 }
 
@@ -1500,11 +1572,28 @@ class MainActivity : AppCompatActivity() {
         qualityLabel: String,
         isSeries: Boolean = false,
         season: Int = -1,
-        episode: Int = -1
+        episode: Int = -1,
+        allQualities: List<QualityItem> = emptyList()
     ) {
+        // Engines that hand out ready links can switch quality inside the player; the
+        // others resolve one on demand from the same endpoint used to start playback.
+        val qualityResolver: suspend (QualityItem) -> String? = { item ->
+            movielixApi.getStreamUrl(
+                movieId,
+                item.id,
+                season = if (isSeries) season else -1,
+                episode = if (isSeries) episode else -1
+            )
+        }
         if (!directUrl.isNullOrEmpty()) {
             when (action) {
-                1 -> playVideoInApp(mediaTitle, qualityLabel, directUrl)
+                1 -> playVideoInApp(
+                    title = mediaTitle,
+                    quality = qualityLabel,
+                    streamUrl = directUrl,
+                    qualities = allQualities,
+                    resolveQualityUrl = qualityResolver
+                )
                 2 -> {
                     startTurboDownload(
                         movieId = movieId,
@@ -1548,7 +1637,13 @@ class MainActivity : AppCompatActivity() {
                     loadingSheet.dismiss()
                     if (!streamUrl.isNullOrEmpty()) {
                         when (action) {
-                            1 -> playVideoInApp(mediaTitle, qualityLabel, streamUrl)
+                            1 -> playVideoInApp(
+                                title = mediaTitle,
+                                quality = qualityLabel,
+                                streamUrl = streamUrl,
+                                qualities = allQualities,
+                                resolveQualityUrl = qualityResolver
+                            )
                             2 -> {
                                 startTurboDownload(
                                     movieId = movieId,
@@ -1590,7 +1685,9 @@ class MainActivity : AppCompatActivity() {
         quality: String,
         streamUrl: String,
         subtitlePath: String? = null,
-        isOffline: Boolean = false
+        isOffline: Boolean = false,
+        qualities: List<QualityItem> = emptyList(),
+        resolveQualityUrl: (suspend (QualityItem) -> String?)? = null
     ) {
         try {
             val dialog = Dialog(this, R.style.Theme_Filigram_Dialog_Fullscreen)
@@ -1622,8 +1719,10 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
+            var currentStreamUrl = streamUrl
+
             fun buildMediaItem(subUri: Uri?): MediaItem {
-                val builder = MediaItem.Builder().setUri(streamUrl)
+                val builder = MediaItem.Builder().setUri(currentStreamUrl)
                 if (subUri != null) {
                     val subMime = when {
                         subUri.toString().endsWith(".vtt", true) -> MimeTypes.TEXT_VTT
@@ -1690,6 +1789,81 @@ class MainActivity : AppCompatActivity() {
                 }
             })
 
+            // ── Controls visibility: the custom top bar follows the player controller ──
+            var isLocked = false
+
+            playerBinding.playerView.setControllerVisibilityListener(
+                PlayerView.ControllerVisibilityListener { visibility ->
+                    if (isLocked) return@ControllerVisibilityListener
+                    val show = visibility == View.VISIBLE
+                    playerBinding.playerTopBar.animate()
+                        .alpha(if (show) 1f else 0f)
+                        .setDuration(180)
+                        .withStartAction { if (show) playerBinding.playerTopBar.isVisible = true }
+                        .withEndAction { if (!show) playerBinding.playerTopBar.isVisible = false }
+                        .start()
+                }
+            )
+
+            // ── Lock: swallow every touch until unlocked ──
+            playerBinding.playerLockOverlay.isClickable = true
+            playerBinding.playerLockOverlay.setOnClickListener { }
+
+            playerBinding.btnPlayerLock.setOnClickListener {
+                isLocked = true
+                playerBinding.playerView.hideController()
+                playerBinding.playerView.useController = false
+                playerBinding.playerTopBar.isVisible = false
+                playerBinding.playerLockOverlay.isVisible = true
+                showAppToast("صفحه قفل شد", "برای باز کردن، دکمه قفل کنار صفحه را بزنید")
+            }
+
+            playerBinding.btnPlayerUnlock.setOnClickListener {
+                isLocked = false
+                playerBinding.playerLockOverlay.isVisible = false
+                playerBinding.playerView.useController = true
+                playerBinding.playerTopBar.alpha = 1f
+                playerBinding.playerTopBar.isVisible = true
+                playerBinding.playerView.showController()
+                showAppToast("قفل صفحه باز شد")
+            }
+
+            // ── Quality switching without leaving the player ──
+            if (qualities.size > 1) {
+                playerBinding.btnPlayerQuality.isVisible = true
+                playerBinding.btnPlayerQuality.setOnClickListener {
+                    showSelectionBottomSheet(
+                        title = "انتخاب کیفیت پخش",
+                        subtitle = "کیفیت مورد نظر را انتخاب کنید؛ پخش از همین لحظه ادامه پیدا می‌کند:",
+                        options = qualities.map { it.title }
+                    ) { which ->
+                        val picked = qualities.getOrNull(which) ?: return@showSelectionBottomSheet
+                        val loading = showAppToast("در حال تغییر کیفیت...", isLoading = true)
+                        lifecycleScope.launch {
+                            val url = picked.directUrl?.takeIf { it.isNotBlank() }
+                                ?: resolveQualityUrl?.invoke(picked)
+                            withContext(Dispatchers.Main) {
+                                loading.dismiss()
+                                if (url.isNullOrBlank()) {
+                                    showAppToast("لینک این کیفیت در دسترس نیست")
+                                    return@withContext
+                                }
+                                val resumeAt = player.currentPosition
+                                val wasPlaying = player.playWhenReady
+                                currentStreamUrl = url
+                                playerBinding.txtPlayerQuality.text = picked.title
+                                player.setMediaItem(buildMediaItem(activeSubtitleUri), resumeAt)
+                                player.prepare()
+                                player.playWhenReady = wasPlaying
+                                showAppToast("کیفیت: ${picked.title}")
+                            }
+                        }
+                    }
+                }
+            } else {
+                playerBinding.btnPlayerQuality.isVisible = false
+            }
+
             // ── Speed control ──────────────────────────────────────────────
             val speedSteps = listOf(0.75f, 1f, 1.25f, 1.5f, 2f)
             val speedLabels = listOf("0.75×", "1×", "1.25×", "1.5×", "2×")
@@ -1713,29 +1887,70 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-            // ── Subtitles ──────────────────────────────────────────────────
+            // ── Subtitles: embedded tracks plus any sidecar file ──
             playerBinding.btnPlayerSubtitles.setOnClickListener {
-                val subOptions = listOf(
-                    "خاموش (بدون زیرنویس)",
-                    if (activeSubtitleUri != null) "زیرنویس فارسی هماهنگ (فعال)" else "زیرنویس فارسی (یافت نشد)"
-                )
+                val labels = mutableListOf("خاموش (بدون زیرنویس)")
+                val picks = mutableListOf<Pair<Tracks.Group?, Int>>(null to -1)
+
+                player.currentTracks.groups
+                    .filter { it.type == C.TRACK_TYPE_TEXT }
+                    .forEach { group ->
+                        for (i in 0 until group.length) {
+                            val format = group.getTrackFormat(i)
+                            val name = format.label
+                                ?: format.language?.let { code ->
+                                    if (code == "fa" || code == "per") "فارسی" else code
+                                }
+                                ?: "زیرنویس ${labels.size}"
+                            labels.add("زیرنویس داخلی: $name")
+                            picks.add(group to i)
+                        }
+                    }
+
+                if (activeSubtitleUri != null) {
+                    labels.add("زیرنویس فایل کنار ویدیو")
+                    picks.add(null to -2)
+                }
+
+                if (labels.size == 1) {
+                    showAppToast(
+                        "زیرنویسی برای این نسخه پیدا نشد",
+                        "نسخه دیگری از همین عنوان را امتحان کنید"
+                    )
+                    return@setOnClickListener
+                }
+
                 showSelectionBottomSheet(
                     title = "انتخاب و مدیریت زیرنویس",
-                    subtitle = "زیرنویس مورد نظر خود را برای این فیلم انتخاب کنید:",
-                    options = subOptions
+                    subtitle = "زیرنویس مورد نظر خود را انتخاب کنید:",
+                    options = labels
                 ) { which ->
-                    when (which) {
-                        0 -> {
-                            val pos = player.currentPosition; val p = player.playWhenReady
-                            player.setMediaItem(buildMediaItem(null), pos); player.playWhenReady = p
+                    val pick = picks.getOrNull(which) ?: return@showSelectionBottomSheet
+                    val group = pick.first
+                    val trackIndex = pick.second
+                    when {
+                        trackIndex == -1 -> {
+                            player.trackSelectionParameters = player.trackSelectionParameters
+                                .buildUpon()
+                                .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true)
+                                .build()
                             showAppToast("زیرنویس غیرفعال شد")
                         }
-                        1 -> {
-                            if (activeSubtitleUri != null) {
-                                val pos = player.currentPosition; val p = player.playWhenReady
-                                player.setMediaItem(buildMediaItem(activeSubtitleUri), pos); player.playWhenReady = p
-                                showAppToast("زیرنویس فارسی فعال شد")
-                            } else showAppToast("فایل زیرنویس برای این ویدیو موجود نیست")
+                        trackIndex == -2 -> {
+                            val pos = player.currentPosition
+                            val wasPlaying = player.playWhenReady
+                            player.setMediaItem(buildMediaItem(activeSubtitleUri), pos)
+                            player.prepare()
+                            player.playWhenReady = wasPlaying
+                            showAppToast("زیرنویس فایل فعال شد")
+                        }
+                        group != null -> {
+                            player.trackSelectionParameters = player.trackSelectionParameters
+                                .buildUpon()
+                                .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false)
+                                .setOverrideForType(TrackSelectionOverride(group.mediaTrackGroup, trackIndex))
+                                .build()
+                            showAppToast("زیرنویس فعال شد")
                         }
                     }
                 }
@@ -2332,6 +2547,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun createStyledBottomSheetDialog(): BottomSheetDialog {
         val dialog = BottomSheetDialog(this, R.style.Theme_Filigram_BottomSheetDialog)
+        trackedDialogs.add(java.lang.ref.WeakReference(dialog))
         dialog.setOnShowListener {
             val bottomSheet = dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
             bottomSheet?.setBackgroundColor(Color.TRANSPARENT)

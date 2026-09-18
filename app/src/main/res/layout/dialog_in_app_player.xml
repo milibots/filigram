@@ -94,6 +94,32 @@
             </LinearLayout>
         </LinearLayout>
 
+        <!-- Quality -->
+        <TextView
+            android:id="@+id/btnPlayerQuality"
+            android:layout_width="wrap_content"
+            android:layout_height="44dp"
+            android:minWidth="44dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:fontFamily="@font/yekan_bakh_bold"
+            android:gravity="center"
+            android:paddingStart="6dp"
+            android:paddingEnd="6dp"
+            android:text="کیفیت"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <!-- Lock -->
+        <ImageButton
+            android:id="@+id/btnPlayerLock"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="قفل صفحه"
+            android:padding="10dp"
+            android:src="@drawable/ic_lock_vector"
+            app:tint="@android:color/white" />
+
         <!-- Speed button -->
         <TextView
             android:id="@+id/btnPlayerSpeed"
@@ -167,7 +193,7 @@
             android:background="@drawable/bg_dialog_glass"
             android:contentDescription="باز کردن قفل"
             android:padding="13dp"
-            android:src="@drawable/ic_close_vector"
+            android:src="@drawable/ic_lock_open_vector"
             app:tint="@android:color/white" />
     </FrameLayout>
 

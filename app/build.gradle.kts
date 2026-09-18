@@ -11,8 +11,8 @@ android {
         applicationId = "com.filigram.cinema"
         minSdk = 26
         targetSdk = 35
-        versionCode = 8
-        versionName = "1.3.0"
+        versionCode = 9
+        versionName = "1.4.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -98,6 +98,11 @@ dependencies {
     implementation("androidx.media3:media3-ui:1.4.1")
     implementation("androidx.media3:media3-common:1.4.1")
     implementation("androidx.media3:media3-datasource:1.4.1")
+    // Streaming container support: HLS (.m3u8), DASH (.mpd), SmoothStreaming and RTSP
+    implementation("androidx.media3:media3-exoplayer-hls:1.4.1")
+    implementation("androidx.media3:media3-exoplayer-dash:1.4.1")
+    implementation("androidx.media3:media3-exoplayer-smoothstreaming:1.4.1")
+    implementation("androidx.media3:media3-exoplayer-rtsp:1.4.1")
 
     // Jsoup for HTML parsing (BeautifulSoup equivalent in Java/Kotlin)
     implementation("org.jsoup:jsoup:1.18.1")
