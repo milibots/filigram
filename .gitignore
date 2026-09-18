@@ -59,3 +59,4 @@ desktop/node_modules/
 desktop/dist/
 desktop/release/
 !desktop/assets/icon.png
+!app/src/main/res/**/*.png
