@@ -2353,6 +2353,15 @@ class MainActivity : AppCompatActivity() {
             "simba" to drawerBinding.rbSimba
         )
         engineBoxes.forEach { (key, box) -> box.isChecked = key in activeEngines }
+        // Multi-select is kept for merged search, while the most recently checked engine
+        // becomes the primary source for Home and listings. Previously the old primary was
+        // retained whenever it stayed checked, making an engine switch appear to do nothing.
+        var selectedEngine = activeEngine
+        engineBoxes.forEach { (key, box) ->
+            box.setOnCheckedChangeListener { _, isChecked ->
+                if (isChecked) selectedEngine = key
+            }
+        }
 
         drawerBinding.cardOpenRadar.setOnClickListener {
             dialog.dismiss()
@@ -2389,8 +2398,7 @@ class MainActivity : AppCompatActivity() {
                 showAppToast("حداقل یک موتور باید فعال بماند")
                 return@setOnClickListener
             }
-            // The first checked engine drives home and listings; keep the current one if still checked.
-            val selected = if (activeEngine in picked) activeEngine else picked.first()
+            val selected = selectedEngine.takeIf { it in picked } ?: picked.first()
             activeEngines = picked.toSet()
 
             activeEngine = selected

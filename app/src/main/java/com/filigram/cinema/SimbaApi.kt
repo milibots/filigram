@@ -6,9 +6,11 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.ByteArrayInputStream
 import java.net.URI
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
+import java.util.zip.GZIPInputStream
 
 /** Read-only adapter for the Simba / Fitlinerim Android API. */
 object SimbaApi {
@@ -39,7 +41,13 @@ object SimbaApi {
         SourceConfig.headers(KEY, FALLBACK_HEADERS).forEach { (k, v) -> builder.header(k, v) }
         client.newCall(builder.build()).execute().use { response ->
             if (!response.isSuccessful) return null
-            val text = response.body?.string().orEmpty()
+            val bytes = response.body?.bytes() ?: return null
+            val isGzip = bytes.size >= 2 && bytes[0] == 0x1f.toByte() && bytes[1] == 0x8b.toByte()
+            val text = if (isGzip) {
+                GZIPInputStream(ByteArrayInputStream(bytes)).bufferedReader(Charsets.UTF_8).use { it.readText() }
+            } else {
+                bytes.toString(Charsets.UTF_8)
+            }
             if (text.trimStart().startsWith("[")) JSONArray(text) else JSONObject(text)
         }
     } catch (e: Exception) {
