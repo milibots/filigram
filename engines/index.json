@@ -1,5 +1,6 @@
 {
   "engines": [
-    "simba"
+    "simba",
+    "hihfilm"
   ]
 }

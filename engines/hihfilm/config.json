@@ -1,0 +1,40 @@
+{
+  "base": "https://api.hihfilm.ir",
+  "alt_base": null,
+  "cdn_base": null,
+  "static_key": "4F5A9C3D9A86FA54EACEDDD635185",
+  "device_id": "77c3f03fbe7fba43",
+  "install_key": 0,
+  "seed_series": [],
+  "headers": {
+    "User-Agent": "okhttp/3.12.13",
+    "Accept-Encoding": "gzip",
+    "Connection": "Keep-Alive"
+  },
+  "post_headers": {
+    "Content-Type": "application/json; charset=UTF-8"
+  },
+  "paths": {
+    "device": "/api/device/{DEVICE}/{KEY}/",
+    "version": "/api/version/check/{ver}/{uid}/{KEY}/",
+    "home": "/api/first/{KEY}/",
+    "genres": "/api/genre/all/{KEY}/",
+    "countries": "/api/country/all/{KEY}/",
+    "categories": "/api/category/all/{KEY}/",
+    "packages": "/api/package/all/{KEY}/",
+    "movies": "/api/movie/by/filtres/{g}/{sort}/{c}/{KEY}/",
+    "series": "/api/serie/by/filtres/{g}/{sort}/{c}/{KEY}/",
+    "channels": "/api/channel/by/filtres/{g}/{sort}/{c}/{KEY}/",
+    "seasons": "/api/season/by/serie/{sid}/{KEY}/"
+  },
+  "extract": {
+    "series_id_from_list": "*.id",
+    "movie_id_from_list": "*.id",
+    "episodes_in_season": "*.episodes",
+    "sources_in_episode": "*.sources",
+    "media_url_field": "url",
+    "quality_field": "quality",
+    "season_field": "id",
+    "episode_field": "id"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "name": "hihfilm",
+  "display_name": "HihFilm",
+  "kind": "android-native",
+  "package": null,
+  "version": 62,
+  "protocol": "HTTPS",
+  "auth_model": "device-registration",
+  "author": "internal",
+  "status": "verified"
+}
