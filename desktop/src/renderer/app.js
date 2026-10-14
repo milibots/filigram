@@ -1029,16 +1029,48 @@ async function openDetail(item) {
     body.appendChild(episodesWrap);
 
     const seasons = detail.seasons.length ? detail.seasons : [{ season: 1, title: 'فصل ۱' }];
-    seasons.forEach((season, index) => {
+    const addSeasonChip = (season, index, sourceDetail) => {
       const chip = el('button', `chip${index === 0 ? ' on' : ''}`, season.title);
       chip.addEventListener('click', () => {
         seasonChips.querySelectorAll('.chip').forEach((c) => c.classList.remove('on'));
         chip.classList.add('on');
-        loadEpisodes(detail, season.season, episodesWrap, seasons);
+        loadEpisodes(sourceDetail, season.season, episodesWrap, seasons);
       });
       seasonChips.appendChild(chip);
-    });
+    };
+    seasons.forEach((season, index) => addSeasonChip(season, index, detail));
     loadEpisodes(detail, seasons[0].season, episodesWrap, seasons);
+
+    // Other engines may already carry newer seasons: add the missing ones next to the existing chips.
+    (async () => {
+      const known = new Set(seasons.map((s) => Number(s.season)));
+      const keys = state.engines.map((e) => e.key).filter((k) => k !== detail.source);
+      await Promise.all(
+        keys.map(async (key) => {
+          try {
+            const hits = await api.search(key, detail.title, 1);
+            const match = hits.find((h) => h.type === 1 && sameTitle(h.title, detail.title));
+            if (!match) return;
+            const other = await api.details(key, match.id, 1);
+            const extra = ((other && other.seasons) || []).filter((s) => !known.has(Number(s.season)));
+            extra.forEach((season) => {
+              known.add(Number(season.season));
+              seasons.push(season);
+              addSeasonChip(season, 1, { ...detail, source: key, id: match.id });
+            });
+          } catch (_) {}
+        })
+      );
+      // keep chips ordered by season number
+      const chips = [...seasonChips.querySelectorAll('.chip')];
+      const order = seasons.map((s) => s.title);
+      chips.sort((x, y) => order.indexOf(x.textContent) - order.indexOf(y.textContent));
+      const sorted = [...seasons].sort((x, y) => Number(x.season) - Number(y.season));
+      sorted.forEach((s) => {
+        const chip = chips.find((c) => c.textContent === s.title);
+        if (chip) seasonChips.appendChild(chip);
+      });
+    })();
   } else {
     body.appendChild(el('h3', 'block-title', 'کیفیت‌های پخش'));
     const list = el('div', 'quality-list');
@@ -1616,3 +1648,37 @@ document.addEventListener('click', (e) => {
     settingsPanel.classList.add('hidden');
   }
 });
+
+// ── Subtitle appearance (uses the app font) ──
+(function initSubtitleSettings() {
+  const defaults = { enabled: true, size: 100, color: '#ffffff', bg: true };
+  let cfg = { ...defaults };
+  try {
+    cfg = { ...defaults, ...JSON.parse(localStorage.getItem('subtitleCfg') || '{}') };
+  } catch {}
+  const enabled = document.getElementById('subEnabled');
+  const size = document.getElementById('subSize');
+  const color = document.getElementById('subColor');
+  const bg = document.getElementById('subBg');
+  const vid = document.getElementById('video');
+
+  function apply() {
+    vid.style.setProperty('--sub-size', String(cfg.size / 100));
+    vid.style.setProperty('--sub-color', cfg.color);
+    vid.style.setProperty('--sub-bg', cfg.bg ? 'rgba(0,0,0,0.65)' : 'transparent');
+    vid.classList.toggle('subs-off', !cfg.enabled);
+    try {
+      localStorage.setItem('subtitleCfg', JSON.stringify(cfg));
+    } catch {}
+  }
+
+  enabled.checked = cfg.enabled;
+  size.value = String(cfg.size);
+  color.value = cfg.color;
+  bg.checked = cfg.bg;
+  enabled.addEventListener('change', () => { cfg.enabled = enabled.checked; apply(); });
+  size.addEventListener('input', () => { cfg.size = Number(size.value); apply(); });
+  color.addEventListener('change', () => { cfg.color = color.value; apply(); });
+  bg.addEventListener('change', () => { cfg.bg = bg.checked; apply(); });
+  apply();
+})();

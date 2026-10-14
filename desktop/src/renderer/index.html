@@ -36,11 +36,39 @@
                 <option value="light">روشن</option>
                 <option value="breakingbad">بریکینگ بد</option>
                 <option value="dracula">دراکولا</option>
+                <option value="nord">نورد</option>
+                <option value="ocean">اقیانوس</option>
+                <option value="forest">جنگل</option>
+                <option value="sunset">غروب</option>
+                <option value="midnight">نیمه‌شب</option>
               </select>
             </div>
             <div class="settings-row">
               <span class="settings-label">موتور / سیاره</span>
               <div id="engineBar" class="engine-bar" title="انتخاب سیاره (منبع محتوا)"></div>
+            </div>
+            <div class="settings-group-title">زیرنویس</div>
+            <div class="settings-row">
+              <span class="settings-label">نمایش زیرنویس</span>
+              <input id="subEnabled" type="checkbox" checked />
+            </div>
+            <div class="settings-row">
+              <span class="settings-label">اندازه</span>
+              <input id="subSize" type="range" min="60" max="220" step="10" value="100" />
+            </div>
+            <div class="settings-row">
+              <span class="settings-label">رنگ</span>
+              <select id="subColor" class="theme-select">
+                <option value="#ffffff">سفید</option>
+                <option value="#ffeb3b">زرد</option>
+                <option value="#4dd0e1">فیروزه‌ای</option>
+                <option value="#69f0ae">سبز</option>
+                <option value="#ff8a80">صورتی</option>
+              </select>
+            </div>
+            <div class="settings-row">
+              <span class="settings-label">پس‌زمینه تیره</span>
+              <input id="subBg" type="checkbox" checked />
             </div>
             <div class="settings-row">
               <span class="settings-label">نسخه جدید</span>

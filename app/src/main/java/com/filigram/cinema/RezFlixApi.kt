@@ -114,6 +114,7 @@ object RezFlixApi {
             }
             val obj = JSONObject(text)
             val isSeries = "serie".equals(obj.optString("type"), ignoreCase = true)
+            val realSeasons = if (isSeries) getSeasons(id) else emptyList()
 
             MovieDetail(
                 id = id,
@@ -126,10 +127,57 @@ object RezFlixApi {
                 year = if (obj.has("year")) obj.optString("year") else null,
                 description = obj.optString("description", ""),
                 descriptionAi = null,
-                seasons = if (isSeries) listOf(SeasonItem(1, "فصل ۱")) else emptyList()
+                seasons = if (isSeries) realSeasons.ifEmpty { listOf(SeasonItem(1, "فصل ۱")) } else emptyList()
             )
         } catch (e: Exception) {
             null
         }
     }
+
+    private val episodeTag = Regex("""S(\d{1,2})[\s._-]*E(\d{1,3})""", RegexOption.IGNORE_CASE)
+
+    /** Raw file list of an item. Series files are flat; season/episode only live in the file name (S01E02). */
+    private suspend fun fetchSources(id: Int): List<QualityItem> = withContext(Dispatchers.IO) {
+        try {
+            val res = client.newCall(newRequest("${base()}/api/movie/by/$id/${token()}/")).execute()
+            val obj = JSONObject(res.body?.string() ?: "{}")
+            val arr = obj.optJSONArray("sources") ?: JSONArray()
+            val out = mutableListOf<QualityItem>()
+            for (i in 0 until arr.length()) {
+                val s = arr.getJSONObject(i)
+                val url = s.optString("url").ifBlank { s.optString("link").ifBlank { s.optString("file") } }
+                if (url.isBlank() || Regex("trailer|teaser", RegexOption.IGNORE_CASE).containsMatchIn(url)) continue
+                out.add(
+                    QualityItem(
+                        id = i + 1,
+                        type = s.optString("type", "MP4").uppercase(),
+                        title = s.optString("label").ifBlank { s.optString("quality").ifBlank { "کیفیت اصلی" } },
+                        size = "مستقیم",
+                        directUrl = url
+                    )
+                )
+            }
+            out
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    private fun tagOf(q: QualityItem): Pair<Int, Int>? {
+        val decoded = try { java.net.URLDecoder.decode(q.directUrl.orEmpty().replace("+", "%2B"), "UTF-8") } catch (e: Exception) { q.directUrl.orEmpty() }
+        val m = episodeTag.find(decoded) ?: return null
+        return m.groupValues[1].toInt() to m.groupValues[2].toInt()
+    }
+
+    suspend fun getQualities(id: Int): List<QualityItem> = fetchSources(id)
+
+    suspend fun getSeasons(id: Int): List<SeasonItem> =
+        fetchSources(id).mapNotNull { tagOf(it)?.first }.distinct().sorted().map { SeasonItem(it, "فصل $it") }
+
+    suspend fun getEpisodes(id: Int, season: Int): List<EpisodeItem> =
+        fetchSources(id)
+            .mapNotNull { q -> tagOf(q)?.takeIf { it.first == season }?.let { it.second to q } }
+            .groupBy({ it.first }, { it.second })
+            .toSortedMap()
+            .map { (ep, qs) -> EpisodeItem(ep, "قسمت $ep", qs) }
 }

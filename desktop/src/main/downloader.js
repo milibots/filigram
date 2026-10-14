@@ -8,7 +8,7 @@ const STATE_FILE = path.join(app.getPath('userData'), 'filigram-downloads.json')
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
 const MAX_REDIRECTS = 6;
 
-const settings = { maxConcurrent: 3, segments: 8 };
+const settings = { maxConcurrent: 3, segments: 6 };
 const tasks = new Map();
 const runtime = new Map(); // id -> { reqs:Set, fd, aborted }
 let notify = () => {};
@@ -77,35 +77,50 @@ function writeAt(fd, buf, position) {
   });
 }
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 async function runSegment(task, rt, seg, url, ranged) {
+  let failures = 0;
   while (!rt.aborted && seg.pos <= seg.end) {
     const headers = ranged ? { Range: `bytes=${seg.pos}-${seg.end}` } : {};
-    const { res, req } = await open(url, headers);
-    if (res.statusCode >= 400) throw new Error(`HTTP ${res.statusCode}`);
-    rt.reqs.add(req);
     const before = seg.pos;
-    await new Promise((resolve, reject) => {
-      res.on('data', (chunk) => {
-        if (rt.aborted) return;
-        res.pause();
-        const limit = seg.end - seg.pos + 1;
-        const buf = chunk.length > limit ? chunk.subarray(0, limit) : chunk;
-        writeAt(rt.fd, buf, seg.pos)
-          .then(() => {
-            seg.pos += buf.length;
-            task.downloaded += buf.length;
-            rt.window += buf.length;
-            if (!rt.aborted) res.resume();
-          })
-          .catch(reject);
+    try {
+      const { res, req } = await open(url, headers);
+      if (res.statusCode >= 400) {
+        res.resume();
+        throw new Error(`HTTP ${res.statusCode}`);
+      }
+      rt.reqs.add(req);
+      await new Promise((resolve, reject) => {
+        res.on('data', (chunk) => {
+          if (rt.aborted) return;
+          res.pause();
+          const limit = seg.end - seg.pos + 1;
+          const buf = chunk.length > limit ? chunk.subarray(0, limit) : chunk;
+          writeAt(rt.fd, buf, seg.pos)
+            .then(() => {
+              seg.pos += buf.length;
+              task.downloaded += buf.length;
+              rt.window += buf.length;
+              if (!rt.aborted) res.resume();
+            })
+            .catch(reject);
+        });
+        res.on('end', resolve);
+        res.on('close', resolve);
+        res.on('error', reject);
       });
-      res.on('end', resolve);
-      res.on('close', resolve);
-      res.on('error', reject);
-    });
-    rt.reqs.delete(req);
-    if (!ranged) break;
-    if (!rt.aborted && seg.pos === before) throw new Error('server returned no data');
+      rt.reqs.delete(req);
+      if (!ranged) break;
+      if (!rt.aborted && seg.pos === before) throw new Error('server returned no data');
+      failures = 0;
+    } catch (err) {
+      if (rt.aborted) return;
+      // Servers often drop or throttle parallel connections: back off and retry this segment.
+      failures += 1;
+      if (!ranged || failures > 8) throw err;
+      await sleep(Math.min(1000 * failures, 5000));
+    }
   }
 }
 

@@ -92,6 +92,7 @@ import com.filigram.cinema.download.DownloadsAdapter
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -119,6 +120,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var storageFolderLauncher: ActivityResultLauncher<Uri?>
     private var onStorageFolderSelected: ((String) -> Unit)? = null
     private var activePlayerDialog: Dialog? = null
+    private var saveActivePlayerProgress: (() -> Unit)? = null
 
     private val notificationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -359,6 +361,34 @@ class MainActivity : AppCompatActivity() {
         }
 
         dialog.show()
+    }
+
+    private val SUBTITLE_COLORS = intArrayOf(
+        0xFFFFFFFF.toInt(), 0xFFFFEB3B.toInt(), 0xFF4DD0E1.toInt(), 0xFF69F0AE.toInt(), 0xFFFF8A80.toInt()
+    )
+
+    /** Applies the user's subtitle size/color with the app font to the player's subtitle view. */
+    private fun applySubtitleStyle(playerView: androidx.media3.ui.PlayerView) {
+        val sp = getSharedPreferences("filigram_prefs", Context.MODE_PRIVATE)
+        val size = sp.getInt("sub_size", 100)
+        val color = SUBTITLE_COLORS[sp.getInt("sub_color", 0).coerceIn(0, SUBTITLE_COLORS.lastIndex)]
+        val typeface = ResourcesCompat.getFont(this, R.font.yekan_bakh_bold)
+        playerView.subtitleView?.apply {
+            setApplyEmbeddedStyles(false)
+            setApplyEmbeddedFontSizes(false)
+            setFractionalTextSize(androidx.media3.ui.SubtitleView.DEFAULT_TEXT_SIZE_FRACTION * size / 100f)
+            setStyle(
+                androidx.media3.ui.CaptionStyleCompat(
+                    color, 0x99000000.toInt(), Color.TRANSPARENT,
+                    androidx.media3.ui.CaptionStyleCompat.EDGE_TYPE_OUTLINE, Color.BLACK, typeface
+                )
+            )
+        }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        saveActivePlayerProgress?.invoke()
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
@@ -1501,7 +1531,8 @@ class MainActivity : AppCompatActivity() {
         onEpisodesLoaded: ((season: Int, episode: Int, title: String?) -> Unit)? = null
     ) {
         detailBinding.seriesControlsContainer.isVisible = true
-        val seasons = if (detail.seasons.isNotEmpty()) detail.seasons else listOf(SeasonItem(1, "فصل ۱"))
+        val seasons = (if (detail.seasons.isNotEmpty()) detail.seasons else listOf(SeasonItem(1, "فصل ۱")))
+            .toMutableList()
 
         var selectedSeason = seasons.first().season
         var selectedEpisode = 1
@@ -1517,6 +1548,7 @@ class MainActivity : AppCompatActivity() {
                         "nextmovie" -> NextMovieApi.getEpisodes(detail.id, seasonNum)
                         "bj" -> BjApi.getEpisodes(detail.id, seasonNum)
                         "simba" -> SimbaApi.getEpisodes(detail.id, seasonNum)
+                        "rezflix" -> RezFlixApi.getEpisodes(detail.id, seasonNum)
                         else -> movielixApi.getEpisodes(detail.id, seasonNum)
                     }
                     var fromEngine: String? = null
@@ -1570,13 +1602,47 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        val seasonTitles = seasons.map { it.title }
-        val seasonAdapter = ChipSelectorAdapter(seasonTitles, 0) { sIndex ->
-            selectedSeason = seasons[sIndex].season
-            loadEpisodesForSeason(selectedSeason)
+        fun bindSeasonChips(selectedIndex: Int) {
+            detailBinding.rvSeasons.adapter = ChipSelectorAdapter(seasons.map { it.title }, selectedIndex) { sIndex ->
+                selectedSeason = seasons[sIndex].season
+                loadEpisodesForSeason(selectedSeason)
+            }
         }
         detailBinding.rvSeasons.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
-        detailBinding.rvSeasons.adapter = seasonAdapter
+        bindSeasonChips(0)
+
+        // Other engines may carry newer seasons: add the missing ones next to the existing chips.
+        lifecycleScope.launch(Dispatchers.IO) {
+            val known = seasons.map { it.season }.toMutableSet()
+            val extras = allEngineKeys.filter { it != activeEngine }.map { eng ->
+                async {
+                    try {
+                        val hit = searchInEngine(eng, detail.title, 1)
+                            .firstOrNull { it.type == 1 && sameTitle(it.title, detail.title) }
+                            ?: return@async emptyList<SeasonItem>()
+                        val other = when (eng) {
+                            "almasmovie" -> AlmasMovieApi.getDetails(hit.id, "tvshow")
+                            "rezflix" -> RezFlixApi.getDetails(hit.id)
+                            "nextmovie" -> NextMovieApi.getDetails(hit.id)
+                            "bj" -> BjApi.getDetails(hit.id)
+                            "simba" -> SimbaApi.getDetails(hit.id)
+                            else -> movielixApi.getMovieDetails(hit.id)
+                        }
+                        other?.seasons.orEmpty()
+                    } catch (e: Exception) {
+                        emptyList<SeasonItem>()
+                    }
+                }
+            }.awaitAll().flatten()
+            val fresh = extras.filter { known.add(it.season) }.sortedBy { it.season }
+            if (fresh.isNotEmpty()) {
+                withContext(Dispatchers.Main) {
+                    seasons.addAll(fresh)
+                    seasons.sortBy { it.season }
+                    bindSeasonChips(seasons.indexOfFirst { it.season == selectedSeason }.coerceAtLeast(0))
+                }
+            }
+        }
 
         detailBinding.btnDownloadSeasonBatch.setOnClickListener {
             showBatchDownloadDialog(
@@ -1633,7 +1699,7 @@ class MainActivity : AppCompatActivity() {
                         "nextmovie" -> NextMovieApi.getQualities(id)
                         "bj" -> BjApi.getQualities(id)
                         "simba" -> SimbaApi.getQualities(id)
-                        "rezflix" -> emptyList()
+                        "rezflix" -> RezFlixApi.getQualities(id)
                         else -> movielixApi.getQualities(id)
                     }
                 }
@@ -1656,7 +1722,7 @@ class MainActivity : AppCompatActivity() {
                     "nextmovie" -> NextMovieApi.getEpisodes(id, season)
                     "bj" -> BjApi.getEpisodes(id, season)
                     "simba" -> SimbaApi.getEpisodes(id, season)
-                    "rezflix" -> emptyList()
+                    "rezflix" -> RezFlixApi.getEpisodes(id, season)
                     else -> movielixApi.getEpisodes(id, season)
                 }
                 episodes.mapNotNull { ep ->
@@ -1739,21 +1805,49 @@ class MainActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             try {
-                var qualities = when (activeEngine) {
-                    "almasmovie" -> AlmasMovieApi.getQualities(movieId)
-                    "nextmovie" -> NextMovieApi.getQualities(movieId)
-                    "bj" -> BjApi.getQualities(movieId)
-                    "simba" -> SimbaApi.getQualities(movieId)
-                    else -> movielixApi.getQualities(movieId)
-                }
+                var qualities: List<QualityItem> = emptyList()
                 var fromEngine: String? = null
-                if (qualities.isEmpty()) {
-                    val alt = firstEngineWithResult(
-                        detailBinding.detailTitle.text.toString(), 0, activeEngine
-                    ) { eng, item -> fetchQualitiesIn(eng, item.id, item.type) }
-                    if (alt != null) {
-                        qualities = alt.second
-                        fromEngine = alt.first
+                kotlinx.coroutines.coroutineScope {
+                    val primary = async(Dispatchers.IO) {
+                        try {
+                            when (activeEngine) {
+                                "almasmovie" -> AlmasMovieApi.getQualities(movieId)
+                                "nextmovie" -> NextMovieApi.getQualities(movieId)
+                                "bj" -> BjApi.getQualities(movieId)
+                                "simba" -> SimbaApi.getQualities(movieId)
+                                "rezflix" -> RezFlixApi.getQualities(movieId)
+                                else -> movielixApi.getQualities(movieId)
+                            }
+                        } catch (e: Exception) {
+                            emptyList()
+                        }
+                    }
+                    // A slow or empty primary engine must not block the other engines: start them after 3s.
+                    val early = kotlinx.coroutines.withTimeoutOrNull(3000L) { primary.await() }
+                    if (!early.isNullOrEmpty()) {
+                        qualities = early
+                    } else {
+                        val alt = async {
+                            firstEngineWithResult(
+                                detailBinding.detailTitle.text.toString(), 0, activeEngine
+                            ) { eng, item -> fetchQualitiesIn(eng, item.id, item.type) }
+                        }
+                        val winner = kotlinx.coroutines.CompletableDeferred<Unit>()
+                        launch {
+                            val r = primary.await()
+                            if (r.isNotEmpty()) { if (qualities.isEmpty()) qualities = r; winner.complete(Unit) }
+                            else if (alt.isCompleted) winner.complete(Unit)
+                        }
+                        launch {
+                            val r = alt.await()
+                            if (r != null) {
+                                if (qualities.isEmpty()) { qualities = r.second; fromEngine = r.first }
+                                winner.complete(Unit)
+                            } else if (primary.isCompleted) winner.complete(Unit)
+                        }
+                        winner.await()
+                        primary.cancel()
+                        alt.cancel()
                     }
                 }
                 withContext(Dispatchers.Main) {
@@ -2172,6 +2266,8 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
+            applySubtitleStyle(playerBinding.playerView)
+
             // ── Subtitles: embedded tracks plus any sidecar file ──
             playerBinding.btnPlayerSubtitles.setOnClickListener {
                 val labels = mutableListOf("خاموش (بدون زیرنویس)")
@@ -2202,8 +2298,13 @@ class MainActivity : AppCompatActivity() {
                         "زیرنویسی برای این نسخه پیدا نشد",
                         "نسخه دیگری از همین عنوان را امتحان کنید"
                     )
-                    return@setOnClickListener
                 }
+                labels.add("اندازه زیرنویس: بزرگ‌تر")
+                picks.add(null to -10)
+                labels.add("اندازه زیرنویس: کوچک‌تر")
+                picks.add(null to -11)
+                labels.add("رنگ زیرنویس: تغییر رنگ")
+                picks.add(null to -12)
 
                 showSelectionBottomSheet(
                     title = "انتخاب و مدیریت زیرنویس",
@@ -2214,6 +2315,17 @@ class MainActivity : AppCompatActivity() {
                     val group = pick.first
                     val trackIndex = pick.second
                     when {
+                        trackIndex == -10 || trackIndex == -11 || trackIndex == -12 -> {
+                            val sp = getSharedPreferences("filigram_prefs", Context.MODE_PRIVATE)
+                            var size = sp.getInt("sub_size", 100)
+                            var colorIdx = sp.getInt("sub_color", 0)
+                            if (trackIndex == -10) size = (size + 15).coerceAtMost(200)
+                            if (trackIndex == -11) size = (size - 15).coerceAtLeast(50)
+                            if (trackIndex == -12) colorIdx = (colorIdx + 1) % SUBTITLE_COLORS.size
+                            sp.edit().putInt("sub_size", size).putInt("sub_color", colorIdx).apply()
+                            applySubtitleStyle(playerBinding.playerView)
+                            showAppToast("زیرنویس: اندازه $size٪")
+                        }
                         trackIndex == -1 -> {
                             player.trackSelectionParameters = player.trackSelectionParameters
                                 .buildUpon()
@@ -2257,8 +2369,25 @@ class MainActivity : AppCompatActivity() {
             // ── Close ──────────────────────────────────────────────────────
             playerBinding.btnClosePlayer.setOnClickListener { dialog.dismiss() }
 
+            // ── Keep resume position fresh: periodic save plus save when the app stops ──
+            val persistProgress = {
+                val pos = player.currentPosition
+                val dur = player.duration
+                if (pos > 0L) PlaybackProgressManager.saveProgress(this, progressKey, pos, dur)
+            }
+            saveActivePlayerProgress = persistProgress
+            val progressTicker = object : Runnable {
+                override fun run() {
+                    if (player.isPlaying) persistProgress()
+                    playerBinding.root.postDelayed(this, 5000L)
+                }
+            }
+            playerBinding.root.postDelayed(progressTicker, 5000L)
+
             // ── Dismiss: save progress & restore orientation ───────────────
             dialog.setOnDismissListener {
+                playerBinding.root.removeCallbacks(progressTicker)
+                if (saveActivePlayerProgress === persistProgress) saveActivePlayerProgress = null
                 val currentPos = player.currentPosition
                 val duration = player.duration
                 if (currentPos > 0L) PlaybackProgressManager.saveProgress(this, progressKey, currentPos, duration)
