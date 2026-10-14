@@ -128,13 +128,13 @@
         android:backgroundTint="@color/gold"
         android:fontFamily="@font/yekan_bakh_bold"
         android:text="جستجو در آرشیو"
-        android:textColor="@color/black"
+        android:textColor="@color/on_accent"
         android:textSize="13sp"
         app:cornerRadius="14dp"
         app:icon="@android:drawable/ic_menu_search"
         app:iconGravity="textStart"
         app:iconPadding="8dp"
-        app:iconTint="@color/black" />
+        app:iconTint="@color/on_accent" />
 
     <!-- Smart Multi-Engine Fallback Banner -->
     <LinearLayout

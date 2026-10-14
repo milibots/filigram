@@ -34,19 +34,19 @@ class AnnouncementsAdapter(
 
         if (item.isRead) {
 
-            holder.binding.cardAnnouncement.strokeColor = Color.parseColor("#222222")
-            holder.binding.cardAnnouncement.strokeWidth = 1
-            holder.binding.cardAnnouncement.setCardBackgroundColor(Color.parseColor("#0A0A0A"))
+            holder.binding.cardAnnouncement.strokeColor = ContextCompat.getColor(context, R.color.card_border)
+            holder.binding.cardAnnouncement.strokeWidth = 0
+            holder.binding.cardAnnouncement.setCardBackgroundColor(ContextCompat.getColor(context, R.color.card))
             holder.binding.txtStatusBadge.setBackgroundResource(R.drawable.bg_badge_read_tag)
             holder.binding.txtStatusBadge.text = "خوانده شده"
-            holder.binding.txtStatusBadge.setTextColor(Color.parseColor("#777777"))
-            holder.binding.txtAnnouncementTitle.setTextColor(Color.parseColor("#CCCCCC"))
-            holder.binding.imgAnnouncementIcon.setColorFilter(Color.parseColor("#666666"))
+            holder.binding.txtStatusBadge.setTextColor(ContextCompat.getColor(context, R.color.sub))
+            holder.binding.txtAnnouncementTitle.setTextColor(ContextCompat.getColor(context, R.color.muted))
+            holder.binding.imgAnnouncementIcon.setColorFilter(ContextCompat.getColor(context, R.color.sub))
         } else {
 
             holder.binding.cardAnnouncement.strokeColor = ContextCompat.getColor(context, R.color.gold)
-            holder.binding.cardAnnouncement.strokeWidth = 2
-            holder.binding.cardAnnouncement.setCardBackgroundColor(Color.parseColor("#121008"))
+            holder.binding.cardAnnouncement.strokeWidth = 0
+            holder.binding.cardAnnouncement.setCardBackgroundColor(ContextCompat.getColor(context, R.color.surface_elevated))
             holder.binding.txtStatusBadge.setBackgroundResource(R.drawable.bg_badge_unread_tag)
             holder.binding.txtStatusBadge.text = "جدید"
             holder.binding.txtStatusBadge.setTextColor(Color.parseColor("#E50914"))

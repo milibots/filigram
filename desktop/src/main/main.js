@@ -25,6 +25,7 @@ function createWindow() {
     backgroundColor: '#000000',
     title: 'Filigram Cinema',
     icon: path.join(__dirname, '..', '..', 'assets', 'icon.png'),
+    frame: false,
     autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -35,6 +36,8 @@ function createWindow() {
   });
 
   Menu.setApplicationMenu(null);
+  mainWindow.removeMenu();
+  mainWindow.setMenuBarVisibility(false);
   mainWindow.loadFile(path.join(__dirname, '..', 'renderer', 'index.html'));
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
@@ -42,6 +45,13 @@ function createWindow() {
     return { action: 'deny' };
   });
 }
+
+ipcMain.on('winControl', (_event, action) => {
+  if (!mainWindow) return;
+  if (action === 'minimize') mainWindow.minimize();
+  else if (action === 'maximize') mainWindow.isMaximized() ? mainWindow.unmaximize() : mainWindow.maximize();
+  else if (action === 'close') mainWindow.close();
+});
 
 function findExternalPlayer() {
   const configured = store.get('externalPlayerPath');

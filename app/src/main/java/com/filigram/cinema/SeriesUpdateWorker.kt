@@ -142,6 +142,9 @@ class SeriesUpdateWorker(
                             episode = latestEpisode,
                             episodeTitle = latestEpTitle
                         )
+                        com.filigram.cinema.widget.NewEpisodeWidgetProvider.record(
+                            context, sub, latestSeason, latestEpisode, latestEpTitle
+                        )
                         SeriesSubscriptionManager.updateLastKnown(
                             context = context,
                             id = sub.id,

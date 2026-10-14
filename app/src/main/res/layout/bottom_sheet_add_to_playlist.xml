@@ -72,7 +72,7 @@
         android:backgroundTint="@color/gold"
         android:fontFamily="@font/yekan_bakh_bold"
         android:text="+ ایجاد پلی‌لیست جدید"
-        android:textColor="@color/black"
+        android:textColor="@color/on_accent"
         app:cornerRadius="16dp" />
 
 </LinearLayout>

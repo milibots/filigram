@@ -233,8 +233,21 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        window.statusBarColor = 0xFF000000.toInt()
-        window.navigationBarColor = 0xFF000000.toInt()
+        val barColor = androidx.core.content.ContextCompat.getColor(this, R.color.app_background)
+        window.statusBarColor = barColor
+        window.navigationBarColor = barColor
+        val isNight = (resources.configuration.uiMode and
+            android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+            android.content.res.Configuration.UI_MODE_NIGHT_YES
+        androidx.core.view.WindowInsetsControllerCompat(window, window.decorView).apply {
+            isAppearanceLightStatusBars = !isNight
+            isAppearanceLightNavigationBars = !isNight
+        }
+        androidx.core.view.WindowInsetsControllerCompat(window, window.decorView).apply {
+            systemBarsBehavior =
+                androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            hide(androidx.core.view.WindowInsetsCompat.Type.systemBars())
+        }
 
         window.setWindowAnimations(R.style.Anim_Filigram_Window)
 
@@ -346,6 +359,17 @@ class MainActivity : AppCompatActivity() {
         }
 
         dialog.show()
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) {
+            androidx.core.view.WindowInsetsControllerCompat(window, window.decorView).apply {
+                systemBarsBehavior =
+                    androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                hide(androidx.core.view.WindowInsetsCompat.Type.systemBars())
+            }
+        }
     }
 
     override fun onNewIntent(intent: Intent) {

@@ -57,14 +57,14 @@
             android:paddingStart="12dp"
             android:paddingEnd="12dp"
             android:text="تماشا در برنامه"
-            android:textColor="@color/black"
+            android:textColor="@color/on_accent"
             android:textSize="11sp"
             app:cornerRadius="8dp"
             app:icon="@drawable/ic_play_black"
             app:iconGravity="textStart"
             app:iconPadding="4dp"
             app:iconSize="14dp"
-            app:iconTint="@color/black" />
+            app:iconTint="@color/on_accent" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnDownloadDirect"

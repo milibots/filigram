@@ -2,26 +2,29 @@
 <resources>
 
     <color name="black">#000000</color>
-    <color name="deep">#000000</color>
-    <color name="surface">#000000</color>
-    <color name="card">#000000</color>
-    <color name="card_border">#1A1A1A</color>
+    <color name="app_background">#F6F7F9</color>
+    <color name="deep">#F6F7F9</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="surface_elevated">#F0F1F4</color>
+    <color name="card">#FFFFFF</color>
+    <color name="card_border">#DEE1E7</color>
 
     <color name="primary_red">#E50914</color>
     <color name="primary_red_dark">#B20710</color>
     <color name="primary_red_glow">#33E50914</color>
 
-    <color name="gold">#FFFFFF</color>
-    <color name="gold_dim">#888888</color>
-    <color name="gold_glow">#20FFFFFF</color>
+    <color name="gold">#E50914</color>
+    <color name="gold_dim">#A70C14</color>
+    <color name="gold_glow">#20E50914</color>
+    <color name="on_accent">#FFFFFF</color>
 
     <color name="status_operational">#00E560</color>
     <color name="status_outage">#E50914</color>
     <color name="status_warn">#FF9800</color>
 
-    <color name="text">#FFFFFF</color>
-    <color name="muted">#CCCCCC</color>
-    <color name="sub">#999999</color>
-    <color name="header_gray">#FFFFFF</color>
-    <color name="header_gray_light">#E0E0E0</color>
+    <color name="text">#17181B</color>
+    <color name="muted">#555C68</color>
+    <color name="sub">#747B86</color>
+    <color name="header_gray">#17181B</color>
+    <color name="header_gray_light">#3E424A</color>
 </resources>

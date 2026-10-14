@@ -4,14 +4,14 @@
     android:id="@+id/coordinatorRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/black"
+    android:background="@color/app_background"
     android:fitsSystemWindows="true">
 
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/black"
+        android:background="@color/app_background"
         android:outlineProvider="none"
         android:stateListAnimator="@null"
         app:elevation="0dp"
@@ -158,7 +158,7 @@
                     android:backgroundTint="@color/gold"
                     android:fontFamily="@font/yekan_bakh_bold"
                     android:text="جستجو"
-                    android:textColor="@color/black"
+                    android:textColor="@color/on_accent"
                     android:textSize="13sp" />
             </LinearLayout>
 
@@ -222,7 +222,7 @@
         android:id="@+id/mainContentFrame"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@color/black"
+        android:background="@color/app_background"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -352,7 +352,7 @@
                 android:id="@+id/gridProgressBar"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:background="@color/black"
+                android:background="@color/app_background"
                 android:visibility="gone">
 
                 <include layout="@layout/view_skeleton_grid" />
@@ -363,14 +363,14 @@
             android:id="@+id/logsScreenContainer"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="@color/black"
+            android:background="@color/app_background"
             android:orientation="vertical"
             android:visibility="gone">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="50dp"
-                android:background="@color/black"
+                android:background="@color/app_background"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
                 android:paddingStart="16dp"
@@ -415,7 +415,7 @@
             android:id="@+id/mainProgressBar"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="@color/black">
+            android:background="@color/app_background">
 
             <include layout="@layout/view_skeleton_home" />
         </FrameLayout>

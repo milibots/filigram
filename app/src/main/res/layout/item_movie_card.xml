@@ -36,7 +36,7 @@
             app:cardCornerRadius="14dp"
             app:cardElevation="0dp"
             app:strokeColor="#24282D"
-            app:strokeWidth="0.8dp"
+            app:strokeWidth="0dp"
             tools:visibility="visible">
 
             <FrameLayout
@@ -73,7 +73,7 @@
             app:cardCornerRadius="14dp"
             app:cardElevation="1dp"
             app:strokeColor="#2D3238"
-            app:strokeWidth="0.8dp"
+            app:strokeWidth="0dp"
             tools:visibility="visible">
 
             <FrameLayout
@@ -110,7 +110,7 @@
             app:cardCornerRadius="14dp"
             app:cardElevation="3dp"
             app:strokeColor="#26FFFFFF"
-            app:strokeWidth="0.6dp">
+            app:strokeWidth="0dp">
 
             <FrameLayout
                 android:layout_width="match_parent"

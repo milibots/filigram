@@ -7,7 +7,7 @@
     app:cardBackgroundColor="@color/card"
     app:cardCornerRadius="16dp"
     app:strokeColor="#222222"
-    app:strokeWidth="1dp">
+    app:strokeWidth="0dp">
 
     <FrameLayout
         android:layout_width="match_parent"
@@ -43,7 +43,7 @@
                 android:paddingEnd="8dp"
                 android:paddingBottom="2dp"
                 android:text="فیلم"
-                android:textColor="@color/black"
+                android:textColor="@color/on_accent"
                 android:textSize="10sp" />
 
             <TextView

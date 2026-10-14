@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#000000"
+    android:background="@color/app_background"
     android:orientation="vertical"
     android:layoutDirection="rtl">
 
@@ -92,7 +92,7 @@
                 app:cardBackgroundColor="@color/card"
                 app:cardCornerRadius="16dp"
                 app:strokeColor="@color/card_border"
-                app:strokeWidth="1dp">
+                app:strokeWidth="0dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -155,7 +155,7 @@
                 app:cardBackgroundColor="@color/card"
                 app:cardCornerRadius="16dp"
                 app:strokeColor="@color/card_border"
-                app:strokeWidth="1dp">
+                app:strokeWidth="0dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -219,7 +219,7 @@
                 app:cardBackgroundColor="@color/card"
                 app:cardCornerRadius="16dp"
                 app:strokeColor="@color/card_border"
-                app:strokeWidth="1dp">
+                app:strokeWidth="0dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -289,7 +289,7 @@
                 app:cardBackgroundColor="@color/card"
                 app:cardCornerRadius="16dp"
                 app:strokeColor="@color/card_border"
-                app:strokeWidth="1dp">
+                app:strokeWidth="0dp">
 
                 <LinearLayout
                     android:id="@+id/rgEngines"
@@ -447,7 +447,7 @@
                 android:backgroundTint="@color/gold"
                 android:fontFamily="@font/yekan_bakh_bold"
                 android:text="اعمال و تغییر موتور فعال"
-                android:textColor="@color/black"
+                android:textColor="@color/on_accent"
                 android:textSize="14sp"
                 app:cornerRadius="16dp" />
 
@@ -473,7 +473,7 @@
                 app:cardBackgroundColor="@color/card"
                 app:cardCornerRadius="16dp"
                 app:strokeColor="@color/card_border"
-                app:strokeWidth="1dp">
+                app:strokeWidth="0dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -676,7 +676,7 @@
                 app:cardBackgroundColor="@color/card"
                 app:cardCornerRadius="16dp"
                 app:strokeColor="@color/card_border"
-                app:strokeWidth="1dp">
+                app:strokeWidth="0dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -766,7 +766,7 @@
                         app:iconPadding="8dp"
                         app:iconTint="@android:color/white"
                         app:strokeColor="#333842"
-                        app:strokeWidth="1dp" />
+                        app:strokeWidth="0dp" />
 
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -791,7 +791,7 @@
                 app:iconPadding="10dp"
                 app:iconTint="#2ECC71"
                 app:strokeColor="#2ECC71"
-                app:strokeWidth="1.5dp" />
+                app:strokeWidth="0dp" />
 
             <!-- ═══════════════════════════════════════════════ -->
             <!-- Bug Report Button (direct telegram link)         -->
@@ -813,7 +813,7 @@
                 app:iconPadding="10dp"
                 app:iconTint="#FF6B6B"
                 app:strokeColor="#FF6B6B"
-                app:strokeWidth="1.5dp" />
+                app:strokeWidth="0dp" />
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>

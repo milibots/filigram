@@ -7,6 +7,7 @@ async function invoke(channel, ...args) {
 }
 
 contextBridge.exposeInMainWorld('filigram', {
+  winControl: (action) => ipcRenderer.send('winControl', action),
   engines: () => invoke('engines'),
   reloadSources: () => invoke('reloadSources'),
   home: (source) => invoke('home', source),

@@ -101,13 +101,13 @@
         android:backgroundTint="@color/gold"
         android:fontFamily="@font/yekan_bakh_bold"
         android:text="افزودن همه به صف دانلود توربو"
-        android:textColor="@color/black"
+        android:textColor="@color/on_accent"
         android:textSize="13sp"
         app:cornerRadius="14dp"
         app:icon="@drawable/ic_download_vector"
         app:iconGravity="textStart"
         app:iconPadding="8dp"
-        app:iconTint="@color/black" />
+        app:iconTint="@color/on_accent" />
 
     <LinearLayout
         android:layout_width="match_parent"

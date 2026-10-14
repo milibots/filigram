@@ -97,7 +97,7 @@
             android:backgroundTint="@color/gold"
             android:fontFamily="@font/yekan_bakh_bold"
             android:text="عضویت در کانال تلگرام"
-            android:textColor="@color/black"
+            android:textColor="@color/on_accent"
             android:textSize="12sp"
             app:cornerRadius="12dp" />
 
@@ -113,7 +113,7 @@
             android:textSize="12sp"
             app:cornerRadius="12dp"
             app:strokeColor="@color/gold"
-            app:strokeWidth="1dp" />
+            app:strokeWidth="0dp" />
     </LinearLayout>
 
 </LinearLayout>

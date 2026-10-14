@@ -1564,3 +1564,35 @@ async function boot() {
 }
 
 boot();
+
+const themeSelect = document.getElementById('themeSelect');
+const themeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+function applyTheme(mode) {
+  const resolved = mode === 'system' ? (themeQuery.matches ? 'dark' : 'light') : mode;
+  document.documentElement.dataset.resolvedTheme = resolved;
+}
+
+function loadThemeMode() {
+  try {
+    return localStorage.getItem('themeMode') || 'system';
+  } catch {
+    return 'system';
+  }
+}
+
+themeSelect.value = loadThemeMode();
+applyTheme(themeSelect.value);
+themeSelect.addEventListener('change', () => {
+  try {
+    localStorage.setItem('themeMode', themeSelect.value);
+  } catch {}
+  applyTheme(themeSelect.value);
+});
+themeQuery.addEventListener('change', () => {
+  if (themeSelect.value === 'system') applyTheme('system');
+});
+
+document.querySelectorAll('.win-controls [data-win]').forEach((btn) => {
+  btn.addEventListener('click', () => api.winControl(btn.dataset.win));
+});

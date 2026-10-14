@@ -78,7 +78,7 @@
                     android:paddingEnd="8dp"
                     android:paddingBottom="2dp"
                     android:fontFamily="@font/yekan_bakh_bold"
-                    android:textColor="@color/black"
+                    android:textColor="@color/on_accent"
                     android:textSize="10sp"
                     android:text="فیلم" />
 

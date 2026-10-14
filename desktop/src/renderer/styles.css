@@ -1,10 +1,10 @@
 @font-face {
-  font-family: 'YekanBakh';
+  font-family: 'MyBaby';
   src: url('fonts/yekan_bakh_regular.ttf') format('truetype');
   font-weight: 400;
 }
 @font-face {
-  font-family: 'YekanBakh';
+  font-family: 'MyBaby';
   src: url('fonts/yekan_bakh_bold.ttf') format('truetype');
   font-weight: 700;
 }
@@ -20,6 +20,17 @@
   --sub: #999999;
   --imdb: #f5c518;
   --radius: 16px;
+  color-scheme: dark;
+}
+
+:root[data-resolved-theme='light'] {
+  --black: #f6f7f9;
+  --card: #ffffff;
+  --card-border: #dfe2e8;
+  --text: #17181b;
+  --muted: #555c68;
+  --sub: #747b86;
+  color-scheme: light;
 }
 
 * {
@@ -32,7 +43,7 @@ body {
   height: 100%;
   background: var(--black);
   color: var(--text);
-  font-family: 'YekanBakh', 'Segoe UI', Tahoma, sans-serif;
+  font-family: 'MyBaby', 'Segoe UI', Tahoma, sans-serif;
   overflow: hidden;
 }
 
@@ -53,7 +64,7 @@ select {
   align-items: center;
   gap: 24px;
   padding: 0 24px;
-  background: linear-gradient(180deg, #0d0d0d 0%, #000 100%);
+  background: linear-gradient(180deg, var(--card) 0%, var(--black) 100%);
   border-bottom: 1px solid var(--card-border);
   -webkit-app-region: drag;
 }
@@ -69,6 +80,17 @@ select {
   align-items: center;
   width: 150px;
   height: 54px;
+}
+
+.theme-select {
+  height: 38px;
+  padding: 0 11px;
+  border-radius: 999px;
+  border: 1px solid var(--card-border);
+  background: var(--card);
+  color: var(--text);
+  outline: none;
+  cursor: pointer;
 }
 
 .brand-logo {
@@ -490,7 +512,7 @@ select {
 }
 
 .detail-page {
-  background: #000;
+  background: var(--black);
   padding-bottom: 32px;
 }
 
@@ -502,7 +524,7 @@ select {
 
 .detail-banner.no-art {
   height: 150px;
-  background: linear-gradient(135deg, #1a0406 0%, #000 70%);
+  background: linear-gradient(135deg, #1a0406 0%, var(--black) 70%);
 }
 
 .detail-banner img {
@@ -515,7 +537,7 @@ select {
 .detail-banner-shade {
   position: absolute;
   inset: 0;
-  background: linear-gradient(0deg, #000 4%, rgba(0, 0, 0, 0.15) 75%);
+  background: linear-gradient(0deg, var(--black) 4%, rgba(0, 0, 0, 0.15) 75%);
 }
 
 .detail-close {
@@ -628,7 +650,7 @@ select {
   display: flex;
   align-items: center;
   gap: 12px;
-  background: #0d0d0d;
+  background: var(--card);
   border: 1px solid var(--card-border);
   border-radius: 12px;
   padding: 11px 14px;
@@ -1006,7 +1028,7 @@ select {
   z-index: 50;
   min-width: 240px;
   padding: 8px;
-  background: #0d0d0d;
+  background: var(--card);
   border: 1px solid #262626;
   border-radius: 14px;
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6);
@@ -1050,3 +1072,23 @@ select {
   flex: 1;
   text-align: start;
 }
+
+.win-controls {
+  display: flex;
+  gap: 2px;
+  -webkit-app-region: no-drag;
+}
+.win-controls button {
+  width: 40px;
+  height: 34px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font-size: 15px;
+  cursor: pointer;
+}
+.win-controls button:hover { background: var(--card); }
+.win-controls .win-close:hover { background: #e50914; color: #fff; }
+html, body, .topbar { border: 0; outline: 0; }
+.topbar { border-bottom: 0; }
