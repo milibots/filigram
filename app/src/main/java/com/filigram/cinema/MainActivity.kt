@@ -726,8 +726,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun showHomeScreen() {
         currentTab = R.id.nav_home
-        binding.topTitle.text = "فیلیگرام"
-        animateTitleChange()
+        binding.topTitle.isVisible = false
+        binding.topLogo.isVisible = true
         if (!binding.swipeRefresh.isVisible) {
             binding.gridScreenContainer.animate().alpha(0f).setDuration(180).withEndAction {
                 binding.gridScreenContainer.isVisible = false
@@ -744,6 +744,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun showGridScreen(title: String) {
         currentTab = if (title.contains("فیلم")) R.id.nav_movies else R.id.nav_series
+        binding.topLogo.isVisible = false
+        binding.topTitle.isVisible = true
         binding.topTitle.text = title
         animateTitleChange()
         val wasHidden = !binding.gridScreenContainer.isVisible
@@ -760,6 +762,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun showLogsScreen() {
         currentTab = R.id.nav_notifications
+        binding.topLogo.isVisible = false
+        binding.topTitle.isVisible = true
         binding.topTitle.text = "کنسول استریم لاگ‌ها"
         animateTitleChange()
         binding.swipeRefresh.isVisible = false

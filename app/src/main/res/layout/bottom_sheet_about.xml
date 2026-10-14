@@ -22,18 +22,19 @@
         android:orientation="horizontal">
 
         <com.google.android.material.card.MaterialCardView
-            android:layout_width="60dp"
-            android:layout_height="60dp"
+            android:layout_width="132dp"
+            android:layout_height="54dp"
             app:cardBackgroundColor="@color/card"
-            app:cardCornerRadius="30dp"
-            app:strokeColor="@color/gold"
+            app:cardCornerRadius="12dp"
+            app:strokeColor="#4A0A0D"
             app:strokeWidth="1.5dp">
 
             <ImageView
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:scaleType="centerCrop"
-                android:src="@drawable/app_logo_filigram" />
+                android:padding="8dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/filigram_wordmark" />
         </com.google.android.material.card.MaterialCardView>
 
         <LinearLayout

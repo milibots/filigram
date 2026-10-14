@@ -66,21 +66,17 @@ select {
 
 .brand {
   display: flex;
-  flex-direction: column;
-  line-height: 1;
+  align-items: center;
+  width: 150px;
+  height: 54px;
 }
 
-.brand-mark {
-  font-weight: 700;
-  font-size: 20px;
-  letter-spacing: 2px;
-  color: var(--red);
-}
-
-.brand-sub {
-  font-size: 10px;
-  letter-spacing: 6px;
-  color: var(--sub);
+.brand-logo {
+  display: block;
+  width: 142px;
+  height: 50px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 10px rgba(229, 9, 20, 0.2));
 }
 
 .nav {

@@ -77,6 +77,16 @@
                 </FrameLayout>
             </LinearLayout>
 
+            <ImageView
+                android:id="@+id/topLogo"
+                android:layout_width="148dp"
+                android:layout_height="48dp"
+                android:layout_centerInParent="true"
+                android:contentDescription="فیلیگرام"
+                android:padding="2dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/filigram_wordmark" />
+
             <TextView
                 android:id="@+id/topTitle"
                 android:layout_width="wrap_content"
@@ -91,7 +101,8 @@
                 android:text="فیلیگرام"
                 android:textColor="@android:color/white"
                 android:textSize="26sp"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                android:visibility="gone" />
 
             <ImageView
                 android:id="@+id/btnTopMenu"
