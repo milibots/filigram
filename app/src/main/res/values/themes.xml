@@ -67,7 +67,7 @@
         <item name="android:windowExitAnimation">@anim/dialog_slide_down</item>
     </style>
 
-    <style name="Widget.Filigram.BottomNav" parent="Widget.MaterialComponents.BottomNavigationView">
+    <style name="Widget.Filigram.BottomNav" parent="Widget.Material3.BottomNavigationView">
         <item name="fontFamily">@font/yekan_bakh_bold</item>
         <item name="android:fontFamily">@font/yekan_bakh_bold</item>
         <item name="itemTextAppearanceActive">@style/TextAppearance.Filigram.NavActive</item>
@@ -75,7 +75,14 @@
         <item name="itemBackground">@android:color/transparent</item>
         <item name="itemIconSize">22dp</item>
         <item name="itemRippleColor">@android:color/transparent</item>
-        <item name="itemActiveIndicatorStyle">@null</item>
+        <item name="itemActiveIndicatorStyle">@style/Widget.Filigram.NavIndicator</item>
+    </style>
+
+    <style name="Widget.Filigram.NavIndicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
+        <item name="android:color">@color/gold_glow</item>
+        <item name="android:width">56dp</item>
+        <item name="android:height">34dp</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.Material3.Corner.Full</item>
     </style>
 
     <style name="TextAppearance.Filigram.NavActive" parent="TextAppearance.MaterialComponents.Caption">

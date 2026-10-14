@@ -22,16 +22,32 @@
       </nav>
 
       <div class="topbar-actions">
-        <select id="themeSelect" class="theme-select" title="حالت نمایش">
-          <option value="system">تم سیستم</option>
-          <option value="dark">تاریک</option>
-          <option value="light">روشن</option>
-        </select>
-        <button id="btnUpdate" class="update-btn" title="بررسی و نصب نسخه جدید">آپدیت</button>
         <div class="search-box">
           <input id="searchInput" type="search" placeholder="جستجوی فیلم یا سریال..." autocomplete="off" />
         </div>
-        <div id="engineBar" class="engine-bar" title="انتخاب سیاره (منبع محتوا)"></div>
+        <div class="settings-wrap">
+          <button id="btnSettings" class="settings-btn" title="تنظیمات">&#9881; تنظیمات</button>
+          <div id="settingsPanel" class="settings-panel hidden">
+            <div class="settings-row">
+              <span class="settings-label">حالت نمایش</span>
+              <select id="themeSelect" class="theme-select" title="حالت نمایش">
+                <option value="system">تم سیستم</option>
+                <option value="dark">تاریک</option>
+                <option value="light">روشن</option>
+                <option value="breakingbad">بریکینگ بد</option>
+                <option value="dracula">دراکولا</option>
+              </select>
+            </div>
+            <div class="settings-row">
+              <span class="settings-label">موتور / سیاره</span>
+              <div id="engineBar" class="engine-bar" title="انتخاب سیاره (منبع محتوا)"></div>
+            </div>
+            <div class="settings-row">
+              <span class="settings-label">نسخه جدید</span>
+              <button id="btnUpdate" class="update-btn" title="بررسی و نصب نسخه جدید">آپدیت</button>
+            </div>
+          </div>
+        </div>
         <div class="win-controls">
           <button data-win="minimize" title="کوچک‌سازی">&#8211;</button>
           <button data-win="maximize" title="بزرگ‌سازی">&#9633;</button>

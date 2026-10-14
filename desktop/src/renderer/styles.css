@@ -1092,3 +1092,91 @@ select {
 .win-controls .win-close:hover { background: #e50914; color: #fff; }
 html, body, .topbar { border: 0; outline: 0; }
 .topbar { border-bottom: 0; }
+
+.settings-wrap { position: relative; -webkit-app-region: no-drag; }
+.settings-btn {
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 0;
+  background: var(--card);
+  color: var(--text);
+  cursor: pointer;
+}
+.settings-panel {
+  position: absolute;
+  top: 46px;
+  inset-inline-end: 0;
+  z-index: 60;
+  min-width: 300px;
+  padding: 14px;
+  border-radius: 16px;
+  background: var(--card);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.settings-panel.hidden { display: none; }
+.settings-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.settings-label { color: var(--muted); font-size: 13px; }
+
+:root[data-resolved-theme='breakingbad'] {
+  --black: #090a07;
+  --card: #14170e;
+  --card-border: #2b3019;
+  --red: #f2c10c;
+  --red-dark: #b88f00;
+  --text: #f5f0cf;
+  --muted: #cfc89a;
+  --sub: #8f8a62;
+  color-scheme: dark;
+}
+:root[data-resolved-theme='dracula'] {
+  --black: #21222c;
+  --card: #282a36;
+  --card-border: #44475a;
+  --red: #bd93f9;
+  --red-dark: #8f6fd1;
+  --text: #f8f8f2;
+  --muted: #cfd0dc;
+  --sub: #8b8fae;
+  color-scheme: dark;
+}
+:root[data-resolved-theme='breakingbad'] .badge-dot,
+:root[data-resolved-theme='breakingbad'] .hero-dot.on,
+:root[data-resolved-theme='breakingbad'] /* ─── Buttons ─────────────────────────────────────────── */
+.primary-btn,
+:root[data-resolved-theme='breakingbad'] .ghost-btn.danger:hover,
+:root[data-resolved-theme='breakingbad'] .chip.on,
+:root[data-resolved-theme='breakingbad'] .round-btn.big,
+:root[data-resolved-theme='breakingbad'] .dl-fill,
+:root[data-resolved-theme='breakingbad'] .badge-count { color: #0b0c07 !important; }
+:root[data-resolved-theme='dracula'] .badge-dot,
+:root[data-resolved-theme='dracula'] .hero-dot.on,
+:root[data-resolved-theme='dracula'] /* ─── Buttons ─────────────────────────────────────────── */
+.primary-btn,
+:root[data-resolved-theme='dracula'] .ghost-btn.danger:hover,
+:root[data-resolved-theme='dracula'] .chip.on,
+:root[data-resolved-theme='dracula'] .round-btn.big,
+:root[data-resolved-theme='dracula'] .dl-fill,
+:root[data-resolved-theme='dracula'] .badge-count { color: #1b1c24 !important; }
+
+/* Breaking Bad: chemistry symbols on navigation */
+:root[data-resolved-theme='breakingbad'] .nav-item::before {
+  color: var(--red);
+  margin-inline-end: 6px;
+  font-family: 'Segoe UI Symbol', 'MyBaby', sans-serif;
+}
+:root[data-resolved-theme='breakingbad'] .nav-item[data-tab='home']::before { content: '97'; }
+:root[data-resolved-theme='breakingbad'] .nav-item[data-tab='movies']::before { content: 'C'; }
+:root[data-resolved-theme='breakingbad'] .nav-item[data-tab='series']::before { content: '9B'; }
+:root[data-resolved-theme='breakingbad'] .nav-item[data-tab='library']::before { content: '²3'; }
+:root[data-resolved-theme='breakingbad'] .nav-item[data-tab='downloads']::before { content: '²2'; }
+:root[data-resolved-theme='breakingbad'] .nav-item[data-tab='news']::before { content: '97'; }
+:root[data-resolved-theme='dracula'] .nav-item::before {
+  content: 'º6';
+  color: #ff79c6;
+  margin-inline-end: 6px;
+}
+:root[data-resolved-theme='breakingbad'] .topbar { border-bottom: 2px solid var(--red); }

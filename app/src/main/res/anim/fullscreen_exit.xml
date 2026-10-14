@@ -5,12 +5,12 @@
     <translate
         android:fromYDelta="0%"
         android:toYDelta="100%"
-        android:duration="320" />
+        android:duration="208" />
 
     <alpha
         android:fromAlpha="1.0"
         android:toAlpha="0.0"
-        android:duration="240"
+        android:duration="156"
         android:startOffset="60" />
 
 </set>

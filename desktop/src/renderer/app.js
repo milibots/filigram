@@ -609,15 +609,23 @@ function firstResult(promises) {
 }
 
 /** Search the same title in every other engine at once; first engine whose fetcher returns data wins. */
-function findInOtherEngines(title, type, fetcher, exclude) {
+function findInOtherEngines(title, type, fetcher, exclude, year) {
   const keys = state.engines.map((e) => e.key).filter((k) => k !== (exclude || state.source));
   return firstResult(
     keys.map(async (key) => {
-      const hits = await api.search(key, title, 1);
-      const match = hits.find((h) => sameTitle(h.title, title) && (type !== 1 || h.type === 1));
-      if (!match) return null;
-      const data = await fetcher(key, match);
-      return data && data.length ? { source: key, item: match, data } : null;
+      const hits = (await api.search(key, title, 1)).filter((h) => type !== 1 || h.type === 1);
+      let candidates = hits.filter((h) => sameTitle(h.title, title)).slice(0, 3);
+      // Titles can differ in language between engines: fall back to same-year top hits.
+      if (!candidates.length && year) {
+        candidates = hits.slice(0, 5).filter((h) => h.year && String(h.year) === String(year)).slice(0, 2);
+      }
+      for (const match of candidates) {
+        try {
+          const data = await fetcher(key, match);
+          if (data && data.length) return { source: key, item: match, data };
+        } catch (_) {}
+      }
+      return null;
     })
   );
 }
@@ -648,20 +656,20 @@ async function withFallback(primary, startFallback, isEmpty, delay = 700) {
 }
 
 /** Same as findInOtherEngines, but remembers which engine matched a title so repeat lookups are instant. */
-function findInOtherEnginesCached(title, type, fetcher, exclude) {
+function findInOtherEnginesCached(title, type, fetcher, exclude, year) {
   const cacheKey = `${type}:${normTitle(title)}`;
   const known = fallbackMatches.get(cacheKey);
   if (known && known.source !== exclude) {
     return fetcher(known.source, known.item)
       .then((data) => (data && data.length ? { source: known.source, item: known.item, data } : null))
       .catch(() => null)
-      .then((hit) => hit || findInOtherEngines(title, type, fetcher, exclude))
+      .then((hit) => hit || findInOtherEngines(title, type, fetcher, exclude, year))
       .then((hit) => {
         if (hit) fallbackMatches.set(cacheKey, { source: hit.source, item: hit.item });
         return hit;
       });
   }
-  return findInOtherEngines(title, type, fetcher, exclude).then((hit) => {
+  return findInOtherEngines(title, type, fetcher, exclude, year).then((hit) => {
     if (hit) fallbackMatches.set(cacheKey, { source: hit.source, item: hit.item });
     return hit;
   });
@@ -1045,7 +1053,7 @@ async function openDetail(item) {
       });
       const result = await withFallback(
         primaryQualities,
-        () => findInOtherEnginesCached(detail.title, detail.type, fetchQualitiesFrom, detail.source),
+        () => findInOtherEnginesCached(detail.title, detail.type, fetchQualitiesFrom, detail.source, detail.year),
         (q) => !q || !q.length
       );
       qualities = result.value;
@@ -1089,7 +1097,7 @@ async function loadEpisodes(detail, seasonNumber, container, seasons) {
       findInOtherEnginesCached(detail.title, 1, async (key, match) => {
         const list = await api.episodes(key, match.id, seasonNumber);
         return list.filter((e) => e.qualities && e.qualities.length);
-      }, detail.source),
+      }, detail.source, detail.year),
     (list) => !hasLinks(list)
   );
   const episodes = result.value;
@@ -1595,4 +1603,16 @@ themeQuery.addEventListener('change', () => {
 
 document.querySelectorAll('.win-controls [data-win]').forEach((btn) => {
   btn.addEventListener('click', () => api.winControl(btn.dataset.win));
+});
+
+const btnSettings = document.getElementById('btnSettings');
+const settingsPanel = document.getElementById('settingsPanel');
+btnSettings.addEventListener('click', (e) => {
+  e.stopPropagation();
+  settingsPanel.classList.toggle('hidden');
+});
+document.addEventListener('click', (e) => {
+  if (!settingsPanel.classList.contains('hidden') && document.contains(e.target) && !e.target.closest('.settings-wrap')) {
+    settingsPanel.classList.add('hidden');
+  }
 });

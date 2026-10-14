@@ -434,7 +434,7 @@
         android:background="@drawable/bg_floating_pill_nav"
         app:elevation="16dp"
         app:itemBackground="@android:color/transparent"
-        app:itemActiveIndicatorStyle="@null"
+        app:itemActiveIndicatorStyle="@style/Widget.Filigram.NavIndicator"
         app:itemRippleColor="@android:color/transparent"
         app:itemIconTint="@color/nav_item_color"
         app:itemTextColor="@color/nav_item_color"

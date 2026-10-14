@@ -1,15 +1,15 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/nav_home"
-        android:icon="@android:drawable/ic_menu_today"
+        android:icon="@drawable/ic_nav_home"
         android:title="خانه" />
     <item
         android:id="@+id/nav_movies"
-        android:icon="@android:drawable/ic_media_play"
+        android:icon="@drawable/ic_nav_movies"
         android:title="فیلم‌ها" />
     <item
         android:id="@+id/nav_series"
-        android:icon="@android:drawable/ic_menu_slideshow"
+        android:icon="@drawable/ic_nav_series"
         android:title="سریال‌ها" />
     <item
         android:id="@+id/nav_playlists"

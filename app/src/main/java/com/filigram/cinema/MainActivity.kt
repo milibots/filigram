@@ -1521,7 +1521,7 @@ class MainActivity : AppCompatActivity() {
                     }
                     var fromEngine: String? = null
                     if (episodes.isEmpty() || episodes.all { it.qualities.isEmpty() }) {
-                        val alt = firstEngineWithResult(detail.title, 1, activeEngine) { eng, item ->
+                        val alt = firstEngineWithResult(detail.title, 1, activeEngine, detail.year) { eng, item ->
                             fetchEpisodesIn(eng, item.id, seasonNum)
                         }
                         if (alt != null) {
@@ -1682,16 +1682,25 @@ class MainActivity : AppCompatActivity() {
         title: String,
         type: Int,
         exclude: String,
+        year: String? = null,
         fetch: suspend (engine: String, item: MovieItem) -> List<T>
     ): Pair<String, List<T>>? = kotlinx.coroutines.coroutineScope {
         val winner = kotlinx.coroutines.CompletableDeferred<Pair<String, List<T>>?>()
         val jobs = allEngineKeys.filter { it != exclude }.map { eng ->
             launch(Dispatchers.IO) {
-                val hits = searchInEngine(eng, title, 1)
-                val match = hits.firstOrNull { sameTitle(it.title, title) && (type != 1 || it.type == 1) }
-                    ?: return@launch
-                val found = fetch(eng, match)
-                if (found.isNotEmpty()) winner.complete(eng to found)
+                val hits = searchInEngine(eng, title, 1).filter { type != 1 || it.type == 1 }
+                var candidates = hits.filter { sameTitle(it.title, title) }.take(3)
+                // Titles differ in language between engines: fall back to same-year top hits.
+                if (candidates.isEmpty() && !year.isNullOrBlank()) {
+                    candidates = hits.take(5).filter { it.year == year }.take(2)
+                }
+                for (match in candidates) {
+                    val found = try { fetch(eng, match) } catch (e: Exception) { emptyList() }
+                    if (found.isNotEmpty()) {
+                        winner.complete(eng to found)
+                        return@launch
+                    }
+                }
             }
         }
         val joiner = launch {
