@@ -2,12 +2,13 @@ const almas = require('./almas');
 const bj = require('./bj');
 const nextmovie = require('./nextmovie');
 const rezflix = require('./rezflix');
+const simba = require('./simba');
 const remoteconfig = require('./remoteconfig');
 const sourceconfig = require('./sourceconfig');
 
-const engines = { almasmovie: almas, bj, nextmovie, rezflix };
+const engines = { almasmovie: almas, bj, nextmovie, rezflix, simba };
 
-const ENGINE_ORDER = ['bj', 'nextmovie', 'almasmovie', 'rezflix'];
+const ENGINE_ORDER = ['bj', 'nextmovie', 'almasmovie', 'rezflix', 'simba'];
 
 function engine(key) {
   return engines[key] || bj;

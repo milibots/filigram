@@ -16,6 +16,7 @@ import com.filigram.cinema.NextMovieApi
 import com.filigram.cinema.R
 import com.filigram.cinema.RezFlixApi
 import com.filigram.cinema.SourceConfig
+import com.filigram.cinema.SimbaApi
 import kotlinx.coroutines.runBlocking
 import java.net.HttpURLConnection
 import java.net.URL
@@ -94,6 +95,7 @@ private class FiligramWidgetFactory(
             "nextmovie" -> NextMovieApi.getRecent(1).filter { it.type == if (wantSeries) 1 else 0 }
             "rezflix" -> RezFlixApi.getMovies(1).filter { it.type == if (wantSeries) 1 else 0 }
             "bj" -> if (wantSeries) BjApi.getSeries(1) else BjApi.getMovies(1)
+            "simba" -> if (wantSeries) SimbaApi.getSeries(1) else SimbaApi.getMovies(1)
             else -> MovielixApi(context).search("", type = if (wantSeries) 1 else 0, page = 1)
         }
 

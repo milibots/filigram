@@ -15,8 +15,35 @@ import com.filigram.cinema.databinding.ItemDownloadCardBinding
 class DownloadsAdapter(
     private val onPauseResumeClick: (DownloadTask) -> Unit,
     private val onCancelDeleteClick: (DownloadTask) -> Unit,
-    private val onPlayDownloadedClick: (DownloadTask) -> Unit
+    private val onPlayDownloadedClick: (DownloadTask) -> Unit,
+    private val onSelectionChanged: (Int) -> Unit = {}
 ) : ListAdapter<DownloadTask, DownloadsAdapter.DownloadViewHolder>(DiffCallback) {
+
+    private val selectedIds = linkedSetOf<String>()
+
+    val selectionCount: Int get() = selectedIds.size
+
+    fun selectedTasks(): List<DownloadTask> = currentList.filter { it.id in selectedIds }
+
+    fun clearSelection() {
+        if (selectedIds.isEmpty()) return
+        selectedIds.clear()
+        notifyItemRangeChanged(0, itemCount, true)
+        onSelectionChanged(0)
+    }
+
+    fun selectAll() {
+        selectedIds.clear()
+        currentList.forEach { selectedIds.add(it.id) }
+        notifyItemRangeChanged(0, itemCount, true)
+        onSelectionChanged(selectedIds.size)
+    }
+
+    private fun toggleSelection(task: DownloadTask, position: Int) {
+        if (!selectedIds.add(task.id)) selectedIds.remove(task.id)
+        notifyItemChanged(position, true)
+        onSelectionChanged(selectedIds.size)
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): DownloadViewHolder {
         val binding = ItemDownloadCardBinding.inflate(LayoutInflater.from(parent.context), parent, false)
@@ -47,10 +74,27 @@ class DownloadsAdapter(
             binding.btnPauseResume.setOnClickListener { onPauseResumeClick(task) }
             binding.btnCancelDelete.setOnClickListener { onCancelDeleteClick(task) }
             binding.btnPlayDownloaded.setOnClickListener { onPlayDownloadedClick(task) }
+
+            binding.root.setOnLongClickListener {
+                toggleSelection(task, bindingAdapterPosition)
+                true
+            }
+            binding.root.setOnClickListener {
+                if (selectedIds.isNotEmpty()) toggleSelection(task, bindingAdapterPosition)
+            }
+            renderSelection(task)
+        }
+
+        private fun renderSelection(task: DownloadTask) {
+            val picked = task.id in selectedIds
+            binding.root.strokeColor = if (picked) 0xFFFFC107.toInt() else 0xFF222222.toInt()
+            binding.root.strokeWidth = if (picked) 3 else 1
+            binding.root.setCardBackgroundColor(if (picked) 0xFF1E1A0A.toInt() else 0xFF0D0D0D.toInt())
         }
 
         fun bindProgressOnly(task: DownloadTask) {
             updateStatusAndSpeed(task)
+            renderSelection(task)
         }
 
         private fun updateStatusAndSpeed(task: DownloadTask) {

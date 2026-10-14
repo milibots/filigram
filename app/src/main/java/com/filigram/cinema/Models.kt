@@ -10,7 +10,9 @@ data class MovieItem(
     val hasDub: Boolean = false,
     val slug: String? = null,
     val rating: String? = null,
-    val genre: String? = null
+    val genre: String? = null,
+    /** Engine this item came from when results are merged across several active engines. */
+    val engine: String? = null
 )
 
 data class VitrinSection(

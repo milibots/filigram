@@ -139,6 +139,19 @@
             android:text="پاکسازی"
             android:textColor="@color/muted"
             android:textSize="11sp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSelectAllDownloads"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:layout_marginStart="4dp"
+            android:fontFamily="@font/yekan_bakh_regular"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:text="انتخاب همه"
+            android:textColor="@color/gold"
+            android:textSize="11sp" />
     </LinearLayout>
 
     <FrameLayout

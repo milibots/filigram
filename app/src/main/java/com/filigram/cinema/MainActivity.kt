@@ -109,6 +109,7 @@ class MainActivity : AppCompatActivity() {
     private var currentTab = R.id.nav_home
 
     private var activeEngine = "movielix"
+    private var activeEngines: Set<String> = setOf("movielix")
     private var activeExoPlayer: ExoPlayer? = null
 
     private var pendingExportJson: String = ""
@@ -237,6 +238,8 @@ class MainActivity : AppCompatActivity() {
 
         val prefs = getSharedPreferences("filigram_prefs", Context.MODE_PRIVATE)
         activeEngine = prefs.getString("active_engine", "movielix") ?: "movielix"
+        activeEngines = (prefs.getStringSet("active_engines", null) ?: setOf(activeEngine))
+            .let { saved -> if (activeEngine in saved) saved else saved + activeEngine }
 
         FavoritesManager.init(this)
         HistoryManager.init(this)
@@ -920,6 +923,14 @@ class MainActivity : AppCompatActivity() {
                         binding.bannerViewPager.isVisible = false
                         vitrinAdapter.updateData(bjSections)
                     }
+                } else if (activeEngine == "simba") {
+                    val simbaSections = SimbaApi.getHomeSections()
+                    withContext(Dispatchers.Main) {
+                        binding.mainProgressBar.isVisible = false
+                        binding.swipeRefresh.isRefreshing = false
+                        binding.bannerViewPager.isVisible = false
+                        vitrinAdapter.updateData(simbaSections)
+                    }
                 } else {
                     val (banners, sections) = movielixApi.getVitrinSections(1)
                     withContext(Dispatchers.Main) {
@@ -1035,6 +1046,7 @@ class MainActivity : AppCompatActivity() {
     private fun initGridData(type: Int) {
         currentGridType = type
         currentSearchQuery = ""
+        binding.btnSearchAllEngines.isVisible = false
         gridPage = 1
         hasMoreGrid = true
         binding.gridProgressBar.isVisible = true
@@ -1048,6 +1060,7 @@ class MainActivity : AppCompatActivity() {
                     "rezflix" -> RezFlixApi.getMovies(1)
                     "nextmovie" -> NextMovieApi.getRecent(1)
                     "bj" -> if (type == 1) BjApi.getSeries(1) else BjApi.getMovies(1)
+                    "simba" -> if (type == 1) SimbaApi.getSeries(1) else SimbaApi.getMovies(1)
                     else -> {
                         val keyword = if (type == 1) "سریال" else "2024"
                         movielixApi.search(keyword, type = type, page = 1)
@@ -1070,6 +1083,21 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /** Searches all active engines in parallel; with several engines the items are tagged and interleaved. */
+    private suspend fun searchActiveEngines(query: String, page: Int): List<MovieItem> {
+        val engines = activeEngines.toList().ifEmpty { listOf(activeEngine) }
+        if (engines.size == 1) return searchInEngine(engines.first(), query, page)
+        val lists = kotlinx.coroutines.coroutineScope {
+            engines.map { eng ->
+                async(Dispatchers.IO) { searchInEngine(eng, query, page).map { it.copy(engine = eng) } }
+            }.map { it.await() }
+        }
+        val out = mutableListOf<MovieItem>()
+        val max = lists.maxOfOrNull { it.size } ?: 0
+        for (i in 0 until max) lists.forEach { l -> l.getOrNull(i)?.let { out.add(it) } }
+        return out
+    }
+
     private suspend fun searchInEngine(engine: String, query: String, page: Int): List<MovieItem> = withContext(Dispatchers.IO) {
         try {
             when (engine) {
@@ -1077,6 +1105,7 @@ class MainActivity : AppCompatActivity() {
                 "rezflix" -> RezFlixApi.search(query, page)
                 "nextmovie" -> NextMovieApi.search(query, page)
                 "bj" -> BjApi.search(query, page)
+                "simba" -> SimbaApi.search(query, page)
                 else -> movielixApi.search(query, type = 2, page = page)
             }
         } catch (e: Exception) {
@@ -1091,14 +1120,16 @@ class MainActivity : AppCompatActivity() {
         gridPage = 1
         hasMoreGrid = true
         showGridScreen("جستجو: $query")
+        binding.btnSearchAllEngines.isVisible = true
+        binding.btnSearchAllEngines.setOnClickListener { showAllEnginesResults(query) }
         binding.gridProgressBar.isVisible = true
         binding.gridLoadingMore.isVisible = false
         gridAdapter.updateData(emptyList())
 
         lifecycleScope.launch {
             try {
-                // 1. First search in active engine
-                val primaryResults = searchInEngine(activeEngine, query, 1)
+                // 1. First search in every active engine (merged, interleaved)
+                val primaryResults = searchActiveEngines(query, 1)
                 if (primaryResults.isNotEmpty()) {
                     withContext(Dispatchers.Main) {
                         binding.gridProgressBar.isVisible = false
@@ -1113,7 +1144,7 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 val allEngines = listOf("movielix", "rezflix", "almasmovie", "nextmovie", "bj")
-                val fallbackEngines = allEngines.filter { it != activeEngine }
+                val fallbackEngines = allEngines.filter { it != activeEngine && it !in activeEngines }
 
                 // Query all fallback engines in parallel for high speed
                 val fallbackDeferreds = fallbackEngines.map { eng ->
@@ -1158,6 +1189,42 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /** Searches every engine at once and lets the user jump to any engine that has results. */
+    private fun showAllEnginesResults(query: String) {
+        binding.btnSearchAllEngines.isEnabled = false
+        showAppToast("در حال جستجو در همه موتورها...")
+        lifecycleScope.launch {
+            val found = allEngineKeys.map { eng ->
+                eng to async(Dispatchers.IO) { searchInEngine(eng, query, 1) }
+            }.map { (eng, d) -> eng to d.await() }.filter { it.second.isNotEmpty() }
+
+            withContext(Dispatchers.Main) {
+                binding.btnSearchAllEngines.isEnabled = true
+                if (found.isEmpty()) {
+                    showAppToast("در هیچ موتوری نتیجه‌ای پیدا نشد")
+                    return@withContext
+                }
+                val labels = found.map { (eng, list) ->
+                    val mark = if (eng == activeEngine) " (فعلی)" else ""
+                    "${getEngineName(eng)} — ${list.size} نتیجه$mark"
+                }.toTypedArray()
+                android.app.AlertDialog.Builder(this@MainActivity)
+                    .setTitle("نتایج «$query» در موتورها")
+                    .setItems(labels) { _, which ->
+                        val (eng, list) = found[which]
+                        activeEngine = eng
+                        getSharedPreferences("filigram_prefs", Context.MODE_PRIVATE)
+                            .edit().putString("active_engine", eng).apply()
+                        gridPage = 1
+                        hasMoreGrid = true
+                        gridAdapter.updateData(list)
+                        showAppToast("نتایج موتور ${getEngineName(eng)} نمایش داده شد")
+                    }
+                    .show()
+            }
+        }
+    }
+
     private fun loadMoreGrid() {
         isGridLoadingMore = true
         binding.gridLoadingMore.isVisible = true
@@ -1165,7 +1232,8 @@ class MainActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             try {
-                val moreItems = when (activeEngine) {
+                val mergedSearch = currentGridType == 2 && currentSearchQuery.isNotBlank() && activeEngines.size > 1
+                val moreItems = if (mergedSearch) searchActiveEngines(currentSearchQuery, nextPage) else when (activeEngine) {
                     "almasmovie" -> {
                         if (currentGridType == 2 && currentSearchQuery.isNotBlank()) {
                             AlmasMovieApi.search(currentSearchQuery, nextPage)
@@ -1196,6 +1264,11 @@ class MainActivity : AppCompatActivity() {
                             BjApi.getMovies(nextPage)
                         }
                     }
+                    "simba" -> {
+                        if (currentGridType == 2 && currentSearchQuery.isNotBlank()) {
+                            SimbaApi.search(currentSearchQuery, nextPage)
+                        } else if (currentGridType == 1) SimbaApi.getSeries(nextPage) else SimbaApi.getMovies(nextPage)
+                    }
                     else -> {
                         val keyword = if (currentGridType == 2) currentSearchQuery else if (currentGridType == 1) "سریال" else "2024"
                         movielixApi.search(keyword, type = currentGridType, page = nextPage)
@@ -1222,6 +1295,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showMovieDetail(item: MovieItem) {
+        item.engine?.let { if (it != activeEngine) activeEngine = it }
         HistoryManager.addVisit(this, item)
         val dialog = Dialog(this, R.style.Theme_Filigram_Dialog_Fullscreen)
         dialog.applyFullscreenAnimation()
@@ -1330,6 +1404,7 @@ class MainActivity : AppCompatActivity() {
                     "rezflix" -> RezFlixApi.getDetails(item.id)
                     "nextmovie" -> NextMovieApi.getDetails(item.id)
                     "bj" -> BjApi.getDetails(item.id)
+                    "simba" -> SimbaApi.getDetails(item.id)
                     else -> movielixApi.getMovieDetails(item.id)
                 }
 
@@ -1406,14 +1481,28 @@ class MainActivity : AppCompatActivity() {
 
             lifecycleScope.launch {
                 try {
-                    val episodes = when (activeEngine) {
+                    var episodes = when (activeEngine) {
                         "almasmovie" -> AlmasMovieApi.getEpisodes(detail.id, seasonNum)
                         "nextmovie" -> NextMovieApi.getEpisodes(detail.id, seasonNum)
                         "bj" -> BjApi.getEpisodes(detail.id, seasonNum)
+                        "simba" -> SimbaApi.getEpisodes(detail.id, seasonNum)
                         else -> movielixApi.getEpisodes(detail.id, seasonNum)
+                    }
+                    var fromEngine: String? = null
+                    if (episodes.isEmpty() || episodes.all { it.qualities.isEmpty() }) {
+                        val alt = firstEngineWithResult(detail.title, 1, activeEngine) { eng, item ->
+                            fetchEpisodesIn(eng, item.id, seasonNum)
+                        }
+                        if (alt != null) {
+                            episodes = alt.second
+                            fromEngine = alt.first
+                        }
                     }
                     withContext(Dispatchers.Main) {
                         detailBinding.detailLoading.isVisible = false
+                        if (fromEngine != null) {
+                            showAppToast("لینک قسمت‌ها از موتور ${getEngineName(fromEngine)} پیدا شد 🎯")
+                        }
                         if (episodes.isNotEmpty()) {
                             selectedEpisode = episodes.first().episode
 
@@ -1481,6 +1570,109 @@ class MainActivity : AppCompatActivity() {
         loadEpisodesForSeason(selectedSeason)
     }
 
+    private val allEngineKeys = listOf("movielix", "rezflix", "almasmovie", "nextmovie", "bj", "simba")
+
+    private fun normalizeTitle(raw: String): String =
+        raw.lowercase().filter { it.isLetterOrDigit() }
+
+    private fun sameTitle(a: String, b: String): Boolean {
+        val x = normalizeTitle(a)
+        val y = normalizeTitle(b)
+        if (x.length < 3 || y.length < 3) return false
+        return x == y || x.contains(y) || y.contains(x)
+    }
+
+    /** Qualities with a ready direct URL from any engine, used by the cross-engine link fallback. */
+    private suspend fun fetchQualitiesIn(engine: String, id: Int, type: Int): List<QualityItem> =
+        withContext(Dispatchers.IO) {
+            try {
+                val detail = when (engine) {
+                    "almasmovie" -> AlmasMovieApi.getDetails(id, if (type == 1) "tvshow" else "movie")
+                    "rezflix" -> RezFlixApi.getDetails(id)
+                    "nextmovie" -> NextMovieApi.getDetails(id)
+                    "bj" -> BjApi.getDetails(id)
+                    "simba" -> SimbaApi.getDetails(id)
+                    else -> movielixApi.getMovieDetails(id)
+                }
+                val list = if (detail != null && detail.directQualities.isNotEmpty()) {
+                    detail.directQualities
+                } else {
+                    when (engine) {
+                        "almasmovie" -> AlmasMovieApi.getQualities(id)
+                        "nextmovie" -> NextMovieApi.getQualities(id)
+                        "bj" -> BjApi.getQualities(id)
+                        "simba" -> SimbaApi.getQualities(id)
+                        "rezflix" -> emptyList()
+                        else -> movielixApi.getQualities(id)
+                    }
+                }
+                list.mapNotNull { q ->
+                    if (!q.directUrl.isNullOrEmpty()) q
+                    else if (engine == "movielix") {
+                        movielixApi.getStreamUrl(id = id, qualityId = q.id)?.let { q.copy(directUrl = it) }
+                    } else null
+                }
+            } catch (e: Exception) {
+                emptyList()
+            }
+        }
+
+    private suspend fun fetchEpisodesIn(engine: String, id: Int, season: Int): List<EpisodeItem> =
+        withContext(Dispatchers.IO) {
+            try {
+                val episodes = when (engine) {
+                    "almasmovie" -> AlmasMovieApi.getEpisodes(id, season)
+                    "nextmovie" -> NextMovieApi.getEpisodes(id, season)
+                    "bj" -> BjApi.getEpisodes(id, season)
+                    "simba" -> SimbaApi.getEpisodes(id, season)
+                    "rezflix" -> emptyList()
+                    else -> movielixApi.getEpisodes(id, season)
+                }
+                episodes.mapNotNull { ep ->
+                    val resolved = ep.qualities.mapNotNull { q ->
+                        if (!q.directUrl.isNullOrEmpty()) q
+                        else if (engine == "movielix") {
+                            movielixApi.getStreamUrl(id = id, qualityId = q.id, season = season, episode = ep.episode)
+                                ?.let { q.copy(directUrl = it) }
+                        } else null
+                    }
+                    if (resolved.isEmpty()) null else ep.copy(qualities = resolved)
+                }
+            } catch (e: Exception) {
+                emptyList()
+            }
+        }
+
+    /**
+     * Searches [title] in every other engine in parallel and returns the first engine whose
+     * same-titled result yields a non-empty [fetch] list. Losing lookups are cancelled.
+     */
+    private suspend fun <T> firstEngineWithResult(
+        title: String,
+        type: Int,
+        exclude: String,
+        fetch: suspend (engine: String, item: MovieItem) -> List<T>
+    ): Pair<String, List<T>>? = kotlinx.coroutines.coroutineScope {
+        val winner = kotlinx.coroutines.CompletableDeferred<Pair<String, List<T>>?>()
+        val jobs = allEngineKeys.filter { it != exclude }.map { eng ->
+            launch(Dispatchers.IO) {
+                val hits = searchInEngine(eng, title, 1)
+                val match = hits.firstOrNull { sameTitle(it.title, title) && (type != 1 || it.type == 1) }
+                    ?: return@launch
+                val found = fetch(eng, match)
+                if (found.isNotEmpty()) winner.complete(eng to found)
+            }
+        }
+        val joiner = launch {
+            jobs.forEach { it.join() }
+            winner.complete(null)
+        }
+        val result = winner.await()
+        jobs.forEach { it.cancel() }
+        joiner.cancel()
+        result
+    }
+
     private fun loadMovieQualities(detailBinding: DialogMovieDetailBinding, movieId: Int) {
         detailBinding.detailLoading.isVisible = false
         detailBinding.qualityListContainer.removeAllViews()
@@ -1507,15 +1699,29 @@ class MainActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             try {
-                val qualities = when (activeEngine) {
+                var qualities = when (activeEngine) {
                     "almasmovie" -> AlmasMovieApi.getQualities(movieId)
                     "nextmovie" -> NextMovieApi.getQualities(movieId)
                     "bj" -> BjApi.getQualities(movieId)
+                    "simba" -> SimbaApi.getQualities(movieId)
                     else -> movielixApi.getQualities(movieId)
+                }
+                var fromEngine: String? = null
+                if (qualities.isEmpty()) {
+                    val alt = firstEngineWithResult(
+                        detailBinding.detailTitle.text.toString(), 0, activeEngine
+                    ) { eng, item -> fetchQualitiesIn(eng, item.id, item.type) }
+                    if (alt != null) {
+                        qualities = alt.second
+                        fromEngine = alt.first
+                    }
                 }
                 withContext(Dispatchers.Main) {
                     pulseAnimator.cancel()
                     populateQualities(detailBinding, movieId, qualities, isSeries = false)
+                    if (fromEngine != null) {
+                        showAppToast("لینک از موتور ${getEngineName(fromEngine)} پیدا شد 🎯")
+                    }
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
@@ -2138,13 +2344,15 @@ class MainActivity : AppCompatActivity() {
             dialog.dismiss()
         }
 
-        when (activeEngine) {
-            "movielix" -> drawerBinding.rbMovielix.isChecked = true
-            "rezflix" -> drawerBinding.rbRezFlix.isChecked = true
-            "almasmovie" -> drawerBinding.rbAlmasMovie.isChecked = true
-            "nextmovie" -> drawerBinding.rbNextMovie.isChecked = true
-            "bj" -> drawerBinding.rbBjEngine.isChecked = true
-        }
+        val engineBoxes = linkedMapOf(
+            "movielix" to drawerBinding.rbMovielix,
+            "rezflix" to drawerBinding.rbRezFlix,
+            "almasmovie" to drawerBinding.rbAlmasMovie,
+            "nextmovie" to drawerBinding.rbNextMovie,
+            "bj" to drawerBinding.rbBjEngine,
+            "simba" to drawerBinding.rbSimba
+        )
+        engineBoxes.forEach { (key, box) -> box.isChecked = key in activeEngines }
 
         drawerBinding.cardOpenRadar.setOnClickListener {
             dialog.dismiss()
@@ -2176,22 +2384,27 @@ class MainActivity : AppCompatActivity() {
         }
 
         drawerBinding.btnApplyEngine.setOnClickListener {
-            val selected = when (drawerBinding.rgEngines.checkedRadioButtonId) {
-                R.id.rbRezFlix -> "rezflix"
-                R.id.rbAlmasMovie -> "almasmovie"
-                R.id.rbNextMovie -> "nextmovie"
-                R.id.rbBjEngine -> "bj"
-                else -> "movielix"
+            val picked = engineBoxes.filter { it.value.isChecked }.keys
+            if (picked.isEmpty()) {
+                showAppToast("حداقل یک موتور باید فعال بماند")
+                return@setOnClickListener
             }
+            // The first checked engine drives home and listings; keep the current one if still checked.
+            val selected = if (activeEngine in picked) activeEngine else picked.first()
+            activeEngines = picked.toSet()
 
             activeEngine = selected
             getSharedPreferences("filigram_prefs", Context.MODE_PRIVATE)
                 .edit()
                 .putString("active_engine", activeEngine)
+                .putStringSet("active_engines", activeEngines)
                 .apply()
 
             AppLogger.i("MainActivity", "موتور فعال به $selected تغییر یافت")
-            showAppToast("موتور فعال: ${getEngineName(activeEngine)}")
+            showAppToast(
+                if (activeEngines.size > 1) "${activeEngines.size} موتور فعال شد (جستجو در همه)"
+                else "موتور فعال: ${getEngineName(activeEngine)}"
+            )
             dialog.dismiss()
 
             showHomeScreen()
@@ -2297,6 +2510,7 @@ class MainActivity : AppCompatActivity() {
             "almasmovie" -> "اورانوس"
             "nextmovie" -> "زحل"
             "bj" -> "مشتری"
+            "simba" -> "سیمبا"
             else -> "زهره"
         }
         return "سیاره ${SourceConfig.label(key, fallback)}"
@@ -3361,6 +3575,13 @@ class MainActivity : AppCompatActivity() {
             },
             onPlayDownloadedClick = { task ->
                 playDownloadedVideo(task)
+            },
+            onSelectionChanged = { count ->
+                dBinding.btnClearDownloads.text = if (count > 0) "حذف ($count)" else "پاکسازی"
+                dBinding.btnSelectAllDownloads.text = if (count > 0) "لغو انتخاب" else "انتخاب همه"
+                if (count > 0) {
+                    dBinding.tvTotalSpeedSummary.text = "$count مورد انتخاب شده (لمس طولانی = انتخاب)"
+                }
             }
         )
 
@@ -3401,19 +3622,50 @@ class MainActivity : AppCompatActivity() {
         }
 
         dBinding.btnPauseAll.setOnClickListener {
-            DownloadManager.pauseAll(this)
-            showAppToast("همه دانلودها متوقف شدند")
+            val picked = downloadsAdapter.selectedTasks()
+            if (picked.isNotEmpty()) {
+                picked.forEach { DownloadManager.pauseTask(this, it.id) }
+                showAppToast("${picked.size} دانلود انتخابی متوقف شد")
+            } else {
+                DownloadManager.pauseAll(this)
+                showAppToast("همه دانلودها متوقف شدند")
+            }
         }
 
         dBinding.btnResumeAll.setOnClickListener {
-            DownloadManager.resumeAll(this)
-            DownloadForegroundService.startService(this)
-            showAppToast("همه دانلودها از سر گرفته شدند")
+            val picked = downloadsAdapter.selectedTasks()
+            if (picked.isNotEmpty()) {
+                picked.forEach { DownloadManager.resumeTask(this, it.id) }
+                DownloadForegroundService.startService(this)
+                showAppToast("${picked.size} دانلود انتخابی شروع شد")
+            } else {
+                DownloadManager.resumeAll(this)
+                DownloadForegroundService.startService(this)
+                showAppToast("همه دانلودها از سر گرفته شدند")
+            }
+        }
+
+        dBinding.btnSelectAllDownloads.setOnClickListener {
+            if (downloadsAdapter.selectionCount > 0) downloadsAdapter.clearSelection()
+            else downloadsAdapter.selectAll()
         }
 
         dBinding.btnClearDownloads.setOnClickListener {
-            DownloadManager.clearCompleted(this)
-            showAppToast("دانلودهای پایان‌یافته پاکسازی شدند")
+            val picked = downloadsAdapter.selectedTasks()
+            if (picked.isEmpty()) {
+                DownloadManager.clearCompleted(this)
+                showAppToast("دانلودهای پایان‌یافته پاکسازی شدند")
+            } else {
+                showConfirmBottomSheet(
+                    title = "حذف دانلودهای انتخابی",
+                    message = "${picked.size} دانلود انتخاب‌شده و فایل‌های آن‌ها پاک می‌شوند.",
+                    positiveText = "حذف",
+                    isDestructive = true
+                ) {
+                    picked.forEach { DownloadManager.cancelTask(this, it.id, deleteFile = true) }
+                    downloadsAdapter.clearSelection()
+                }
+            }
         }
 
         dBinding.btnDownloadSettings.setOnClickListener {
@@ -3641,6 +3893,88 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+
+        fun exportLinks(asCsv: Boolean) {
+            val preferredResolution = when (bBinding.rgBatchQualities.checkedRadioButtonId) {
+                R.id.rbQuality1080 -> "1080"
+                R.id.rbQuality480 -> "480"
+                else -> "720"
+            }
+            bBinding.batchLoading.isVisible = true
+            bBinding.btnExportTxt.isEnabled = false
+            bBinding.btnExportCsv.isEnabled = false
+
+            lifecycleScope.launch {
+                try {
+                    val rows = mutableListOf<List<String>>()
+                    val cleanTitle = subtitle.replace("سریال «", "").replace("»", "")
+                    for (seasonNum in seasons) {
+                        val episodes = withContext(Dispatchers.IO) {
+                            when (activeEngine) {
+                                "almasmovie" -> AlmasMovieApi.getEpisodes(movieId, seasonNum)
+                                "nextmovie" -> NextMovieApi.getEpisodes(movieId, seasonNum)
+                                "bj" -> BjApi.getEpisodes(movieId, seasonNum)
+                                else -> movielixApi.getEpisodes(movieId, seasonNum)
+                            }
+                        }
+                        for (ep in episodes) {
+                            val q = ep.qualities.find { it.type.contains(preferredResolution) || it.title.contains(preferredResolution) }
+                                ?: ep.qualities.firstOrNull() ?: continue
+                            val url = if (!q.directUrl.isNullOrEmpty()) q.directUrl
+                            else withContext(Dispatchers.IO) {
+                                movielixApi.getStreamUrl(id = movieId, qualityId = q.id, season = seasonNum, episode = ep.episode)
+                            }
+                            if (url.isNullOrEmpty()) continue
+                            rows.add(listOf(cleanTitle, seasonNum.toString(), ep.episode.toString(), q.title, q.size, url))
+                        }
+                    }
+
+                    if (rows.isEmpty()) {
+                        showAppToast("لینکی برای خروجی گرفتن پیدا نشد")
+                        return@launch
+                    }
+
+                    val text = if (asCsv) {
+                        fun cell(v: String) = "\"" + v.replace("\"", "\"\"") + "\""
+                        val header = listOf("series", "season", "episode", "quality", "size", "url").joinToString(",")
+                        "﻿" + header + "\r\n" + rows.joinToString("\r\n") { r -> r.joinToString(",") { cell(it) } }
+                    } else {
+                        rows.joinToString("\n") { it.last() }
+                    }
+
+                    val base = cleanTitle.replace("[\\/:*?\"<>|]".toRegex(), "_").trim().ifEmpty { "links" }
+                    val seasonTag = if (seasons.size == 1) "S${seasons.first()}" else "all-seasons"
+                    val dir = java.io.File(
+                        android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS),
+                        "Filigram"
+                    )
+                    val file = withContext(Dispatchers.IO) {
+                        dir.mkdirs()
+                        java.io.File(dir, "$base $seasonTag links.${if (asCsv) "csv" else "txt"}").also {
+                            it.writeText(text, Charsets.UTF_8)
+                        }
+                    }
+
+                    dialog.dismiss()
+                    showAppToast("${rows.size} لینک ذخیره شد: ${file.name}", autoDismissMs = 4000L)
+                    val send = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_SUBJECT, file.name)
+                        putExtra(Intent.EXTRA_TEXT, text)
+                    }
+                    startActivity(Intent.createChooser(send, "اشتراک‌گذاری لینک‌ها"))
+                } catch (e: Exception) {
+                    showAppToast("خطا در ساخت فایل لینک‌ها: ${e.message}")
+                } finally {
+                    bBinding.batchLoading.isVisible = false
+                    bBinding.btnExportTxt.isEnabled = true
+                    bBinding.btnExportCsv.isEnabled = true
+                }
+            }
+        }
+
+        bBinding.btnExportTxt.setOnClickListener { exportLinks(asCsv = false) }
+        bBinding.btnExportCsv.setOnClickListener { exportLinks(asCsv = true) }
 
         dialog.show()
     }

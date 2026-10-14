@@ -1,0 +1,39 @@
+{
+  "base": "http://fitlinerim.info",
+  "alt_base": "https://boxlimon.info",
+  "cdn_base": "http://simbaapp.info",
+  "static_key": "4F5A9C3D9A86FA54EACEDDD635185",
+  "install_key": 14789632,
+  "seed_series": [35344, 35358, 35382],
+  "headers": {
+    "User-Agent": "okhttp/4.9.3",
+    "Accept": "application/json, text/html, video/*, */*",
+    "Accept-Encoding": "gzip, deflate",
+    "Connection": "keep-alive"
+  },
+  "post_headers": {
+    "Content-Type": "application/x-www-form-urlencoded"
+  },
+  "paths": {
+    "home": "/api/first/{KEY}/",
+    "version": "/api/version/check/{ver}/{uid}/{KEY}/",
+    "genres": "/api/genre/all/{KEY}/",
+    "countries": "/api/country/all/{KEY}/",
+    "categories": "/api/category/all/{KEY}/",
+    "packages": "/api/package/all/{KEY}/",
+    "movies": "/api/movie/by/filtres/{g}/{sort}/{c}/{KEY}/",
+    "series": "/api/serie/by/filtres/{g}/{sort}/{c}/{KEY}/",
+    "channels": "/api/channel/by/filtres/{g}/{sort}/{c}/{KEY}/",
+    "seasons": "/api/season/by/serie/{sid}/{KEY}/"
+  },
+  "extract": {
+    "series_id_from_list": "*.id",
+    "movie_id_from_list": "*.id",
+    "episodes_in_season": "*.episodes",
+    "sources_in_episode": "*.sources",
+    "media_url_field": "url",
+    "quality_field": "quality",
+    "season_field": "id",
+    "episode_field": "id"
+  }
+}

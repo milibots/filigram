@@ -25,5 +25,17 @@ contextBridge.exposeInMainWorld('filigram', {
   openExternal: (url) => invoke('openExternal', url),
   copyText: (text) => invoke('copyText', text),
   externalPlayer: () => invoke('externalPlayer'),
-  playExternal: (url) => invoke('playExternal', url)
+  playExternal: (url) => invoke('playExternal', url),
+  dlList: () => invoke('dlList'),
+  dlEnqueue: (items) => invoke('dlEnqueue', items),
+  dlPause: (id) => invoke('dlPause', id),
+  dlResume: (id) => invoke('dlResume', id),
+  dlRemove: (id, deleteFile) => invoke('dlRemove', id, deleteFile),
+  dlPauseAll: () => invoke('dlPauseAll'),
+  dlResumeAll: () => invoke('dlResumeAll'),
+  dlClearCompleted: () => invoke('dlClearCompleted'),
+  dlShow: (id) => invoke('dlShow', id),
+  dlOpenFolder: () => invoke('dlOpenFolder'),
+  exportLinks: (format, rows, baseName) => invoke('exportLinks', format, rows, baseName),
+  onDownloads: (cb) => ipcRenderer.on('dl:update', (_e, list) => cb(list))
 });

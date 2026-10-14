@@ -74,6 +74,14 @@ object SystemRadar {
             isCore = false
         ))
 
+        list.add(pingService(
+            id = "simba",
+            name = "موتور Simba / Fitlinerim",
+            description = "آرشیو فیلم و سریال با لینک‌های مستقیم قسمت‌ها",
+            url = "http://fitlinerim.info/api/first/4F5A9C3D9A86FA54EACEDDD635185/",
+            isCore = false
+        ))
+
         list
     }
 

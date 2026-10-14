@@ -97,6 +97,18 @@ class SeriesUpdateWorker(
                                 }
                             }
                         }
+                        "simba" -> {
+                            val detail = SimbaApi.getDetails(sub.id)
+                            if (detail != null && detail.seasons.isNotEmpty()) {
+                                latestSeason = detail.seasons.maxOfOrNull { it.season } ?: 1
+                                val episodes = SimbaApi.getEpisodes(sub.id, latestSeason)
+                                val maxEp = episodes.maxByOrNull { it.episode }
+                                if (maxEp != null) {
+                                    latestEpisode = maxEp.episode
+                                    latestEpTitle = maxEp.title
+                                }
+                            }
+                        }
                         "rezflix" -> {
                             val detail = RezFlixApi.getDetails(sub.id)
                             if (detail != null && detail.seasons.isNotEmpty()) {

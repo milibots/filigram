@@ -290,14 +290,14 @@
                 app:strokeColor="@color/card_border"
                 app:strokeWidth="1dp">
 
-                <RadioGroup
+                <LinearLayout
                     android:id="@+id/rgEngines"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:padding="16dp">
 
-                    <RadioButton
+                    <CheckBox
                         android:id="@+id/rbMovielix"
                         android:drawableStart="@drawable/ic_planet_venus"
                         android:drawablePadding="10dp"
@@ -320,7 +320,7 @@
                         android:textColor="@color/muted"
                         android:textSize="10sp" />
 
-                    <RadioButton
+                    <CheckBox
                         android:id="@+id/rbRezFlix"
                         android:drawableStart="@drawable/ic_planet_neptune"
                         android:drawablePadding="10dp"
@@ -343,7 +343,7 @@
                         android:textColor="@color/muted"
                         android:textSize="10sp" />
 
-                    <RadioButton
+                    <CheckBox
                         android:id="@+id/rbAlmasMovie"
                         android:drawableStart="@drawable/ic_planet_uranus"
                         android:drawablePadding="10dp"
@@ -366,7 +366,7 @@
                         android:textColor="@color/muted"
                         android:textSize="10sp" />
 
-                    <RadioButton
+                    <CheckBox
                         android:id="@+id/rbNextMovie"
                         android:drawableStart="@drawable/ic_planet_saturn"
                         android:drawablePadding="10dp"
@@ -388,7 +388,7 @@
                         android:textColor="@color/muted"
                         android:textSize="10sp" />
 
-                    <RadioButton
+                    <CheckBox
                         android:id="@+id/rbBjEngine"
                         android:drawableStart="@drawable/ic_planet_jupiter"
                         android:drawablePadding="10dp"
@@ -411,7 +411,30 @@
                         android:textColor="@color/muted"
                         android:textSize="10sp" />
 
-                </RadioGroup>
+                    <CheckBox
+                        android:id="@+id/rbSimba"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:buttonTint="@color/gold"
+                        android:drawableStart="@drawable/ic_planet_jupiter"
+                        android:drawablePadding="10dp"
+                        android:fontFamily="@font/yekan_bakh_bold"
+                        android:paddingStart="8dp"
+                        android:text="سیاره سیمبا — Fitlinerim"
+                        android:textColor="@android:color/white"
+                        android:textSize="13sp" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="36dp"
+                        android:fontFamily="@font/yekan_bakh_regular"
+                        android:text="آرشیو Simba با فیلم، سریال و لینک‌های مستقیم قسمت‌ها"
+                        android:textColor="@color/muted"
+                        android:textSize="10sp" />
+
+                </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
             <com.google.android.material.button.MaterialButton

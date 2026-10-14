@@ -114,6 +114,24 @@
       },
       "image_rewrite": [],
       "notes": "Android only. Registers its own device token at runtime and falls back to the token above."
+    },
+    {
+      "key": "simba",
+      "label": "سیمبا",
+      "planet": "simba",
+      "enabled": true,
+      "order": 6,
+      "base_url": "http://fitlinerim.info",
+      "headers": {
+        "User-Agent": "okhttp/4.9.3",
+        "Accept": "application/json, text/html, video/*, */*",
+        "Accept-Encoding": "gzip, deflate",
+        "Connection": "keep-alive"
+      },
+      "cookies": "",
+      "auth": {},
+      "image_rewrite": [],
+      "notes": "No-auth Simba / Fitlinerim Android API."
     }
   ]
 }

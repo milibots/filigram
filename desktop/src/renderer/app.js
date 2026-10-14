@@ -10,7 +10,10 @@ const state = {
   heroTimer: null,
   listing: { kind: null, page: 1, items: [], loading: false, query: '' },
   detail: null,
-  player: { item: null, quality: null, key: '' }
+  player: { item: null, quality: null, key: '' },
+  engines: [],
+  activeSources: [],
+  downloads: []
 };
 
 const view = document.getElementById('view');
@@ -19,6 +22,7 @@ const engineBar = document.getElementById('engineBar');
 const searchInput = document.getElementById('searchInput');
 const playerOverlay = document.getElementById('playerOverlay');
 const video = document.getElementById('video');
+const DEFAULT_COVER = 'assets/default-cover.jpg';
 
 const FA_DIGITS = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
 
@@ -49,11 +53,67 @@ function el(tag, className, text) {
   return node;
 }
 
-function posterFallback(img) {
-  img.addEventListener('error', () => {
-    img.removeAttribute('src');
+const posterCache = new Map();
+const posterQueue = [];
+let posterWorkers = 0;
+
+/** Looks the title up in the other engines and returns the first poster that exists. */
+function lookupPoster(title, exclude) {
+  const key = normTitle(title);
+  if (!key) return Promise.resolve(null);
+  if (!posterCache.has(key)) {
+    posterCache.set(
+      key,
+      new Promise((resolve) => {
+        posterQueue.push(async () => {
+          const found = await firstResult(
+            state.engines
+              .filter((e) => e.key !== exclude)
+              .map(async (e) => {
+                const hits = await api.search(e.key, title, 1);
+                const hit = hits.find((h) => h.image && sameTitle(h.title, title));
+                return hit ? hit.image : null;
+              })
+          );
+          resolve(found);
+        });
+        pumpPosters();
+      })
+    );
+  }
+  return posterCache.get(key);
+}
+
+function pumpPosters() {
+  while (posterWorkers < 3 && posterQueue.length) {
+    posterWorkers += 1;
+    const job = posterQueue.shift();
+    job().finally(() => {
+      posterWorkers -= 1;
+      pumpPosters();
+    });
+  }
+}
+
+function posterFallback(img, item) {
+  let triedAlternate = false;
+  img.addEventListener('error', async () => {
+    const failed = img.getAttribute('src');
     img.alt = '';
     img.classList.add('art-missing');
+    if (failed && failed.endsWith(DEFAULT_COVER)) return;
+    if (triedAlternate || !item || !item.title) {
+      img.src = DEFAULT_COVER;
+      return;
+    }
+    triedAlternate = true;
+    const alt = await lookupPoster(item.title, item.source || state.source);
+    if (alt && alt !== failed) {
+      img.classList.remove('art-missing');
+      img.src = alt;
+    } else {
+      img.src = DEFAULT_COVER;
+    }
   });
 }
 
@@ -67,7 +127,8 @@ const PLANET_ART = {
   bj: { body: '#e8a33d', band: '#c4762a', ring: null },
   nextmovie: { body: '#d9c27a', band: '#b39a4e', ring: '#e6dcb0' },
   almasmovie: { body: '#7fd4e0', band: '#4da3b8', ring: '#bfe9f0' },
-  rezflix: { body: '#5b7de8', band: '#3c53b0', ring: null }
+  rezflix: { body: '#5b7de8', band: '#3c53b0', ring: null },
+  simba: { body: '#e06a32', band: '#8d351e', ring: '#f4b05d' }
 };
 
 function planetSvg(key) {
@@ -81,6 +142,38 @@ function planetSvg(key) {
     <circle cx="12" cy="12.5" r="2.4" fill="${art.band}" opacity="0.5"/>
     ${ring}
   </svg>`;
+}
+
+
+/* ─── Multi-engine helpers ─────────────────────────────── */
+function activeKeys() {
+  const known = new Set(state.engines.map((e) => e.key));
+  const keys = state.activeSources.filter((k) => known.has(k));
+  return keys.length ? keys : [state.source];
+}
+
+function tagSource(items, key) {
+  return (items || []).map((item) => ({ ...item, source: item.source || key }));
+}
+
+function interleave(lists) {
+  const out = [];
+  const max = Math.max(0, ...lists.map((l) => l.length));
+  for (let i = 0; i < max; i += 1) lists.forEach((l) => l[i] && out.push(l[i]));
+  return out;
+}
+
+async function searchActive(query, page) {
+  const keys = activeKeys();
+  const lists = await Promise.all(
+    keys.map((key) =>
+      api
+        .search(key, query, page)
+        .then((items) => tagSource(items, key))
+        .catch(() => [])
+    )
+  );
+  return interleave(lists);
 }
 
 function itemKey(item) {
@@ -123,7 +216,10 @@ function movieCard(item) {
   img.loading = 'lazy';
   img.alt = item.title;
   if (item.image) img.src = item.image;
-  posterFallback(img);
+  else lookupPoster(item.title, item.source || state.source).then((alt) => {
+    img.src = alt || DEFAULT_COVER;
+  });
+  posterFallback(img, item);
   card.appendChild(img);
 
   const tagText = item.type === 1 ? 'سریال' : item.hasDub ? 'دوبله' : item.hasSub ? 'زیرنویس' : 'فیلم';
@@ -229,14 +325,31 @@ async function renderHome() {
   view.appendChild(skeleton());
 
   let sections = [];
+  let heroPool = [];
   try {
-    sections = await api.home(state.source);
+    const keys = activeKeys();
+    const perEngine = await Promise.all(
+      keys.map((key) =>
+        api
+          .home(key)
+          .then((list) =>
+            list.map((section) => ({
+              ...section,
+              title: keys.length > 1 ? `${engineLabel(key)} • ${section.title}` : section.title,
+              items: tagSource(section.items, key)
+            }))
+          )
+          .catch(() => [])
+      )
+    );
+    sections = perEngine.flat();
+    heroPool = interleave(perEngine.map((list) => (list[0] ? list[0].items : [])));
   } catch (err) {
     toast(`خطا در دریافت ویترین: ${err.message}`);
   }
 
   view.textContent = '';
-  state.heroItems = (sections[0] && sections[0].items ? sections[0].items : []).slice(0, 6);
+  state.heroItems = heroPool.slice(0, 6);
   renderHero(view);
 
   const progressItems = Object.values(state.store.progress || {})
@@ -269,7 +382,15 @@ async function renderListing(kind, title) {
     state.listing.loading = true;
     moreBtn.disabled = true;
     try {
-      const items = await api.listing(state.source, kind, state.listing.page);
+      const lists = await Promise.all(
+        activeKeys().map((key) =>
+          api
+            .listing(key, kind, state.listing.page)
+            .then((rows) => tagSource(rows, key))
+            .catch(() => [])
+        )
+      );
+      const items = interleave(lists);
       items.forEach((item) => {
         state.listing.items.push(item);
         grid.appendChild(movieCard(item));
@@ -306,9 +427,26 @@ async function renderSearch(query) {
 
   let items = [];
   try {
-    items = await api.search(state.source, query, 1);
+    items = await searchActive(query, 1);
   } catch (err) {
     toast(`خطا در جستجو: ${err.message}`);
+  }
+
+  if (!items.length) {
+    const current = activeKeys();
+    toast(`در ${current.map(engineLabel).join('، ')} یافت نشد؛ در حال بررسی سایر موتورها...`, 3200);
+    const alt = await firstResult(
+      state.engines
+        .filter((e) => !current.includes(e.key))
+        .map(async (e) => {
+          const hits = await api.search(e.key, query, 1);
+          return hits.length ? { key: e.key, hits } : null;
+        })
+    );
+    if (alt) {
+      items = alt.hits.map((h) => ({ ...h, source: alt.key }));
+      toast(`نتیجه از موتور ${engineLabel(alt.key)} بارگذاری شد`);
+    }
   }
 
   view.textContent = '';
@@ -320,6 +458,36 @@ async function renderSearch(query) {
   const grid = el('div', 'grid');
   items.forEach((item) => grid.appendChild(movieCard(item)));
   view.appendChild(grid);
+
+  const moreWrap = el('div', 'load-more');
+  const moreBtn = el('button', 'primary-btn', 'بارگذاری نتایج بیشتر از همه موتورها');
+  moreWrap.appendChild(moreBtn);
+  view.appendChild(moreWrap);
+
+  const seen = new Set(items.map((i) => `${i.source || state.source}:${i.id}`));
+  moreBtn.addEventListener('click', async () => {
+    moreBtn.disabled = true;
+    moreBtn.textContent = 'در حال جستجو در همه موتورها...';
+    const keys = state.engines.map((e) => e.key);
+    const batches = await Promise.all(
+      keys.map((key) =>
+        Promise.all([api.search(key, query, 1), api.search(key, query, 2)])
+          .then(([a, b]) => [...a, ...b].map((h) => ({ ...h, source: key })))
+          .catch(() => [])
+      )
+    );
+    let added = 0;
+    batches.flat().forEach((hit) => {
+      const id = `${hit.source}:${hit.id}`;
+      if (seen.has(id)) return;
+      seen.add(id);
+      grid.appendChild(movieCard(hit));
+      added += 1;
+    });
+    moreBtn.disabled = false;
+    moreBtn.textContent = 'بارگذاری نتایج بیشتر از همه موتورها';
+    toast(added ? `${fa(added)} نتیجه جدید اضافه شد` : 'نتیجه جدیدی پیدا نشد');
+  });
 
   const history = [query, ...state.store.searchHistory.filter((q) => q !== query)].slice(0, 12);
   saveStore('searchHistory', history);
@@ -378,7 +546,351 @@ function switchTab(tab) {
   else if (tab === 'movies') renderListing('movies', 'فیلم‌ها');
   else if (tab === 'series') renderListing('series', 'سریال‌ها');
   else if (tab === 'library') renderLibrary();
+  else if (tab === 'downloads') renderDownloads();
   else if (tab === 'news') renderNews();
+}
+
+
+/* ─── Links export, quality pick and cross-engine fallback ─ */
+const QUALITY_PREFS = ['1080', '720', '480'];
+
+function pickQuality(qualities, pref) {
+  if (!qualities || !qualities.length) return null;
+  return qualities.find((q) => `${q.title || ''} ${q.type || ''}`.includes(pref)) || qualities[0];
+}
+
+function normTitle(text) {
+  return String(text || '')
+    .toLowerCase()
+    .replace(/سریال|فیلم|دوبله|زیرنویس|فارسی|کامل|فصل/g, '')
+    .replace(/[^\p{L}\p{N}]/gu, '');
+}
+
+function sameTitle(a, b) {
+  const x = normTitle(a);
+  const y = normTitle(b);
+  if (x.length < 3 || y.length < 3) return false;
+  return x === y || x.includes(y) || y.includes(x);
+}
+
+function engineLabel(key) {
+  const found = state.engines.find((e) => e.key === key);
+  return found ? found.label : key;
+}
+
+function firstResult(promises) {
+  return new Promise((resolve) => {
+    let pending = promises.length;
+    if (!pending) resolve(null);
+    promises.forEach((p) =>
+      p
+        .then((value) => {
+          if (value) resolve(value);
+        })
+        .catch(() => {})
+        .finally(() => {
+          pending -= 1;
+          if (pending === 0) resolve(null);
+        })
+    );
+  });
+}
+
+/** Search the same title in every other engine at once; first engine whose fetcher returns data wins. */
+function findInOtherEngines(title, type, fetcher, exclude) {
+  const keys = state.engines.map((e) => e.key).filter((k) => k !== (exclude || state.source));
+  return firstResult(
+    keys.map(async (key) => {
+      const hits = await api.search(key, title, 1);
+      const match = hits.find((h) => sameTitle(h.title, title) && (type !== 1 || h.type === 1));
+      if (!match) return null;
+      const data = await fetcher(key, match);
+      return data && data.length ? { source: key, item: match, data } : null;
+    })
+  );
+}
+
+
+const fallbackMatches = new Map();
+
+/**
+ * Runs the primary request; if it is slow (> delay) or empty, other engines are queried in the
+ * background so the first usable answer shows up immediately.
+ */
+async function withFallback(primary, startFallback, isEmpty, delay = 700) {
+  let fallback = null;
+  const timer = setTimeout(() => {
+    fallback = startFallback();
+  }, delay);
+  let value = null;
+  try {
+    value = await primary;
+  } catch (_) {
+    value = null;
+  }
+  clearTimeout(timer);
+  if (!isEmpty(value)) return { value, from: null };
+  if (!fallback) fallback = startFallback();
+  const alt = await fallback;
+  return alt ? { value: alt.data, from: alt.source } : { value: value || [], from: null };
+}
+
+/** Same as findInOtherEngines, but remembers which engine matched a title so repeat lookups are instant. */
+function findInOtherEnginesCached(title, type, fetcher, exclude) {
+  const cacheKey = `${type}:${normTitle(title)}`;
+  const known = fallbackMatches.get(cacheKey);
+  if (known && known.source !== exclude) {
+    return fetcher(known.source, known.item)
+      .then((data) => (data && data.length ? { source: known.source, item: known.item, data } : null))
+      .catch(() => null)
+      .then((hit) => hit || findInOtherEngines(title, type, fetcher, exclude))
+      .then((hit) => {
+        if (hit) fallbackMatches.set(cacheKey, { source: hit.source, item: hit.item });
+        return hit;
+      });
+  }
+  return findInOtherEngines(title, type, fetcher, exclude).then((hit) => {
+    if (hit) fallbackMatches.set(cacheKey, { source: hit.source, item: hit.item });
+    return hit;
+  });
+}
+
+async function fetchQualitiesFrom(key, item) {
+  const detail = await api.details(key, item.id, item.type);
+  if (detail && detail.directQualities && detail.directQualities.length) return detail.directQualities;
+  return api.qualities(key, item.id);
+}
+
+function pad2(n) {
+  return String(n).padStart(2, '0');
+}
+
+function episodeNumber(episode, index) {
+  return Number.isFinite(Number(episode.episode)) && Number(episode.episode) > 0 ? Number(episode.episode) : index + 1;
+}
+
+function linkRows(detail, seasonNumber, episodes, pref) {
+  const rows = [];
+  episodes.forEach((episode, index) => {
+    const q = pickQuality(episode.qualities, pref);
+    if (!q || !q.directUrl) return;
+    rows.push({
+      series: detail.title,
+      season: seasonNumber,
+      episode: episodeNumber(episode, index),
+      quality: q.title || q.type || '',
+      size: q.size || '',
+      url: q.directUrl
+    });
+  });
+  return rows;
+}
+
+async function exportRows(format, rows, baseName) {
+  if (!rows.length) {
+    toast('لینکی برای خروجی گرفتن موجود نیست');
+    return;
+  }
+  const saved = await api.exportLinks(format, rows, baseName);
+  if (saved) toast(`${fa(rows.length)} لینک ذخیره شد`);
+}
+
+async function downloadRows(rows) {
+  if (!rows.length) {
+    toast('لینکی برای دانلود موجود نیست');
+    return;
+  }
+  const items = rows.map((r) => ({
+    title: r.season
+      ? `${r.series} S${pad2(r.season)}E${pad2(r.episode)} ${r.quality}`.trim()
+      : `${r.series} ${r.quality}`.trim(),
+    url: r.url
+  }));
+  await api.dlEnqueue(items);
+  toast(`${fa(items.length)} مورد به صف دانلود اضافه شد`);
+}
+
+/** Shift-click aware multi-select shared by episode and download lists. */
+function createSelection(onChange) {
+  const picked = new Set();
+  let anchor = -1;
+  return {
+    picked,
+    toggle(index, shift) {
+      if (shift && anchor >= 0) {
+        const [a, b] = anchor < index ? [anchor, index] : [index, anchor];
+        for (let i = a; i <= b; i += 1) picked.add(i);
+      } else if (picked.has(index)) picked.delete(index);
+      else picked.add(index);
+      anchor = index;
+      onChange();
+    },
+    all(count) {
+      for (let i = 0; i < count; i += 1) picked.add(i);
+      onChange();
+    },
+    clear() {
+      picked.clear();
+      anchor = -1;
+      onChange();
+    }
+  };
+}
+
+
+/* ─── Downloads manager ─────────────────────────────────── */
+function bytesText(n) {
+  if (!n || n < 0) return '۰';
+  const units = ['B', 'KB', 'MB', 'GB'];
+  let value = n;
+  let u = 0;
+  while (value >= 1024 && u < units.length - 1) {
+    value /= 1024;
+    u += 1;
+  }
+  return fa(`${value.toFixed(u > 1 ? 1 : 0)} ${units[u]}`);
+}
+
+const DL_STATUS = {
+  queued: 'در صف',
+  connecting: 'اتصال...',
+  downloading: 'در حال دریافت',
+  paused: 'متوقف',
+  completed: 'تکمیل شد',
+  failed: 'خطا',
+  cancelled: 'لغو شد'
+};
+
+const dlView = { selection: null, rows: new Map(), ids: '', list: null, summary: null };
+
+function updateDownloadBadge() {
+  const active = state.downloads.filter((t) => ['queued', 'connecting', 'downloading'].includes(t.status)).length;
+  const badge = document.getElementById('dlBadge');
+  badge.textContent = active ? fa(active) : '';
+  badge.classList.toggle('on', active > 0);
+}
+
+function renderDownloads() {
+  state.tab = 'downloads';
+  view.textContent = '';
+  const head = el('div', 'page-head');
+  head.appendChild(el('h1', 'page-title', 'مدیریت دانلود'));
+  view.appendChild(head);
+
+  dlView.summary = el('div', 'dl-summary');
+  const bar = el('div', 'bulk-bar');
+  const allBtn = el('button', 'ghost-btn', 'انتخاب همه');
+  const resumeBtn = el('button', 'ghost-btn', 'شروع');
+  const pauseBtn = el('button', 'ghost-btn', 'توقف');
+  const removeBtn = el('button', 'ghost-btn danger', 'حذف');
+  const clearBtn = el('button', 'ghost-btn', 'پاکسازی تکمیل‌شده‌ها');
+  const folderBtn = el('button', 'ghost-btn', 'باز کردن پوشه');
+  bar.append(allBtn, resumeBtn, pauseBtn, removeBtn, clearBtn, folderBtn);
+  view.append(dlView.summary, bar);
+
+  dlView.list = el('div', 'episode-list');
+  view.appendChild(dlView.list);
+  dlView.rows.clear();
+  dlView.ids = '';
+  dlView.selection = createSelection(paintDownloads);
+
+  const picked = () => [...dlView.selection.picked].map((i) => state.downloads[i]).filter(Boolean);
+  const act = (fn) => {
+    const targets = picked();
+    (targets.length ? targets : state.downloads).forEach(fn);
+  };
+
+  allBtn.addEventListener('click', () => {
+    if (dlView.selection.picked.size === state.downloads.length) dlView.selection.clear();
+    else dlView.selection.all(state.downloads.length);
+  });
+  resumeBtn.addEventListener('click', () => act((t) => api.dlResume(t.id)));
+  pauseBtn.addEventListener('click', () => act((t) => api.dlPause(t.id)));
+  removeBtn.addEventListener('click', () => {
+    const targets = picked();
+    if (!targets.length) {
+      toast('ابتدا موارد را انتخاب کنید (Shift برای انتخاب بازه‌ای)');
+      return;
+    }
+    if (!window.confirm(`${fa(targets.length)} مورد و فایل‌های آن‌ها حذف شوند؟`)) return;
+    targets.forEach((t) => api.dlRemove(t.id, true));
+    dlView.selection.clear();
+  });
+  clearBtn.addEventListener('click', () => api.dlClearCompleted());
+  folderBtn.addEventListener('click', () => api.dlOpenFolder());
+
+  paintDownloads();
+}
+
+function paintDownloads() {
+  if (state.tab !== 'downloads' || !dlView.list) return;
+  const list = state.downloads;
+  const ids = list.map((t) => t.id).join('|');
+
+  if (ids !== dlView.ids) {
+    dlView.ids = ids;
+    dlView.list.textContent = '';
+    dlView.rows.clear();
+    if (!list.length) {
+      dlView.list.appendChild(el('div', 'empty', 'دانلودی وجود ندارد. از صفحه سریال، قسمت‌ها را انتخاب و دانلود کنید.'));
+    }
+    list.forEach((task, index) => {
+      const row = el('div', 'episode-row dl-row');
+      const box = el('span', 'check');
+      const body = el('div', 'dl-body');
+      const title = el('div', 'ep-title', task.title);
+      const track = el('div', 'dl-track');
+      const fill = el('div', 'dl-fill');
+      track.appendChild(fill);
+      const info = el('div', 'dl-info');
+      body.append(title, track, info);
+
+      const toggle = el('button', 'ghost-btn');
+      const show = el('button', 'ghost-btn', 'پوشه');
+      const del = el('button', 'ghost-btn danger', '✕');
+      toggle.addEventListener('click', (event) => {
+        event.stopPropagation();
+        const current = state.downloads.find((t) => t.id === task.id);
+        if (!current) return;
+        if (['downloading', 'connecting', 'queued'].includes(current.status)) api.dlPause(task.id);
+        else if (current.status !== 'completed') api.dlResume(task.id);
+      });
+      show.addEventListener('click', (event) => {
+        event.stopPropagation();
+        api.dlShow(task.id);
+      });
+      del.addEventListener('click', (event) => {
+        event.stopPropagation();
+        api.dlRemove(task.id, task.status !== 'completed');
+      });
+      row.append(box, body, toggle, show, del);
+      row.addEventListener('click', (event) => dlView.selection.toggle(index, event.shiftKey));
+      dlView.list.appendChild(row);
+      dlView.rows.set(task.id, { row, box, fill, info, toggle });
+    });
+  }
+
+  let speed = 0;
+  list.forEach((task, index) => {
+    const node = dlView.rows.get(task.id);
+    if (!node) return;
+    const percent = task.total ? Math.min(100, (task.downloaded / task.total) * 100) : 0;
+    node.fill.style.width = `${percent}%`;
+    node.fill.classList.toggle('done', task.status === 'completed');
+    node.row.classList.toggle('picked', dlView.selection.picked.has(index));
+    node.box.textContent = dlView.selection.picked.has(index) ? '✓' : '';
+    const parts = [DL_STATUS[task.status] || task.status];
+    if (task.total) parts.push(`${bytesText(task.downloaded)} / ${bytesText(task.total)} (${fa(Math.floor(percent))}٪)`);
+    if (task.status === 'downloading' && task.speed) parts.push(`${bytesText(task.speed)}/s`);
+    if (task.status === 'failed' && task.error) parts.push(task.error);
+    node.info.textContent = parts.join('  •  ');
+    node.toggle.textContent = ['downloading', 'connecting', 'queued'].includes(task.status) ? '❚❚' : '▶';
+    node.toggle.hidden = task.status === 'completed';
+    if (task.status === 'downloading') speed += task.speed || 0;
+  });
+
+  const picked = dlView.selection.picked.size;
+  dlView.summary.textContent = `سرعت کل: ${bytesText(speed)}/s  •  ${fa(list.length)} مورد${picked ? `  •  ${fa(picked)} انتخاب‌شده` : ''}`;
 }
 
 /* ─── Detail ────────────────────────────────────────────── */
@@ -446,11 +958,9 @@ async function openDetail(item) {
       bannerImg.src = detail.image;
       return;
     }
-    bannerImg.remove();
-    banner.classList.add('no-art');
+    bannerImg.src = DEFAULT_COVER;
   });
-  if (detail.banner || detail.image) bannerImg.src = detail.banner || detail.image;
-  else banner.classList.add('no-art');
+  bannerImg.src = detail.banner || detail.image || DEFAULT_COVER;
   banner.appendChild(bannerImg);
   banner.appendChild(el('div', 'detail-banner-shade'));
   const closeBtn = el('button', 'ghost-btn detail-close', '→  بازگشت');
@@ -461,9 +971,9 @@ async function openDetail(item) {
   const body = el('div', 'detail-body');
 
   const head = el('div', 'detail-head');
-  if (detail.image) {
+  {
     const poster = el('img', 'detail-poster');
-    poster.src = detail.image;
+    poster.src = detail.image || DEFAULT_COVER;
     poster.alt = detail.title;
     posterFallback(poster);
     head.appendChild(poster);
@@ -504,11 +1014,11 @@ async function openDetail(item) {
       chip.addEventListener('click', () => {
         seasonChips.querySelectorAll('.chip').forEach((c) => c.classList.remove('on'));
         chip.classList.add('on');
-        loadEpisodes(detail, season.season, episodesWrap);
+        loadEpisodes(detail, season.season, episodesWrap, seasons);
       });
       seasonChips.appendChild(chip);
     });
-    loadEpisodes(detail, seasons[0].season, episodesWrap);
+    loadEpisodes(detail, seasons[0].season, episodesWrap, seasons);
   } else {
     body.appendChild(el('h3', 'block-title', 'کیفیت‌های پخش'));
     const list = el('div', 'quality-list');
@@ -517,32 +1027,61 @@ async function openDetail(item) {
     let qualities = detail.directQualities || [];
     if (!qualities.length) {
       list.appendChild(el('div', 'empty', 'در حال دریافت لینک‌ها...'));
-      try {
-        qualities = await api.qualities(detail.source, detail.id);
-      } catch (err) {
+      const primaryQualities = api.qualities(detail.source, detail.id).catch((err) => {
         toast(`خطا در دریافت لینک‌ها: ${err.message}`);
-      }
+        return [];
+      });
+      const result = await withFallback(
+        primaryQualities,
+        () => findInOtherEnginesCached(detail.title, detail.type, fetchQualitiesFrom, detail.source),
+        (q) => !q || !q.length
+      );
+      qualities = result.value;
+      if (result.from) toast(`لینک از موتور ${engineLabel(result.from)} پیدا شد`);
       list.textContent = '';
     }
 
     if (!qualities.length) list.appendChild(el('div', 'empty', 'لینک پخشی برای این عنوان پیدا نشد.'));
     qualities.forEach((q) => list.appendChild(qualityRow(detail, q, '')));
+    if (qualities.length) {
+      const bar = el('div', 'bulk-bar');
+      const movieRows = () =>
+        qualities
+          .filter((q) => q.directUrl)
+          .map((q) => ({ series: detail.title, season: 0, episode: 0, quality: q.title || q.type, size: q.size, url: q.directUrl }));
+      const txt = el('button', 'ghost-btn', 'خروجی TXT');
+      txt.addEventListener('click', () => exportRows('txt', movieRows(), detail.title));
+      const csv = el('button', 'ghost-btn', 'خروجی CSV');
+      csv.addEventListener('click', () => exportRows('csv', movieRows(), detail.title));
+      bar.append(txt, csv);
+      body.appendChild(bar);
+    }
   }
 
   detailCard.appendChild(body);
   detailCard.scrollTop = 0;
 }
 
-async function loadEpisodes(detail, seasonNumber, container) {
+async function loadEpisodes(detail, seasonNumber, container, seasons) {
   container.textContent = '';
   container.appendChild(el('div', 'empty', 'در حال دریافت قسمت‌ها...'));
 
-  let episodes = [];
-  try {
-    episodes = await api.episodes(detail.source, detail.id, seasonNumber);
-  } catch (err) {
+  const hasLinks = (list) => Array.isArray(list) && list.some((e) => e.qualities && e.qualities.length);
+  const primaryEpisodes = api.episodes(detail.source, detail.id, seasonNumber).catch((err) => {
     toast(`خطا در دریافت قسمت‌ها: ${err.message}`);
-  }
+    return [];
+  });
+  const result = await withFallback(
+    primaryEpisodes,
+    () =>
+      findInOtherEnginesCached(detail.title, 1, async (key, match) => {
+        const list = await api.episodes(key, match.id, seasonNumber);
+        return list.filter((e) => e.qualities && e.qualities.length);
+      }, detail.source),
+    (list) => !hasLinks(list)
+  );
+  const episodes = result.value;
+  if (result.from) toast(`لینک قسمت‌ها از موتور ${engineLabel(result.from)} پیدا شد`);
 
   container.textContent = '';
   if (!episodes.length) {
@@ -550,33 +1089,120 @@ async function loadEpisodes(detail, seasonNumber, container) {
     return;
   }
 
-  const chips = el('div', 'chips');
-  const qualityWrap = el('div', 'quality-list');
-  container.appendChild(el('h3', 'block-title', 'قسمت‌ها'));
-  container.appendChild(chips);
-  container.appendChild(qualityWrap);
+  let pref = state.store.qualityPref || '720';
+  const rowEls = [];
+  const selection = createSelection(refresh);
 
-  function showEpisode(episode) {
-    qualityWrap.textContent = '';
-    if (!episode.qualities.length) {
-      qualityWrap.appendChild(el('div', 'empty', 'لینکی برای این قسمت موجود نیست.'));
-      return;
-    }
-    episode.qualities.forEach((q) =>
-      qualityWrap.appendChild(qualityRow(detail, q, `فصل ${fa(seasonNumber)} — ${episode.title}`))
-    );
+  container.appendChild(el('h3', 'block-title', 'قسمت‌ها'));
+
+  const bar = el('div', 'bulk-bar');
+  const prefWrap = el('div', 'chips');
+  const prefChips = QUALITY_PREFS.map((value) => {
+    const chip = el('button', `chip${value === pref ? ' on' : ''}`, `${fa(value)}p`);
+    chip.addEventListener('click', () => {
+      pref = value;
+      saveStore('qualityPref', value);
+      prefChips.forEach((c, i) => c.classList.toggle('on', QUALITY_PREFS[i] === value));
+      refresh();
+    });
+    prefWrap.appendChild(chip);
+    return chip;
+  });
+  const allBtn = el('button', 'ghost-btn', 'انتخاب همه');
+  const dlBtn = el('button', 'primary-btn', 'دانلود');
+  const txtBtn = el('button', 'ghost-btn', 'TXT');
+  const csvBtn = el('button', 'ghost-btn', 'CSV');
+  const allTxtBtn = el('button', 'ghost-btn', 'همه فصل‌ها TXT');
+  const allCsvBtn = el('button', 'ghost-btn', 'همه فصل‌ها CSV');
+  bar.append(prefWrap, allBtn, dlBtn, txtBtn, csvBtn, allTxtBtn, allCsvBtn);
+  container.appendChild(bar);
+
+  const list = el('div', 'episode-list');
+  container.appendChild(list);
+
+  function refresh() {
+    rowEls.forEach((node, index) => {
+      node.row.classList.toggle('picked', selection.picked.has(index));
+      node.box.textContent = selection.picked.has(index) ? '✓' : '';
+      const q = pickQuality(episodes[index].qualities, pref);
+      node.quality.textContent = q ? [q.title || q.type, q.size].filter(Boolean).join(' • ') : 'بدون لینک';
+    });
+    const n = selection.picked.size;
+    dlBtn.textContent = n ? `دانلود انتخاب‌شده (${fa(n)})` : 'دانلود همه';
+    allBtn.textContent = n === episodes.length ? 'لغو انتخاب' : 'انتخاب همه';
   }
 
   episodes.forEach((episode, index) => {
-    const chip = el('button', `chip${index === 0 ? ' on' : ''}`, episode.title);
-    chip.addEventListener('click', () => {
-      chips.querySelectorAll('.chip').forEach((c) => c.classList.remove('on'));
-      chip.classList.add('on');
-      showEpisode(episode);
+    const row = el('div', 'episode-row');
+    const box = el('span', 'check');
+    const title = el('span', 'ep-title', episode.title);
+    const quality = el('span', 'ep-quality');
+    const play = el('button', 'ghost-btn', '▶');
+    const copy = el('button', 'ghost-btn', 'لینک');
+    play.addEventListener('click', (event) => {
+      event.stopPropagation();
+      const q = pickQuality(episode.qualities, pref);
+      if (q) openPlayer(detail, q, `فصل ${fa(seasonNumber)} — ${episode.title}`);
     });
-    chips.appendChild(chip);
+    copy.addEventListener('click', async (event) => {
+      event.stopPropagation();
+      const q = pickQuality(episode.qualities, pref);
+      if (!q) return;
+      await api.copyText(q.directUrl);
+      toast('لینک کپی شد');
+    });
+    row.append(box, title, quality, play, copy);
+    row.addEventListener('click', (event) => selection.toggle(index, event.shiftKey));
+    list.appendChild(row);
+    rowEls.push({ row, box, quality });
   });
-  showEpisode(episodes[0]);
+
+  allBtn.addEventListener('click', () => {
+    if (selection.picked.size === episodes.length) selection.clear();
+    else selection.all(episodes.length);
+  });
+
+  // Episode numbers must come from the original index, so build rows per selected index.
+  function rowsFromPicked() {
+    const indexes = selection.picked.size ? [...selection.picked].sort((a, b) => a - b) : episodes.map((_, i) => i);
+    const out = [];
+    indexes.forEach((i) => {
+      const q = pickQuality(episodes[i].qualities, pref);
+      if (!q || !q.directUrl) return;
+      out.push({
+        series: detail.title,
+        season: seasonNumber,
+        episode: episodeNumber(episodes[i], i),
+        quality: q.title || q.type || '',
+        size: q.size || '',
+        url: q.directUrl
+      });
+    });
+    return out;
+  }
+
+  dlBtn.addEventListener('click', () => downloadRows(rowsFromPicked()));
+  txtBtn.addEventListener('click', () => exportRows('txt', rowsFromPicked(), `${detail.title} S${pad2(seasonNumber)}`));
+  csvBtn.addEventListener('click', () => exportRows('csv', rowsFromPicked(), `${detail.title} S${pad2(seasonNumber)}`));
+
+  async function allSeasonRows() {
+    const all = [];
+    const list = seasons && seasons.length ? seasons : [{ season: seasonNumber }];
+    toast('در حال جمع‌آوری لینک همه فصل‌ها...', 4000);
+    for (const season of list) {
+      try {
+        const eps = await api.episodes(detail.source, detail.id, season.season);
+        all.push(...linkRows(detail, season.season, eps, pref));
+      } catch (_) {
+        /* a failed season is skipped */
+      }
+    }
+    return all;
+  }
+  allTxtBtn.addEventListener('click', async () => exportRows('txt', await allSeasonRows(), `${detail.title} all-seasons`));
+  allCsvBtn.addEventListener('click', async () => exportRows('csv', await allSeasonRows(), `${detail.title} all-seasons`));
+
+  refresh();
 }
 
 function closeDetail() {
@@ -814,27 +1440,96 @@ function bindShell() {
   window.addEventListener('beforeunload', saveProgress);
 }
 
+
+/* ─── Engine drawer (multi-select) ─────────────────────── */
+function buildEngineDrawer() {
+  engineBar.textContent = '';
+  const trigger = el('button', 'planet-btn on');
+  const panel = el('div', 'engine-panel hidden');
+  engineBar.append(trigger, panel);
+  let dirty = false;
+
+  function paintTrigger() {
+    const keys = activeKeys();
+    trigger.textContent = '';
+    trigger.insertAdjacentHTML('beforeend', planetSvg(keys[0]));
+    trigger.appendChild(el('span', 'planet-label', keys.length > 1 ? `${fa(keys.length)} موتور فعال` : engineLabel(keys[0])));
+    trigger.appendChild(el('span', 'planet-caret', '▾'));
+  }
+
+  function paintPanel() {
+    panel.textContent = '';
+    panel.appendChild(el('div', 'engine-panel-title', 'موتورهای فعال (چند انتخاب)'));
+    const active = new Set(activeKeys());
+    state.engines.forEach((engine) => {
+      const row = el('button', `engine-row${active.has(engine.key) ? ' on' : ''}`);
+      row.insertAdjacentHTML('beforeend', planetSvg(engine.key));
+      row.appendChild(el('span', 'engine-row-label', engine.label));
+      row.appendChild(el('span', 'check', active.has(engine.key) ? '✓' : ''));
+      row.addEventListener('click', async (event) => {
+        event.stopPropagation();
+        const next = new Set(activeKeys());
+        if (next.has(engine.key)) {
+          if (next.size === 1) {
+            toast('حداقل یک موتور باید فعال بماند');
+            return;
+          }
+          next.delete(engine.key);
+        } else next.add(engine.key);
+        state.activeSources = state.engines.map((e) => e.key).filter((k) => next.has(k));
+        state.source = state.activeSources[0];
+        dirty = true;
+        await saveStore('activeSources', state.activeSources);
+        await saveStore('source', state.source);
+        paintTrigger();
+        paintPanel();
+      });
+      panel.appendChild(row);
+    });
+  }
+
+  function close() {
+    if (panel.classList.contains('hidden')) return;
+    panel.classList.add('hidden');
+    if (dirty) {
+      dirty = false;
+      toast(`${fa(activeKeys().length)} موتور فعال شد`);
+      if (['home', 'movies', 'series'].includes(state.tab)) switchTab(state.tab);
+    }
+  }
+
+  trigger.addEventListener('click', (event) => {
+    event.stopPropagation();
+    if (panel.classList.contains('hidden')) {
+      paintPanel();
+      panel.classList.remove('hidden');
+    } else close();
+  });
+  document.addEventListener('click', (event) => {
+    if (!panel.contains(event.target)) close();
+  });
+  paintTrigger();
+}
+
 async function boot() {
   state.store = await api.storeGet();
   state.source = state.store.source || 'almasmovie';
 
   const engines = await api.engines();
-  engines.forEach((engine) => {
-    const btn = el('button', `planet-btn${engine.key === state.source ? ' on' : ''}`);
-    btn.dataset.key = engine.key;
-    btn.title = `سیاره ${engine.label}`;
-    btn.innerHTML = planetSvg(engine.key);
-    btn.appendChild(el('span', 'planet-label', engine.label));
-    btn.addEventListener('click', async () => {
-      if (state.source === engine.key) return;
-      state.source = engine.key;
-      engineBar.querySelectorAll('.planet-btn').forEach((b) => b.classList.toggle('on', b.dataset.key === engine.key));
-      await saveStore('source', state.source);
-      toast(`سیاره ${engine.label} انتخاب شد`);
-      switchTab('home');
-    });
-    engineBar.appendChild(btn);
+  state.engines = engines;
+  const saved = Array.isArray(state.store.activeSources) ? state.store.activeSources : [];
+  state.activeSources = saved.filter((k) => engines.some((e) => e.key === k));
+  if (!state.activeSources.length) state.activeSources = [state.source];
+  state.source = state.activeSources[0];
+  buildEngineDrawer();
+
+  state.downloads = await api.dlList().catch(() => []);
+  api.onDownloads((list) => {
+    state.downloads = list;
+    updateDownloadBadge();
+    paintDownloads();
   });
+  updateDownloadBadge();
 
   bindShell();
   bindPlayer();

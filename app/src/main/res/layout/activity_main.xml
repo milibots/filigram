@@ -283,6 +283,21 @@
                 android:layout_height="match_parent"
                 android:orientation="vertical">
 
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSearchAllEngines"
+                    style="@style/Widget.Material3.Button.TonalButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="44dp"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginEnd="12dp"
+                    android:fontFamily="@font/yekan_bakh_bold"
+                    android:text="بارگذاری نتایج بیشتر از همه موتورها"
+                    android:textColor="@color/gold"
+                    android:textSize="12sp"
+                    android:visibility="gone"
+                    app:cornerRadius="14dp" />
+
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/rvGridMovies"
                     android:layout_width="match_parent"

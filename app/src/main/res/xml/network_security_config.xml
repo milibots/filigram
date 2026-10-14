@@ -10,5 +10,7 @@
 
     <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="true">server-win-iran.info</domain>
+        <domain includeSubdomains="true">fitlinerim.info</domain>
+        <domain includeSubdomains="true">simbaapp.info</domain>
     </domain-config>
 </network-security-config>

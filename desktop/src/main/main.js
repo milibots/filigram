@@ -1,10 +1,11 @@
 const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
-const { app, BrowserWindow, ipcMain, shell, clipboard, session, Menu } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, clipboard, session, Menu, dialog } = require('electron');
 
 const api = require('./api');
 const store = require('./store');
+const downloader = require('./downloader');
 
 const VLC_CANDIDATES = [
   'C:\\Program Files\\VideoLAN\\VLC\\vlc.exe',
@@ -83,6 +84,46 @@ app.whenReady().then(async () => {
 
   handle('storeGet', () => store.getAll());
   handle('storeSet', (key, value) => store.set(key, value));
+
+  downloader.init((list) => {
+    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('dl:update', list);
+  });
+
+  function downloadDir() {
+    return store.get('downloadDir') || path.join(app.getPath('downloads'), 'Filigram');
+  }
+
+  handle('dlList', () => downloader.list());
+  handle('dlEnqueue', (items) => downloader.enqueue(downloadDir(), items));
+  handle('dlPause', (id) => downloader.pause(id));
+  handle('dlResume', (id) => downloader.resume(id));
+  handle('dlRemove', (id, deleteFile) => downloader.remove(id, !!deleteFile));
+  handle('dlPauseAll', () => downloader.pauseAll());
+  handle('dlResumeAll', () => downloader.resumeAll());
+  handle('dlClearCompleted', () => downloader.clearCompleted());
+  handle('dlShow', (id) => {
+    const t = downloader.list().find((x) => x.id === id);
+    if (t) shell.showItemInFolder(fs.existsSync(t.filePath) ? t.filePath : `${t.filePath}.part`);
+  });
+  handle('dlOpenFolder', () => {
+    fs.mkdirSync(downloadDir(), { recursive: true });
+    return shell.openPath(downloadDir());
+  });
+  handle('exportLinks', async (format, rows, baseName) => {
+    const cell = (v) => `"${String(v === undefined || v === null ? '' : v).replace(/"/g, '""')}"`;
+    const csv = format === 'csv';
+    const header = ['series', 'season', 'episode', 'quality', 'size', 'url'].join(',');
+    const body = rows.map((r) => [r.series, r.season, r.episode, r.quality, r.size, r.url].map(cell).join(','));
+    const text = csv ? `\uFEFF${[header, ...body].join('\r\n')}` : rows.map((r) => r.url).join('\r\n');
+    const safe = String(baseName || 'links').replace(/[\\/:*?"<>|]/g, '_');
+    const res = await dialog.showSaveDialog(mainWindow, {
+      defaultPath: path.join(app.getPath('documents'), `${safe}.${csv ? 'csv' : 'txt'}`),
+      filters: [csv ? { name: 'CSV', extensions: ['csv'] } : { name: 'Text', extensions: ['txt'] }]
+    });
+    if (res.canceled || !res.filePath) return null;
+    fs.writeFileSync(res.filePath, text, 'utf8');
+    return res.filePath;
+  });
 
   handle('openExternal', (url) => shell.openExternal(url));
   handle('copyText', (text) => clipboard.writeText(String(text || '')));
