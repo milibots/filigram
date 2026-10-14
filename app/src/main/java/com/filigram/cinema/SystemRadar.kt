@@ -28,7 +28,7 @@ object SystemRadar {
 
         list.add(pingService(
             id = "movielix",
-            name = "موتور اصلی موویلیکس (Movielix Core)",
+            name = "سیاره زهره",
             description = "سرور اختصاصی استریم و دانلود مستقیم (پیش‌فرض)",
             url = "https://global-api2.expertmedias.org/apiMovielix.php",
             isCore = true
@@ -36,7 +36,7 @@ object SystemRadar {
 
         list.add(pingService(
             id = "rezflix",
-            name = "موتور رزفلیکس (RezFlix Engine)",
+            name = "سیاره نپتون",
             description = "آرشیو فیلم‌ها و سریال‌های دوبله و زیرنویس (بتا)",
             url = "http://server-win-iran.info/api/movie/by/filtres/0/created/0/4F5A9C3D9A86FA54EACEDDD635185/?page=1",
             isCore = false
@@ -44,7 +44,7 @@ object SystemRadar {
 
         list.add(pingService(
             id = "filmjoo",
-            name = "موتور فیلم‌جو / دلفان (FilmJoo Engine)",
+            name = "سیاره عطارد",
             description = "سرور استخراج محتوای سینمایی دلفان پلاس (بتا)",
             url = "http://tahlilgaraan.ir/app-plus/vp1.php?key=pwep5d4sdoe0ewsosa7d563d&action=filter_search&pageno=1",
             isCore = false
@@ -52,7 +52,7 @@ object SystemRadar {
 
         list.add(pingService(
             id = "almasmovie",
-            name = "موتور الماس‌مووی (AlmasMovie Engine)",
+            name = "سیاره اورانوس",
             description = "سرویس مستقیم و پایگاه دانلود و استریم اختصاصی اندروید",
             url = "https://almasandroid.com/api/almas/v1/config/",
             isCore = false
@@ -60,7 +60,7 @@ object SystemRadar {
 
         list.add(pingService(
             id = "nextmovie",
-            name = "موتور نکست‌مووی (NextMovie Engine)",
+            name = "سیاره زحل",
             description = "سرور استریم و دانلود مستقیم فیلم و سریال",
             url = "https://mihan-cdn.com",
             isCore = false
@@ -68,7 +68,7 @@ object SystemRadar {
 
         list.add(pingService(
             id = "bj",
-            name = "موتور هوشمند BJ (پایگاه MAPI)",
+            name = "سیاره مشتری",
             description = "پایگاه داده فیلم و سریال با لینک مستقیم و استریم آنلاین",
             url = "https://forooshonline20.ir/wp-json/mapi/v1/post/movies?page=1&per_page=1",
             isCore = false
@@ -76,7 +76,7 @@ object SystemRadar {
 
         list.add(pingService(
             id = "simba",
-            name = "موتور Simba / Fitlinerim",
+            name = "سیاره مریخ",
             description = "آرشیو فیلم و سریال با لینک‌های مستقیم قسمت‌ها",
             url = "http://fitlinerim.info/api/first/4F5A9C3D9A86FA54EACEDDD635185/",
             isCore = false

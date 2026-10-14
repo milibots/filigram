@@ -105,8 +105,8 @@ object SimbaApi {
         val movies = getMovies(1)
         val series = getSeries(1)
         buildList {
-            if (movies.isNotEmpty()) add(VitrinSection(1, "فیلم‌های Simba", movies))
-            if (series.isNotEmpty()) add(VitrinSection(2, "سریال‌های Simba", series))
+            if (movies.isNotEmpty()) add(VitrinSection(1, "فیلم‌های سیاره مریخ", movies))
+            if (series.isNotEmpty()) add(VitrinSection(2, "سریال‌های سیاره مریخ", series))
         }
     }
 

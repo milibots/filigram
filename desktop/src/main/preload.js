@@ -20,6 +20,7 @@ contextBridge.exposeInMainWorld('filigram', {
   comments: (source, id, page) => invoke('comments', source, id, page),
   banners: () => invoke('banners'),
   announcements: () => invoke('announcements'),
+  checkForUpdates: (manual = true) => invoke('checkForUpdates', manual),
   storeGet: () => invoke('storeGet'),
   storeSet: (key, value) => invoke('storeSet', key, value),
   openExternal: (url) => invoke('openExternal', url),

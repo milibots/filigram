@@ -6,6 +6,7 @@ const { app, BrowserWindow, ipcMain, shell, clipboard, session, Menu, dialog } =
 const api = require('./api');
 const store = require('./store');
 const downloader = require('./downloader');
+const updater = require('./updater');
 
 const VLC_CANDIDATES = [
   'C:\\Program Files\\VideoLAN\\VLC\\vlc.exe',
@@ -81,6 +82,7 @@ app.whenReady().then(async () => {
   handle('comments', (source, id, page) => api.comments(source, id, page));
   handle('banners', () => api.banners());
   handle('announcements', () => api.announcements());
+  handle('checkForUpdates', (manual = true) => updater.check(mainWindow, !!manual));
 
   handle('storeGet', () => store.getAll());
   handle('storeSet', (key, value) => store.set(key, value));
@@ -143,6 +145,9 @@ app.whenReady().then(async () => {
   ]);
 
   createWindow();
+  mainWindow.webContents.once('did-finish-load', () => {
+    setTimeout(() => updater.check(mainWindow, false), 2500);
+  });
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

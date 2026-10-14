@@ -101,6 +101,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var movielixApi: MovielixApi
+    private lateinit var appUpdater: AppUpdater
 
     private lateinit var vitrinAdapter: VitrinSectionAdapter
     private lateinit var gridAdapter: MovieCardAdapter
@@ -191,6 +192,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        appUpdater = AppUpdater(this)
 
         exportLauncher = registerForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
             if (uri != null && pendingExportJson.isNotEmpty()) {
@@ -238,8 +240,22 @@ class MainActivity : AppCompatActivity() {
 
         val prefs = getSharedPreferences("filigram_prefs", Context.MODE_PRIVATE)
         activeEngine = prefs.getString("active_engine", "movielix") ?: "movielix"
-        activeEngines = (prefs.getStringSet("active_engines", null) ?: setOf(activeEngine))
-            .let { saved -> if (activeEngine in saved) saved else saved + activeEngine }
+        val activateAllMigration = !prefs.getBoolean("all_engines_default_v1", false)
+        activeEngines = if (activateAllMigration) {
+            allEngineKeys.toSet()
+        } else {
+            (prefs.getStringSet("active_engines", null) ?: allEngineKeys.toSet())
+                .filterTo(linkedSetOf()) { it in allEngineKeys }
+                .ifEmpty { allEngineKeys.toSet() }
+        }
+        if (activeEngine !in activeEngines) activeEngine = activeEngines.first()
+        if (activateAllMigration) {
+            prefs.edit()
+                .putBoolean("all_engines_default_v1", true)
+                .putString("active_engine", activeEngine)
+                .putStringSet("active_engines", activeEngines)
+                .apply()
+        }
 
         FavoritesManager.init(this)
         HistoryManager.init(this)
@@ -278,6 +294,10 @@ class MainActivity : AppCompatActivity() {
         checkNotificationPermission()
         checkAndSendWelcomeNotification()
         checkAppOpenCountAndPromptChannel()
+
+        binding.root.postDelayed({
+            if (!isFinishing && !isDestroyed) appUpdater.check(manual = false)
+        }, 2500L)
 
         lifecycleScope.launch {
             RemoteConfigRepository.getConfigs(this@MainActivity)
@@ -624,7 +644,7 @@ class MainActivity : AppCompatActivity() {
         return dialogDecor ?: (window?.decorView as? ViewGroup)
     }
 
-    private fun showAppToast(
+    internal fun showAppToast(
         title: String,
         subtitle: String? = null,
         iconRes: Int = R.drawable.ic_star_gold,
@@ -880,86 +900,69 @@ class MainActivity : AppCompatActivity() {
         hasMoreVitrin = true
         binding.mainProgressBar.isVisible = true
         binding.vitrinLoadingMore.isVisible = false
+        binding.bannerViewPager.isVisible = false
+        vitrinAdapter.updateData(emptyList())
 
         lifecycleScope.launch {
-            try {
-                if (activeEngine == "almasmovie") {
-                    val homeSections = AlmasMovieApi.getHomeSections()
-                    val finalSections = if (homeSections.isNotEmpty()) {
-                        homeSections
-                    } else {
-                        val almasMovies = AlmasMovieApi.getRecent(1)
-                        listOf(VitrinSection(1, "منتخب فیلم‌های الماس‌مووی (AlmasMovie)", almasMovies))
-                    }
-                    withContext(Dispatchers.Main) {
-                        binding.mainProgressBar.isVisible = false
-                        binding.swipeRefresh.isRefreshing = false
-                        binding.bannerViewPager.isVisible = false
-                        vitrinAdapter.updateData(finalSections)
-                    }
-                } else if (activeEngine == "rezflix") {
-                    val rezMovies = RezFlixApi.getMovies(1)
-                    withContext(Dispatchers.Main) {
-                        binding.mainProgressBar.isVisible = false
-                        binding.swipeRefresh.isRefreshing = false
-                        binding.bannerViewPager.isVisible = false
-                        val section = VitrinSection(1, "منتخب فیلم‌های رزفلیکس (RezFlix)", rezMovies)
-                        vitrinAdapter.updateData(listOf(section))
-                    }
-                } else if (activeEngine == "nextmovie") {
-                    val nextMovies = NextMovieApi.getRecent(1)
-                    withContext(Dispatchers.Main) {
-                        binding.mainProgressBar.isVisible = false
-                        binding.swipeRefresh.isRefreshing = false
-                        binding.bannerViewPager.isVisible = false
-                        val section = VitrinSection(1, "منتخب فیلم‌های نکست‌مووی (NextMovie)", nextMovies)
-                        vitrinAdapter.updateData(listOf(section))
-                    }
-                } else if (activeEngine == "bj") {
-                    val bjSections = BjApi.getHomeSections()
-                    withContext(Dispatchers.Main) {
-                        binding.mainProgressBar.isVisible = false
-                        binding.swipeRefresh.isRefreshing = false
-                        binding.bannerViewPager.isVisible = false
-                        vitrinAdapter.updateData(bjSections)
-                    }
-                } else if (activeEngine == "simba") {
-                    val simbaSections = SimbaApi.getHomeSections()
-                    withContext(Dispatchers.Main) {
-                        binding.mainProgressBar.isVisible = false
-                        binding.swipeRefresh.isRefreshing = false
-                        binding.bannerViewPager.isVisible = false
-                        vitrinAdapter.updateData(simbaSections)
-                    }
-                } else {
-                    val (banners, sections) = movielixApi.getVitrinSections(1)
-                    withContext(Dispatchers.Main) {
-                        binding.mainProgressBar.isVisible = false
-                        binding.swipeRefresh.isRefreshing = false
+            val orderedKeys = allEngineKeys.filter { it in activeEngines }
+                .let { keys -> if (keys.isEmpty()) allEngineKeys else keys }
+            val collected = mutableListOf<VitrinSection>()
 
-                        if (banners.isNotEmpty()) {
-                            binding.bannerViewPager.isVisible = true
-                            binding.bannerViewPager.adapter = HeroBannerAdapter(
-                                banners,
-                                onItemClick = { bannerItem -> showMovieDetail(bannerItem) },
-                                onItemLongClick = { bannerItem -> showMediaQuickActionsBottomSheet(bannerItem) }
-                            )
-                        } else {
-                            binding.bannerViewPager.isVisible = false
+            kotlinx.coroutines.supervisorScope {
+                val jobs = orderedKeys.map { engineKey ->
+                    launch(Dispatchers.IO) {
+                        val result = runCatching { homeForEngine(engineKey) }.getOrNull() ?: return@launch
+                        val banners = result.first
+                        val safeSections = result.second
+                            .filter { it.items.isNotEmpty() }
+                            .mapIndexed { index, section ->
+                                val prefix = listOf("منتخب", "تازه‌ها", "محبوب‌ها", "پیشنهادها").getOrElse(index) { "تماشایی‌ها" }
+                                VitrinSection(
+                                    id = (orderedKeys.indexOf(engineKey) + 1) * 100 + index,
+                                    title = "$prefix ${getEngineName(engineKey)}",
+                                    items = section.items.map { item ->
+                                        if (item.engine.isNullOrBlank()) item.copy(engine = engineKey) else item
+                                    }
+                                )
+                            }
+                        if (safeSections.isEmpty()) return@launch
+                        withContext(Dispatchers.Main) {
+                            collected.addAll(safeSections)
+                            vitrinAdapter.updateData(collected.toList())
+                            binding.mainProgressBar.isVisible = false
+                            if (banners.isNotEmpty() && !binding.bannerViewPager.isVisible) {
+                                binding.bannerViewPager.isVisible = true
+                                binding.bannerViewPager.adapter = HeroBannerAdapter(
+                                    banners.map { if (it.engine.isNullOrBlank()) it.copy(engine = engineKey) else it },
+                                    onItemClick = { bannerItem -> showMovieDetail(bannerItem) },
+                                    onItemLongClick = { bannerItem -> showMediaQuickActionsBottomSheet(bannerItem) }
+                                )
+                            }
                         }
-
-                        vitrinAdapter.updateData(sections)
                     }
                 }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    binding.mainProgressBar.isVisible = false
-                    binding.swipeRefresh.isRefreshing = false
-                    AppLogger.e("MainActivity", "خطا در دریافت اطلاعات خانه: ${e.message}")
-                    showAppToast("خطا در اتصال به شبکه")
-                }
+                jobs.forEach { it.join() }
+            }
+            binding.mainProgressBar.isVisible = false
+            binding.swipeRefresh.isRefreshing = false
+            if (collected.isEmpty()) {
+                showAppToast("هیچ‌کدام از سیاره‌ها پاسخ ندادند؛ دوباره تلاش کنید", autoDismissMs = 4000L)
             }
         }
+    }
+
+    private suspend fun homeForEngine(engineKey: String): Pair<List<MovieItem>, List<VitrinSection>> = when (engineKey) {
+        "almasmovie" -> {
+            val sections = AlmasMovieApi.getHomeSections()
+            emptyList<MovieItem>() to (sections.ifEmpty {
+                listOf(VitrinSection(1, "", AlmasMovieApi.getRecent(1)))
+            })
+        }
+        "rezflix" -> emptyList<MovieItem>() to listOf(VitrinSection(1, "", RezFlixApi.getMovies(1)))
+        "nextmovie" -> emptyList<MovieItem>() to listOf(VitrinSection(1, "", NextMovieApi.getRecent(1)))
+        "bj" -> emptyList<MovieItem>() to BjApi.getHomeSections()
+        "simba" -> emptyList<MovieItem>() to SimbaApi.getHomeSections()
+        else -> movielixApi.getVitrinSections(1)
     }
 
     private fun loadMoreVitrin() {
@@ -976,7 +979,7 @@ class MainActivity : AppCompatActivity() {
                         binding.vitrinLoadingMore.isVisible = false
                         if (more.isNotEmpty()) {
                             vitrinPage = nextPage
-                            val section = VitrinSection(nextPage, "عناوین بیشتر الماس‌مووی (صفحه $nextPage)", more)
+                            val section = VitrinSection(nextPage, "عناوین بیشتر سیاره اورانوس (صفحه $nextPage)", more)
                             vitrinAdapter.appendData(listOf(section))
                         } else {
                             hasMoreVitrin = false
@@ -989,7 +992,7 @@ class MainActivity : AppCompatActivity() {
                         binding.vitrinLoadingMore.isVisible = false
                         if (more.isNotEmpty()) {
                             vitrinPage = nextPage
-                            val section = VitrinSection(nextPage, "عناوین بیشتر رزفلیکس (صفحه $nextPage)", more)
+                            val section = VitrinSection(nextPage, "عناوین بیشتر سیاره نپتون (صفحه $nextPage)", more)
                             vitrinAdapter.appendData(listOf(section))
                         } else {
                             hasMoreVitrin = false
@@ -1002,7 +1005,7 @@ class MainActivity : AppCompatActivity() {
                         binding.vitrinLoadingMore.isVisible = false
                         if (more.isNotEmpty()) {
                             vitrinPage = nextPage
-                            val section = VitrinSection(nextPage, "عناوین بیشتر نکست‌مووی (صفحه $nextPage)", more)
+                            val section = VitrinSection(nextPage, "عناوین بیشتر سیاره زحل (صفحه $nextPage)", more)
                             vitrinAdapter.appendData(listOf(section))
                         } else {
                             hasMoreVitrin = false
@@ -1015,7 +1018,7 @@ class MainActivity : AppCompatActivity() {
                         binding.vitrinLoadingMore.isVisible = false
                         if (more.isNotEmpty()) {
                             vitrinPage = nextPage
-                            val section = VitrinSection(nextPage, "عناوین بیشتر BJ (صفحه $nextPage)", more)
+                            val section = VitrinSection(nextPage, "عناوین بیشتر سیاره مشتری (صفحه $nextPage)", more)
                             vitrinAdapter.appendData(listOf(section))
                         } else {
                             hasMoreVitrin = false
@@ -2513,15 +2516,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun getEngineName(key: String): String {
-        val fallback = when (key) {
+        val planet = when (key) {
             "rezflix" -> "نپتون"
             "almasmovie" -> "اورانوس"
             "nextmovie" -> "زحل"
             "bj" -> "مشتری"
-            "simba" -> "سیمبا"
+            "simba" -> "مریخ"
             else -> "زهره"
         }
-        return "سیاره ${SourceConfig.label(key, fallback)}"
+        return "سیاره $planet"
     }
 
     private fun showPlaylistsHubDialog(initialTab: Int = 0) {
@@ -2855,6 +2858,11 @@ class MainActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 showAppToast("کانال تلگرام: t.me/filigramapp", autoDismissMs = 4000L)
             }
+        }
+
+        aboutBinding.cardCheckUpdates.setOnClickListener {
+            dialog.dismiss()
+            appUpdater.check(manual = true)
         }
 
         dialog.show()

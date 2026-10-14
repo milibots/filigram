@@ -209,22 +209,22 @@ object BjApi {
 
         val suggestions = getSuggestions()
         if (suggestions.isNotEmpty()) {
-            sections.add(VitrinSection(sectionId++, "پیشنهادات ویژه (موتور BJ)", suggestions))
+            sections.add(VitrinSection(sectionId++, "پیشنهادات ویژه سیاره مشتری", suggestions))
         }
 
         val movies = getMovies(1)
         if (movies.isNotEmpty()) {
-            sections.add(VitrinSection(sectionId++, "جدیدترین فیلم‌های روز (موتور BJ)", movies))
+            sections.add(VitrinSection(sectionId++, "جدیدترین فیلم‌های سیاره مشتری", movies))
         }
 
         val series = getSeries(1)
         if (series.isNotEmpty()) {
-            sections.add(VitrinSection(sectionId++, "برترین سریال‌های روز (موتور BJ)", series))
+            sections.add(VitrinSection(sectionId++, "برترین سریال‌های سیاره مشتری", series))
         }
 
         val cartoons = getCartoons(1)
         if (cartoons.isNotEmpty()) {
-            sections.add(VitrinSection(sectionId++, "انیمیشن و کارتون‌های منتخب (موتور BJ)", cartoons))
+            sections.add(VitrinSection(sectionId++, "انیمیشن‌های منتخب سیاره مشتری", cartoons))
         }
 
         sections

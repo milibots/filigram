@@ -133,6 +133,23 @@ select {
   gap: 10px;
 }
 
+.update-btn {
+  height: 38px;
+  padding: 0 15px;
+  border-radius: 999px;
+  border: 1px solid #661018;
+  background: #240609;
+  color: #ff5962;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.update-btn:hover {
+  border-color: var(--red);
+  background: #39090d;
+  color: #fff;
+}
+
 .search-box input {
   width: 300px;
   height: 40px;

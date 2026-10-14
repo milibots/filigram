@@ -159,7 +159,15 @@ object SourceConfig {
         return result
     }
 
-    fun label(key: String, fallback: String): String = entries[key]?.label ?: fallback
+    fun label(key: String, fallback: String): String = when (key) {
+        "movielix" -> "زهره"
+        "rezflix" -> "نپتون"
+        "almasmovie" -> "اورانوس"
+        "nextmovie" -> "زحل"
+        "bj" -> "مشتری"
+        "simba" -> "مریخ"
+        else -> fallback
+    }
 
     fun isEnabled(key: String): Boolean = entries[key]?.enabled ?: true
 

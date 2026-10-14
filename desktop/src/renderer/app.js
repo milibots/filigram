@@ -21,8 +21,20 @@ const toastEl = document.getElementById('toast');
 const engineBar = document.getElementById('engineBar');
 const searchInput = document.getElementById('searchInput');
 const playerOverlay = document.getElementById('playerOverlay');
+const btnUpdate = document.getElementById('btnUpdate');
 const video = document.getElementById('video');
 const DEFAULT_COVER = 'assets/default-cover.jpg';
+
+btnUpdate.addEventListener('click', async () => {
+  btnUpdate.disabled = true;
+  btnUpdate.textContent = 'در حال بررسی…';
+  try {
+    await api.checkForUpdates(true);
+  } finally {
+    btnUpdate.disabled = false;
+    btnUpdate.textContent = 'آپدیت';
+  }
+});
 
 const FA_DIGITS = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
 
@@ -333,9 +345,9 @@ async function renderHome() {
         api
           .home(key)
           .then((list) =>
-            list.map((section) => ({
+            list.filter((section) => Array.isArray(section.items) && section.items.length).map((section, index) => ({
               ...section,
-              title: keys.length > 1 ? `${engineLabel(key)} • ${section.title}` : section.title,
+              title: `${['منتخب', 'تازه‌ها', 'محبوب‌ها', 'پیشنهادها'][index] || 'تماشایی‌ها'} سیاره ${engineLabel(key)}`,
               items: tagSource(section.items, key)
             }))
           )
@@ -1518,9 +1530,16 @@ async function boot() {
   const engines = await api.engines();
   state.engines = engines;
   const saved = Array.isArray(state.store.activeSources) ? state.store.activeSources : [];
-  state.activeSources = saved.filter((k) => engines.some((e) => e.key === k));
-  if (!state.activeSources.length) state.activeSources = [state.source];
+  if (!state.store.allEnginesDefaultV1) {
+    state.activeSources = engines.map((engine) => engine.key);
+    await saveStore('activeSources', state.activeSources);
+    await saveStore('allEnginesDefaultV1', true);
+  } else {
+    state.activeSources = saved.filter((k) => engines.some((e) => e.key === k));
+    if (!state.activeSources.length) state.activeSources = engines.map((engine) => engine.key);
+  }
   state.source = state.activeSources[0];
+  await saveStore('source', state.source);
   buildEngineDrawer();
 
   state.downloads = await api.dlList().catch(() => []);

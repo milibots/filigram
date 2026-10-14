@@ -421,7 +421,7 @@
                         android:drawablePadding="10dp"
                         android:fontFamily="@font/yekan_bakh_bold"
                         android:paddingStart="8dp"
-                        android:text="سیاره سیمبا — Fitlinerim"
+                        android:text="سیاره مریخ — آرشیو سریع"
                         android:textColor="@android:color/white"
                         android:textSize="13sp" />
 
@@ -430,7 +430,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="36dp"
                         android:fontFamily="@font/yekan_bakh_regular"
-                        android:text="آرشیو Simba با فیلم، سریال و لینک‌های مستقیم قسمت‌ها"
+                        android:text="آرشیو فیلم و سریال با لینک‌های مستقیم قسمت‌ها"
                         android:textColor="@color/muted"
                         android:textSize="10sp" />
 

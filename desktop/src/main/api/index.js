@@ -9,6 +9,7 @@ const sourceconfig = require('./sourceconfig');
 const engines = { almasmovie: almas, bj, nextmovie, rezflix, simba };
 
 const ENGINE_ORDER = ['bj', 'nextmovie', 'almasmovie', 'rezflix', 'simba'];
+const PLANET_LABELS = { bj: 'مشتری', nextmovie: 'زحل', almasmovie: 'اورانوس', rezflix: 'نپتون', simba: 'مریخ' };
 
 function engine(key) {
   return engines[key] || bj;
@@ -20,11 +21,11 @@ function engineList() {
   const configured = sourceconfig
     .enabledList()
     .filter((s) => engines[s.key])
-    .map((s) => ({ key: s.key, label: s.label || engines[s.key].label, planet: s.planet || s.key }));
+    .map((s) => ({ key: s.key, label: PLANET_LABELS[s.key], planet: s.planet || s.key }));
 
   return configured.length
     ? configured
-    : ENGINE_ORDER.map((key) => ({ key, label: engines[key].label, planet: key }));
+    : ENGINE_ORDER.map((key) => ({ key, label: PLANET_LABELS[key], planet: key }));
 }
 
 async function homeSections(sourceKey) {

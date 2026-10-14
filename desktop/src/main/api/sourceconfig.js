@@ -14,7 +14,7 @@ const DEFAULT_ORDER = [
   { key: 'nextmovie', label: 'زحل', planet: 'saturn', enabled: true, order: 2 },
   { key: 'almasmovie', label: 'اورانوس', planet: 'uranus', enabled: true, order: 3 },
   { key: 'rezflix', label: 'نپتون', planet: 'neptune', enabled: true, order: 4 },
-  { key: 'simba', label: 'سیمبا', planet: 'simba', enabled: true, order: 5 }
+  { key: 'simba', label: 'مریخ', planet: 'mars', enabled: true, order: 5 }
 ];
 
 const DESKTOP_KEYS = new Set(DEFAULT_ORDER.map((s) => s.key));

@@ -116,8 +116,8 @@ async function getQualities(id) {
 async function getHomeSections() {
   const [movies, series] = await Promise.all([getMovies(), getSeries()]);
   return [
-    movies.length ? { id: 1, title: 'فیلم‌های Simba', items: movies } : null,
-    series.length ? { id: 2, title: 'سریال‌های Simba', items: series } : null
+    movies.length ? { id: 1, title: 'فیلم‌های سیاره مریخ', items: movies } : null,
+    series.length ? { id: 2, title: 'سریال‌های سیاره مریخ', items: series } : null
   ].filter(Boolean);
 }
 
